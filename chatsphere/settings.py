@@ -23,7 +23,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-h_^mrp$b6d@ziqz=3n=#^%7v*nr)2=$9q0_1ek4mddc%sjkj%0'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ["pragyanpandey.com.np", "www.pragyanpandey.com.np","127.0.0.1", "localhost"]
 CSRF_TRUSTED_ORIGINS = ["https://pragyanpandey.com.np", "https://www.pragyanpandey.com.np"]
@@ -137,7 +137,9 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = "/static/"                      # ← leading slash!
+STATICFILES_DIRS = [BASE_DIR / "static"]     # ← tell Django about project-level /static
+STATIC_ROOT = BASE_DIR / "staticfiles"       # ← used later for collectstatic (prod)
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field

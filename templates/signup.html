@@ -19,7 +19,7 @@
   <div class="field">
     <label for="id_username">Username*</label>
     <input id="id_username" name="username" type="text"
-           value="{{ form.username.value|default_if_none:'' if form else '' }}" required />
+           value="{{ form.username.value|default_if_none:''}}" required />
     {% if form and form.username.errors %}
       <small class="error">{% for e in form.username.errors %}{{ e }}{% if not forloop.last %}<br>{% endif %}{% endfor %}</small>
     {% endif %}
@@ -28,13 +28,13 @@
   <div class="field">
     <label for="id_full_name">Full name</label>
     <input id="id_full_name" name="full_name" type="text"
-           value="{{ form.full_name.value|default_if_none:'' if form else '' }}" />
+           value="{{ form.full_name.value|default_if_none:''}}" />
   </div>
 
   <div class="field">
     <label for="id_email">Email</label>
     <input id="id_email" name="email" type="email"
-           value="{{ form.email.value|default_if_none:'' if form else '' }}" />
+           value="{{ form.email.value|default_if_none:''}}" />
     {% if form and form.email.errors %}
       <small class="error">{% for e in form.email.errors %}{{ e }}{% if not forloop.last %}<br>{% endif %}{% endfor %}</small>
     {% endif %}
