@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth import get_user_model, login, logout
+from django.contrib.auth import get_user_model, login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.shortcuts import render, redirect, resolve_url
@@ -57,9 +57,18 @@ def signup_view(request):
         form = SignupForm(request.POST, request.FILES)
         if form.is_valid():
             user = form.save()
-            # create an AuraPoints row for this user (optional but handy)
             AuraPoints.objects.get_or_create(user=user)
-            login(request, user)
+
+            # Authenticate to set the backend attribute
+            raw_password = form.cleaned_data.get("password1")
+            auth_user = authenticate(request, username=user.username, password=raw_password)
+
+            if auth_user is not None:
+                login(request, auth_user)  # backend already set by authenticate()
+            else:
+                # very rare fallback: explicitly choose a backend
+                login(request, user, backend="django.contrib.auth.backends.ModelBackend")
+
             messages.success(request, "Welcome to Chatsphere! Your account is ready.")
             return redirect(_safe_next(request, "home"))
         else:

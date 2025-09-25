@@ -169,4 +169,4 @@ ACCOUNT_AUTHENTICATION_METHOD = "username_email"  # login via username or email
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = True
 ACCOUNT_EMAIL_VERIFICATION = "optional"  # dev: "none" | prod: "mandatory"/"optional"
-ACCOUNT_SESSION_REMEMBER = True  # keep user logged in (if they close browser)
+ACCOUNT_SESSION_REMEMBER = False  # keep user logged out (if they close browser)
