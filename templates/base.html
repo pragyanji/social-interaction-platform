@@ -1,0 +1,62 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>{% block title %}Chatsphere{% endblock %}</title>
+
+  <!-- main stylesheet -->
+  <link rel="stylesheet" href="{% static 'css/main.css' %}" />
+  {% block head_extra %}{% endblock %}
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="{% url 'landing' %}">
+        <img src="{% static 'img/logo.png' %}" alt="Chatsphere" class="brand-logo" />
+        <span>Chatsphere</span>
+      </a>
+
+      <nav class="nav">
+        <a href="{% url 'landing' %}">Landing</a>
+        <a href="{% url 'home' %}">Home</a>
+        {% if request.user.is_authenticated %}
+          <a href="/admin/">Admin</a>
+          <form action="{% url 'logout' %}" method="post" class="inline">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-link">Logout</button>
+          </form>
+        {% else %}
+          <a href="{% url 'signin' %}">Sign in</a>
+          <a class="btn btn-primary" href="{% url 'signup' %}">Create account</a>
+        {% endif %}
+      </nav>
+    </div>
+  </header>
+
+  {% if messages %}
+    <div class="container">
+      <ul class="messages">
+        {% for message in messages %}
+          <li class="msg {{ message.tags|default:'' }}">{{ message }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+
+  <main class="container">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <small>© <span id="y"></span> Chatsphere · <a href="#">Privacy</a></small>
+    </div>
+  </footer>
+
+  <script>document.getElementById('y').textContent = new Date().getFullYear();</script>
+  <script src="{% static 'js/app.js' %}"></script>
+  {% block body_extra %}{% endblock %}
+</body>
+</html>

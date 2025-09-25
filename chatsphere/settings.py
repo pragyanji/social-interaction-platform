@@ -23,9 +23,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-h_^mrp$b6d@ziqz=3n=#^%7v*nr)2=$9q0_1ek4mddc%sjkj%0'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["pragyanpandey.com.np", "www.pragyanpandey.com.np","127.0.0.1", "localhost"]
+CSRF_TRUSTED_ORIGINS = ["https://pragyanpandey.com.np", "https://www.pragyanpandey.com.np"]
+
 
 
 # Application definition
@@ -37,7 +39,17 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    
+    "django.contrib.sites",           # <-- required by allauth
+    "allauth",
+    "allauth.account",
+    "allauth.socialaccount",
+    "allauth.socialaccount.providers.google",   # add more providers as needed
+    
+    'core_chatsphere',
 ]
+
+SITE_ID = 1
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -45,6 +57,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    "allauth.account.middleware.AccountMiddleware",  # <-- allauth
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -54,7 +67,7 @@ ROOT_URLCONF = 'chatsphere.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / "templates"],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -66,6 +79,10 @@ TEMPLATES = [
     },
 ]
 
+TEMPLATES[0]["OPTIONS"]["context_processors"] += [
+    "django.template.context_processors.request",  # must be present
+]
+
 WSGI_APPLICATION = 'chatsphere.wsgi.application'
 
 
@@ -74,8 +91,14 @@ WSGI_APPLICATION = 'chatsphere.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'chatsphere',
+        'USER': 'postgres',
+        'PASSWORD': 'pragyan',
+        'HOST': 'localhost',
+        'PORT': '5432',
+        "CONN_MAX_AGE": 60,
+
     }
 }
 
@@ -104,7 +127,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = "Asia/Kathmandu"
 
 USE_I18N = True
 
@@ -120,3 +143,28 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+AUTH_USER_MODEL = "core_chatsphere.User"
+
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
+
+
+LOGIN_URL = "signin"
+LOGIN_REDIRECT_URL = "home"
+LOGOUT_REDIRECT_URL = "landing"  # not strictly needed since we redirect in view
+
+AUTHENTICATION_BACKENDS = [
+    "django.contrib.auth.backends.ModelBackend",                  # keep default
+    "allauth.account.auth_backends.AuthenticationBackend",        # allauth
+]
+# allauth core settings (tweak as you like)
+LOGIN_URL = "account_login"            # allauth’s login view
+LOGIN_REDIRECT_URL = "home"
+LOGOUT_REDIRECT_URL = "landing"
+
+ACCOUNT_AUTHENTICATION_METHOD = "username_email"  # login via username or email
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_USERNAME_REQUIRED = True
+ACCOUNT_EMAIL_VERIFICATION = "optional"  # dev: "none" | prod: "mandatory"/"optional"
+ACCOUNT_SESSION_REMEMBER = True  # keep user logged in (if they close browser)

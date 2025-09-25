@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% load socialaccount %}
+
+{% block title %}Create account · Chatsphere{% endblock %}
+
+{% block content %}
+<h2 class="page-title">Create your account</h2>
+
+<form method="post" action="{% url 'signup' %}" class="form card" enctype="multipart/form-data">
+  {% csrf_token %}
+
+  {# If you pass a Django form (e.g., UserCreationForm subclass), show non-field errors #}
+  {% if form and form.non_field_errors %}
+    <div class="form-errors">
+      {% for e in form.non_field_errors %}<p>{{ e }}</p>{% endfor %}
+    </div>
+  {% endif %}
+
+  <div class="field">
+    <label for="id_username">Username*</label>
+    <input id="id_username" name="username" type="text"
+           value="{{ form.username.value|default_if_none:'' if form else '' }}" required />
+    {% if form and form.username.errors %}
+      <small class="error">{% for e in form.username.errors %}{{ e }}{% if not forloop.last %}<br>{% endif %}{% endfor %}</small>
+    {% endif %}
+  </div>
+
+  <div class="field">
+    <label for="id_full_name">Full name</label>
+    <input id="id_full_name" name="full_name" type="text"
+           value="{{ form.full_name.value|default_if_none:'' if form else '' }}" />
+  </div>
+
+  <div class="field">
+    <label for="id_email">Email</label>
+    <input id="id_email" name="email" type="email"
+           value="{{ form.email.value|default_if_none:'' if form else '' }}" />
+    {% if form and form.email.errors %}
+      <small class="error">{% for e in form.email.errors %}{{ e }}{% if not forloop.last %}<br>{% endif %}{% endfor %}</small>
+    {% endif %}
+  </div>
+
+  <div class="field">
+    <label for="id_password1">Password*</label>
+    <input id="id_password1" name="password1" type="password" required />
+  </div>
+
+  <div class="field">
+    <label for="id_password2">Confirm password*</label>
+    <input id="id_password2" name="password2" type="password" required />
+    {% if form and form.password2.errors %}
+      <small class="error">{% for e in form.password2.errors %}{{ e }}{% if not forloop.last %}<br>{% endif %}{% endfor %}</small>
+    {% endif %}
+  </div>
+
+  {# Optional: profile picture upload (matches your User.profile_pic) #}
+  <div class="field">
+    <label for="id_profile_pic">Profile picture</label>
+    <input id="id_profile_pic" name="profile_pic" type="file" accept="image/*" />
+  </div>
+
+  <button type="submit" class="btn btn-primary">Create account</button>
+  <p class="muted">Already have an account? <a href="{% url 'signin' %}">Sign in</a>.</p>
+
+  <div class="card" style="margin-top:12px">
+  <p class="muted">Or continue with</p>
+  <a class="btn btn-outline" href="{% provider_login_url 'google' process='login' %}">
+    Continue with Google
+  </a>
+</div>
+
+</form>
+{% endblock %}
