@@ -46,7 +46,7 @@ INSTALLED_APPS = [
     "allauth.socialaccount",
     "allauth.socialaccount.providers.google",   # add more providers as needed
     
-    'core_chatsphere',
+    'core_chatsphere',  # added app
 ]
 
 SITE_ID = 1
@@ -165,8 +165,7 @@ LOGIN_URL = "account_login"            # allauth’s login view
 LOGIN_REDIRECT_URL = "home"
 LOGOUT_REDIRECT_URL = "landing"
 
-ACCOUNT_AUTHENTICATION_METHOD = "username_email"  # login via username or email
-ACCOUNT_EMAIL_REQUIRED = True
-ACCOUNT_USERNAME_REQUIRED = True
+ACCOUNT_LOGIN_METHODS = {"email", "username"}  # login via username or email
+ACCOUNT_SIGNUP_FIELDS = ["email*", "username*", "password1*", "password2*"]
 ACCOUNT_EMAIL_VERIFICATION = "optional"  # dev: "none" | prod: "mandatory"/"optional"
 ACCOUNT_SESSION_REMEMBER = False  # keep user logged out (if they close browser)
