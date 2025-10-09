@@ -8,40 +8,6 @@ from django.db.models import Q, Sum
 from django.utils import timezone
 
 
-# -----------------------------
-# User
-# -----------------------------
-class User(AbstractUser):
-    """
-    Custom user that keeps your extra fields seen in the ERD.
-    Username + password are inherited from AbstractUser.
-    """
-    full_name = models.CharField(max_length=150, blank=True)
-    profile_pic = models.ImageField(upload_to="profiles/", blank=True, null=True)
-
-    # Link to IdentityVerification for verification status
-    verification_status = models.OneToOneField(
-        'IdentityVerification',
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='user_verification_status',
-        help_text='Reference to the user\'s identity verification record.'
-    )
-
-    # Link to AuraPoints model to show user's aura points
-    aura_point = models.OneToOneField(
-        'AuraPoints',
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='user_aura_point',
-        help_text='Reference to the user\'s aura points record.'
-    )
-
-    def __str__(self) -> str:
-        return self.username
-
 
 # -----------------------------
 # Identity Verification
@@ -74,6 +40,43 @@ class IdentityVerification(models.Model):
     class Meta:
         verbose_name = "Identity verification"
         verbose_name_plural = "Identity verifications"
+        
+  
+# -----------------------------
+# User
+# -----------------------------
+class User(AbstractUser):
+    """
+    Custom user that keeps your extra fields seen in the ERD.
+    Username + password are inherited from AbstractUser.
+    """
+    full_name = models.CharField(max_length=150, blank=True)
+    profile_pic = models.ImageField(upload_to="profiles/", blank=True, null=True)
+
+    # Link to IdentityVerification for verification status
+    verification_status = models.ForeignKey(
+        IdentityVerification,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='user_verification_status',
+    )
+
+    # Link to AuraPoints model to show user's aura points
+    aura_point = models.OneToOneField(
+        'AuraPoints',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='user_aura_point',
+        help_text='Reference to the user\'s aura points record.'
+    )
+
+    def __str__(self) -> str:
+        return self.username
+
+
+
 
 
 # -----------------------------
