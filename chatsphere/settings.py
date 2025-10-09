@@ -90,15 +90,20 @@ WSGI_APPLICATION = 'chatsphere.wsgi.application'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 DATABASES = {
+    # for production, use PostgreSQL or MySQL
+    # 'default': {
+    #     'ENGINE': 'django.db.backends.postgresql',
+    #     'NAME': 'chatsphere',
+    #     'USER': 'postgres',
+    #     'PASSWORD': 'pragyan',
+    #     'HOST': 'localhost',
+    #     'PORT': '5432',
+    #     "CONN_MAX_AGE": 60,
+    # }
+    # for development, you can use SQLite (uncomment below)
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'chatsphere',
-        'USER': 'postgres',
-        'PASSWORD': 'pragyan',
-        'HOST': 'localhost',
-        'PORT': '5432',
-        "CONN_MAX_AGE": 60,
-
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
 

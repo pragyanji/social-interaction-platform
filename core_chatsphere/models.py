@@ -19,17 +19,25 @@ class User(AbstractUser):
     full_name = models.CharField(max_length=150, blank=True)
     profile_pic = models.ImageField(upload_to="profiles/", blank=True, null=True)
 
-    class VerificationStatus(models.TextChoices):
-        PENDING = "PENDING", "Pending"
-        VERIFIED = "VERIFIED", "Verified"
-        REJECTED = "REJECTED", "Rejected"
-
-    verification_status = models.CharField(
-        max_length=20, choices=VerificationStatus.choices, default=VerificationStatus.PENDING
+    # Link to IdentityVerification for verification status
+    verification_status = models.OneToOneField(
+        'IdentityVerification',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='user_verification_status',
+        help_text='Reference to the user\'s identity verification record.'
     )
 
-    # Cached/denormalized total (your ERD shows aura_point on User)
-    aura_point = models.IntegerField(default=0)
+    # Link to AuraPoints model to show user's aura points
+    aura_point = models.OneToOneField(
+        'AuraPoints',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='user_aura_point',
+        help_text='Reference to the user\'s aura points record.'
+    )
 
     def __str__(self) -> str:
         return self.username
