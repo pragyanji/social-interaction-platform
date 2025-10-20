@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChatSphere - Video Chat</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        video {
+            transform: scaleX(-1);
+            -webkit-transform: scaleX(-1);
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white flex items-center justify-center min-h-screen">
+    <div class="container mx-auto p-4 max-w-[1400px] w-full">
+        <header id="chat-header" class="text-center mb-6">
+            <h1 class="text-4xl md:text-5xl font-bold text-indigo-400">Video Chat</h1>
+            <p class="text-gray-400 mt-2">Connect with strangers from around the world.</p>
+            <div class="mt-4 inline-flex items-center gap-2 bg-gray-800 px-4 py-2 rounded-full">
+                <div class="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                <span class="text-gray-300 text-sm">
+                    <span id="online-count" class="font-bold text-green-400">0</span> users online
+                </span>
+            </div>
+        </header>
+
+        <main id="main-content" class="bg-gray-800 rounded-2xl shadow-2xl p-4 md:p-8">
+            <!-- Video feeds -->
+            <div id="video-container" class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 mb-6 hidden max-w-[1400px] mx-auto">
+                <div class="relative bg-gray-900 rounded-lg overflow-hidden shadow-lg" style="height: 70vh;">
+                    <video id="localVideo" autoplay muted playsinline class="w-full h-full object-cover"></video>
+                    <div class="absolute bottom-2 left-2 bg-black bg-opacity-50 px-3 py-1 rounded-full text-sm">You</div>
+                    <div class="absolute bottom-2 right-2 flex gap-2">
+                        <button id="toggleAudio" aria-label="Toggle microphone" class="bg-black bg-opacity-50 p-2 rounded-full hover:bg-opacity-75 transition-all">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M10 12a2 2 0 0 0 2-2V5a2 2 0 1 0-4 0v5a2 2 0 0 0 2 2z"/>
+                                <path d="M16 9v1a6 6 0 0 1-12 0V9h2v1a4 4 0 0 0 8 0V9h2z"/>
+                            </svg>
+                        </button>
+                        <button id="toggleVideo" aria-label="Toggle camera" class="bg-black bg-opacity-50 p-2 rounded-full hover:bg-opacity-75 transition-all">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M2 6a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2h2a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6z"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="relative bg-gray-900 rounded-lg overflow-hidden shadow-lg" style="height: 70vh;">
+                    <video id="remoteVideo" autoplay playsinline class="w-full h-full object-cover"></video>
+                    <div class="absolute bottom-2 left-2 bg-black bg-opacity-50 px-3 py-1 rounded-full text-sm">Stranger</div>
+                    <div id="loading-spinner" class="absolute inset-0 flex items-center justify-center bg-gray-900 bg-opacity-75 hidden">
+                        <svg class="animate-spin h-10 w-10 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Status and controls -->
+            <div class="text-center">
+                <p id="status" class="text-gray-400 mb-6 h-6">Ready to connect.</p>
+                <p id="waiting-users" class="text-gray-500 text-sm mb-4 h-4"></p>
+                <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+                    <button id="startButton" 
+                        class="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-900 disabled:cursor-not-allowed text-white font-bold py-3 px-8 rounded-full transition-colors shadow-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-opacity-75"
+                        aria-label="Start video chat"
+                        title="Start video chat with a random person">
+                        Start Chat
+                    </button>
+                    <button id="stopButton" 
+                        class="w-full sm:w-auto bg-red-600 hover:bg-red-700 disabled:bg-red-900 disabled:cursor-not-allowed text-white font-bold py-3 px-8 rounded-full transition-colors shadow-lg hidden focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-opacity-75"
+                        aria-label="Stop video chat"
+                        title="End current chat">
+                        Stop Chat
+                    </button>
+                    <button id="nextButton" 
+                        class="w-full sm:w-auto bg-yellow-600 hover:bg-yellow-700 disabled:bg-yellow-900 disabled:cursor-not-allowed text-white font-bold py-3 px-8 rounded-full transition-colors shadow-lg hidden focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-opacity-75"
+                        aria-label="Find next chat partner"
+                        title="End current chat and find a new partner">
+                        Next Stranger
+                    </button>
+                </div>
+            </div>
+        </main>
+        
+        <footer class="text-center mt-8 text-gray-500 text-sm">
+            <p>&copy; 2024 ChatSphere. All rights reserved.</p>
+        </footer>
+    </div>
+
+    <!-- Firebase Configuration -->
+    <script>
+        // @ts-ignore - Django template variable
+        window.FIREBASE_CONFIG = {{ firebase_config|safe }};
+    </script>
+    
+    <script type="module">
+        // Firebase Setup
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getDatabase, ref, set, get, onValue, push, remove, update, serverTimestamp, onDisconnect } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        
+        // Debug flag - set to true to see detailed logs
+        const DEBUG = true;
+        
+        // DOM Elements - will be initialized after page loads
+        let startButton, stopButton, nextButton, localVideo, remoteVideo, statusEl, videoContainer, loadingSpinner, onlineCountEl, waitingUsersEl;
+        
+        function log(...args) {
+            if (DEBUG) {
+                console.log('[ChatSphere]', ...args);
+            }
+        }
+
+        // Initialize Firebase globally
+        let app, db, auth;
+        try {
+            log('Loading Firebase config from global variable');
+            const firebaseConfig = window.FIREBASE_CONFIG;
+            log('Firebase config loaded:', firebaseConfig);
+            
+            app = initializeApp(firebaseConfig);
+            db = getDatabase(app);
+            auth = getAuth(app);
+            
+            log('Firebase initialized successfully');
+        } catch (error) {
+            console.error('Error initializing Firebase:', error);
+            log('Firebase initialization failed:', error.message);
+            throw error;
+        }
+
+                        // WebRTC Configuration
+                
+                // Debug logging
+                async function checkMediaPermissions() {
+                    try {
+                        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                        console.log('Media permissions granted:', stream.getTracks());
+                        stream.getTracks().forEach(track => track.stop());
+                        document.getElementById('status').textContent = 'Camera and microphone access granted';
+                        return true;
+                    } catch (error) {
+                        console.error('Media permission error:', error);
+                        document.getElementById('status').textContent = 'Error: ' + error.message;
+                        return false;
+                    }
+                }
+        
+        const servers = {
+            iceServers: [
+                { urls: ['stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302'] },
+            ],
+            iceCandidatePoolSize: 10,
+        };
+        let pc = new RTCPeerConnection(servers);
+        
+        // App State
+        let localStream = null;
+        let remoteStream = null;
+        let currentRoomId = null;
+        let userId = null;
+        let isAudioEnabled = true;
+        let isVideoEnabled = true;
+        let roomListener = null; // To track room status changes
+        let isReconnecting = false; // Flag to prevent infinite reconnection loops
+        
+        // Debug function
+        function updateStatus(message, isError = false) {
+            console.log(message);
+            statusEl.textContent = message;
+            if (isError) {
+                statusEl.classList.add('text-red-500');
+            } else {
+                statusEl.classList.remove('text-red-500');
+            }
+        }
+        
+        // Function to start the chat
+        async function startChat() {
+            log('Start button clicked');
+            try {
+                log('Disabling start button');
+                startButton.disabled = true;
+                updateStatus('Starting video chat...');
+                
+                log('Setting up media streams');
+                await setupStreams();
+                
+                log('Finding or creating room');
+                await findOrCreateRoom();
+            } catch (error) {
+                console.error('Error starting chat:', error);
+                startButton.disabled = false;
+                updateStatus('Failed to start chat: ' + error.message, true);
+            }
+        }
+
+        // Add connection state listener
+        pc.onconnectionstatechange = (event) => {
+            console.log("Connection state changed:", pc.connectionState);
+            updateStatus("WebRTC Connection State: " + pc.connectionState);
+        };
+        
+        // Add ICE connection state listener
+        pc.oniceconnectionstatechange = (event) => {
+            console.log("ICE Connection state:", pc.iceConnectionState);
+            updateStatus("ICE Connection State: " + pc.iceConnectionState);
+        };
+        
+        // Add signaling state listener
+        pc.onsignalingstatechange = (event) => {
+            console.log("Signaling state:", pc.signalingState);
+            updateStatus("Signaling State: " + pc.signalingState);
+        };
+        
+        // Presence System Functions
+        async function setupPresence() {
+            if (!userId) return;
+            
+            const presenceRef = ref(db, `presence/${userId}`);
+            const userStatusData = {
+                online: true,
+                lastSeen: serverTimestamp()
+            };
+            
+            // Set user as online
+            await set(presenceRef, userStatusData);
+            
+            // Remove user from presence when they disconnect
+            onDisconnect(presenceRef).remove();
+            
+            log('Presence tracking setup complete');
+        }
+        
+        function trackOnlineUsers() {
+            const presenceRef = ref(db, 'presence');
+            
+            onValue(presenceRef, (snapshot) => {
+                const onlineUsers = snapshot.val();
+                const count = onlineUsers ? Object.keys(onlineUsers).length : 0;
+                onlineCountEl.textContent = count;
+                log('Online users:', count);
+            });
+        }
+        
+        function trackWaitingUsers() {
+            const waitingRoomsRef = ref(db, 'waiting_rooms');
+            
+            onValue(waitingRoomsRef, (snapshot) => {
+                const waitingRooms = snapshot.val();
+                const count = waitingRooms ? Object.keys(waitingRooms).length : 0;
+                
+                if (count > 0) {
+                    waitingUsersEl.textContent = `${count} ${count === 1 ? 'person' : 'people'} waiting to chat`;
+                } else {
+                    waitingUsersEl.textContent = '';
+                }
+                log('Waiting users:', count);
+            });
+        }
+        
+        async function removePresence() {
+            if (!userId) return;
+            
+            try {
+                await remove(ref(db, `presence/${userId}`));
+                log('User presence removed');
+            } catch (error) {
+                console.warn('Error removing presence:', error);
+            }
+        }
+        
+        // Monitor room for peer disconnection
+        function monitorRoomStatus() {
+            if (!currentRoomId) return;
+            
+            const roomRef = ref(db, `rooms/${currentRoomId}`);
+            
+            // Remove previous listener if exists
+            if (roomListener) {
+                roomListener();
+            }
+            
+            roomListener = onValue(roomRef, async (snapshot) => {
+                const roomData = snapshot.val();
+                
+                // If room is deleted (peer clicked Next/Stop)
+                if (!roomData && !isReconnecting) {
+                    log('Room deleted - peer has left');
+                    isReconnecting = true;
+                    updateStatus('Stranger has left. Finding a new partner...');
+                    
+                    // Stop listening
+                    if (roomListener) {
+                        roomListener();
+                        roomListener = null;
+                    }
+                    
+                    // Automatically find new partner
+                    const oldRoomId = currentRoomId;
+                    currentRoomId = null; // Clear room ID to prevent cleanup from deleting again
+                    
+                    // Clean up local resources only
+                    if (localStream) {
+                        localStream.getTracks().forEach(track => track.stop());
+                    }
+                    if (remoteStream) {
+                        remoteStream.getTracks().forEach(track => track.stop());
+                    }
+                    if (pc) {
+                        pc.close();
+                        pc = new RTCPeerConnection(servers);
+                    }
+                    
+                    try {
+                        await setupStreams();
+                        await findOrCreateRoom();
+                    } catch (error) {
+                        console.error('Error finding new chat after peer left:', error);
+                        updateStatus('Error finding new chat. Please try again.');
+                    } finally {
+                        isReconnecting = false;
+                    }
+                }
+            });
+            
+            log('Room monitoring started');
+        }
+        
+        async function initialize() {
+            log('Initializing application');
+            try {
+                log('Initializing Firebase');
+                updateStatus("Initializing Firebase connection...");
+                await signInAnonymously(auth);
+                updateStatus("Firebase initialized, authenticating...");
+            } catch (error) {
+                console.error("Authentication failed:", error);
+                updateStatus("Error: Could not authenticate with Firebase.", true);
+                return;
+            }
+
+            onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    log('User authenticated:', user.uid);
+                    userId = user.uid;
+                    startButton.disabled = false;
+                    startButton.classList.remove('opacity-50');
+                    updateStatus("Authentication successful. Click 'Start Chat' to begin.");
+                    
+                    // Setup presence tracking
+                    await setupPresence();
+                    trackOnlineUsers();
+                    trackWaitingUsers();
+                } else {
+                    log('User not authenticated');
+                    userId = null;
+                    startButton.disabled = true;
+                    startButton.classList.add('opacity-50');
+                    updateStatus("Authentication required to start.", true);
+                }
+            });
+            
+            // Add manual check for Firebase config
+            log('Firebase config:', window.FIREBASE_CONFIG);
+            log('Start button status:', !startButton.disabled);
+        }
+
+        const setupStreams = async () => {
+            try {
+                statusEl.textContent = "Setting up video chat...";
+                // Hide the header when starting chat
+                document.getElementById('chat-header').classList.add('hidden');
+                
+                statusEl.textContent = "Requesting camera and microphone access...";
+                localStream = await navigator.mediaDevices.getUserMedia({ 
+                    video: true, 
+                    audio: true 
+                });
+                statusEl.textContent = "Camera and microphone access granted";
+                remoteStream = new MediaStream();
+                
+                // Log device information
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                console.log("Available devices:", devices);
+
+                localStream.getTracks().forEach((track) => {
+                    pc.addTrack(track, localStream);
+                });
+
+                pc.ontrack = (event) => {
+                    event.streams[0].getTracks().forEach((track) => {
+                        remoteStream.addTrack(track);
+                    });
+                };
+
+                localVideo.srcObject = localStream;
+                remoteVideo.srcObject = remoteStream;
+
+                videoContainer.classList.remove('hidden');
+                startButton.classList.add('hidden');
+                nextButton.classList.remove('hidden');
+                nextButton.disabled = false;
+                stopButton.classList.remove('hidden');
+                stopButton.disabled = false;
+            } catch (error) {
+                console.error("Media Error:", error);
+                switch(error.name) {
+                    case 'NotAllowedError':
+                        statusEl.textContent = "Camera/Microphone access denied. Please check your permissions.";
+                        break;
+                    case 'NotFoundError':
+                        statusEl.textContent = "No camera or microphone found. Please connect a device.";
+                        break;
+                    case 'NotReadableError':
+                        statusEl.textContent = "Camera/Microphone is already in use by another application.";
+                        break;
+                    default:
+                        statusEl.textContent = "Could not access camera/microphone. Please try again.";
+                }
+                throw error;
+            }
+        };
+
+        // Helper function to clean up rooms
+        async function cleanupRooms() {
+            console.log("Cleaning up existing rooms for user:", userId);
+            const roomsRef = ref(db, 'rooms');
+            const waitingRoomsRef = ref(db, 'waiting_rooms');
+            
+            // Clean rooms
+            const existingRooms = await get(roomsRef);
+            if (existingRooms.exists()) {
+                const rooms = existingRooms.val();
+                for (const [key, room] of Object.entries(rooms)) {
+                    if (room.creatorId === userId || room.joinerId === userId) {
+                        console.log("Removing existing room:", key);
+                        await remove(ref(db, `rooms/${key}`));
+                    }
+                }
+            }
+            
+            // Clean waiting rooms
+            const existingWaitingRooms = await get(waitingRoomsRef);
+            if (existingWaitingRooms.exists()) {
+                const rooms = existingWaitingRooms.val();
+                for (const [key, room] of Object.entries(rooms)) {
+                    if (room.creatorId === userId) {
+                        console.log("Removing existing waiting room:", key);
+                        await remove(ref(db, `waiting_rooms/${key}`));
+                    }
+                }
+            }
+        }
+
+        async function findOrCreateRoom() {
+            try {
+                statusEl.textContent = 'Looking for a stranger...';
+                loadingSpinner.classList.remove('hidden');
+                nextButton.disabled = true;
+
+                await cleanupRooms();
+
+                const roomsRef = ref(db, 'rooms');
+                const waitingRoomsRef = ref(db, 'waiting_rooms');
+                
+                // Try to find an existing room
+                const waitingRooms = await get(waitingRoomsRef);
+                log("Available waiting rooms:", waitingRooms.val());
+                
+                if (waitingRooms.exists()) {
+                    const rooms = waitingRooms.val();
+                    const availableRoom = Object.entries(rooms).find(([_, room]) => room.creatorId !== userId);
+                    if (availableRoom) {
+                        const [roomId, roomData] = availableRoom;
+                        log("Found available room:", roomId);
+                        currentRoomId = roomId;
+                
+                        // Get the full room data from the main rooms collection
+                        const existingRoomSnapshot = await get(ref(db, `rooms/${roomId}`));
+                        const existingRoomData = existingRoomSnapshot.val();
+                        
+                        // Remove from waiting rooms and update status
+                        await remove(ref(db, `waiting_rooms/${roomId}`));
+                        await update(ref(db, `rooms/${roomId}`), {
+                            status: 'full',
+                            joinerId: userId
+                        });
+                        
+                        log('Joining as callee');
+                        await startCallAsCallee();
+                        return;
+                    }
+                }
+                
+                // Create a new room if no available rooms
+                log('No available rooms, creating new room');
+                const newRoomRef = push(roomsRef);
+                currentRoomId = newRoomRef.key;
+                
+                await set(newRoomRef, {
+                    creatorId: userId,
+                    status: 'waiting',
+                    createdAt: serverTimestamp()
+                });
+                
+                // Add to waiting rooms
+                await set(ref(db, `waiting_rooms/${currentRoomId}`), {
+                    creatorId: userId,
+                    status: 'waiting',
+                    createdAt: serverTimestamp()
+                });
+                
+                log('Starting as caller');
+                await startCallAsCaller();
+            } catch (error) {
+                console.error("Error in findOrCreateRoom:", error);
+                
+                if (error.message === 'Timeout waiting for offer') {
+                    statusEl.textContent = "Connection timeout. The other user may have left. Try again.";
+                } else {
+                    statusEl.textContent = "Error finding/creating room. Please try again.";
+                }
+                
+                loadingSpinner.classList.add('hidden');
+                nextButton.disabled = false;
+                
+                // Clean up the room if it was created
+                if (currentRoomId) {
+                    await cleanup();
+                }
+                
+                throw error;
+            }
+        }        const startCallAsCaller = async () => {
+            const roomRef = ref(db, `rooms/${currentRoomId}`);
+            
+            pc.onicecandidate = async (event) => {
+                if (event.candidate) {
+                    await push(ref(db, `rooms/${currentRoomId}/callerCandidates`), event.candidate.toJSON());
+                }
+            };
+
+            // Create offer
+            const offerDescription = await pc.createOffer();
+            await pc.setLocalDescription(offerDescription);
+
+            const offer = {
+                sdp: offerDescription.sdp,
+                type: offerDescription.type,
+            };
+
+            await update(roomRef, { offer });
+
+            // Listen for answer
+            onValue(roomRef, async (snapshot) => {
+                const data = snapshot.val();
+                if (!pc.currentRemoteDescription && data?.answer) {
+                    const answerDescription = new RTCSessionDescription(data.answer);
+                    await pc.setRemoteDescription(answerDescription);
+                    statusEl.textContent = 'Stranger connected!';
+                    loadingSpinner.classList.add('hidden');
+                    nextButton.disabled = false;
+                    
+                    // Start monitoring room for peer disconnection
+                    monitorRoomStatus();
+                }
+            });
+
+            // Listen for remote ICE candidates
+            onValue(ref(db, `rooms/${currentRoomId}/calleeCandidates`), (snapshot) => {
+                snapshot.forEach((childSnapshot) => {
+                    const candidate = new RTCIceCandidate(childSnapshot.val());
+                    pc.addIceCandidate(candidate);
+                });
+            });
+        };
+
+        const startCallAsCallee = async () => {
+            const roomRef = ref(db, `rooms/${currentRoomId}`);
+            
+            pc.onicecandidate = async (event) => {
+                if (event.candidate) {
+                    await push(ref(db, `rooms/${currentRoomId}/calleeCandidates`), event.candidate.toJSON());
+                }
+            };
+
+            // Wait for the offer to be available
+            log('Waiting for offer from caller...');
+            statusEl.textContent = 'Waiting for peer to connect...';
+            
+            return new Promise((resolve, reject) => {
+                const unsubscribe = onValue(roomRef, async (snapshot) => {
+                    try {
+                        const roomData = snapshot.val();
+                        
+                        // Check if offer exists and is valid
+                        if (roomData && roomData.offer && roomData.offer.type && roomData.offer.sdp) {
+                            log('Offer received from caller');
+                            unsubscribe(); // Stop listening
+                            
+                            const offerDescription = roomData.offer;
+                            
+                            await pc.setRemoteDescription(new RTCSessionDescription(offerDescription));
+                            const answerDescription = await pc.createAnswer();
+                            await pc.setLocalDescription(answerDescription);
+
+                            const answer = {
+                                type: answerDescription.type,
+                                sdp: answerDescription.sdp,
+                            };
+
+                            await update(roomRef, { answer });
+                            
+                            // Listen for ICE candidates
+                            onValue(ref(db, `rooms/${currentRoomId}/callerCandidates`), (snapshot) => {
+                                snapshot.forEach((childSnapshot) => {
+                                    const candidate = new RTCIceCandidate(childSnapshot.val());
+                                    pc.addIceCandidate(candidate);
+                                });
+                            });
+
+                            statusEl.textContent = 'Connected to stranger!';
+                            loadingSpinner.classList.add('hidden');
+                            nextButton.disabled = false;
+                            
+                            // Start monitoring room for peer disconnection
+                            monitorRoomStatus();
+                            
+                            resolve();
+                        }
+                    } catch (error) {
+                        console.error('Error in startCallAsCallee:', error);
+                        unsubscribe();
+                        reject(error);
+                    }
+                }, (error) => {
+                    console.error('Firebase listener error:', error);
+                    reject(error);
+                });
+                
+                // Timeout after 30 seconds
+                setTimeout(() => {
+                    unsubscribe();
+                    reject(new Error('Timeout waiting for offer'));
+                }, 30000);
+            });
+        };
+
+        const cleanup = async () => {
+            // Stop room monitoring
+            if (roomListener) {
+                roomListener();
+                roomListener = null;
+                log('Room monitoring stopped');
+            }
+            
+            if (currentRoomId) {
+                try {
+                    // Remove room and waiting room entries
+                    await remove(ref(db, `rooms/${currentRoomId}`));
+                    await remove(ref(db, `waiting_rooms/${currentRoomId}`));
+                } catch (error) {
+                    console.warn('Error cleaning up room:', error);
+                }
+            }
+            
+            // Stop all tracks
+            if (localStream) {
+                localStream.getTracks().forEach(track => {
+                    track.stop();
+                    localStream.removeTrack(track);
+                });
+                localStream = null;
+            }
+            
+            if (remoteStream) {
+                remoteStream.getTracks().forEach(track => {
+                    track.stop();
+                    remoteStream.removeTrack(track);
+                });
+                remoteStream = null;
+            }
+
+            // Clean up WebRTC connection
+            if (pc) {
+                pc.ontrack = null;
+                pc.onicecandidate = null;
+                pc.close();
+                pc = new RTCPeerConnection(servers);
+            }
+
+            // Clear video elements
+            if (remoteVideo.srcObject) {
+                remoteVideo.srcObject = null;
+            }
+            if (localVideo.srcObject) {
+                localVideo.srcObject = null;
+            }
+
+            currentRoomId = null;
+            isAudioEnabled = true;
+            isVideoEnabled = true;
+
+            // Show the header when chat ends
+            document.getElementById('chat-header').classList.remove('hidden');
+        };
+
+        // Media Controls and button handlers will be set up in window load event
+
+        // Initialize when the page loads
+        window.addEventListener('load', async () => {
+            try {
+                log('Page loaded');
+                
+                // Initialize DOM elements
+                startButton = document.getElementById('startButton');
+                stopButton = document.getElementById('stopButton');
+                nextButton = document.getElementById('nextButton');
+                localVideo = document.getElementById('localVideo');
+                remoteVideo = document.getElementById('remoteVideo');
+                statusEl = document.getElementById('status');
+                videoContainer = document.getElementById('video-container');
+                loadingSpinner = document.getElementById('loading-spinner');
+                onlineCountEl = document.getElementById('online-count');
+                waitingUsersEl = document.getElementById('waiting-users');
+                
+                log('DOM elements initialized');
+                
+                // Set up all button click handlers
+                startButton.onclick = startChat;
+                
+                document.getElementById('toggleAudio').onclick = () => {
+                    if (localStream) {
+                        const audioTrack = localStream.getAudioTracks()[0];
+                        if (audioTrack) {
+                            isAudioEnabled = !isAudioEnabled;
+                            audioTrack.enabled = isAudioEnabled;
+                            const button = document.getElementById('toggleAudio');
+                            button.classList.toggle('bg-red-500', !isAudioEnabled);
+                            button.setAttribute('aria-pressed', !isAudioEnabled);
+                        }
+                    }
+                };
+
+                document.getElementById('toggleVideo').onclick = () => {
+                    if (localStream) {
+                        const videoTrack = localStream.getVideoTracks()[0];
+                        if (videoTrack) {
+                            isVideoEnabled = !isVideoEnabled;
+                            videoTrack.enabled = isVideoEnabled;
+                            const button = document.getElementById('toggleVideo');
+                            button.classList.toggle('bg-red-500', !isVideoEnabled);
+                            button.setAttribute('aria-pressed', !isVideoEnabled);
+                        }
+                    }
+                };
+
+                stopButton.onclick = async () => {
+                    stopButton.disabled = true;
+                    statusEl.textContent = 'Ending chat...';
+                    
+                    await cleanup();
+                    
+                    // Reset UI
+                    videoContainer.classList.add('hidden');
+                    startButton.classList.remove('hidden');
+                    startButton.disabled = false;
+                    nextButton.classList.add('hidden');
+                    stopButton.classList.add('hidden');
+                    stopButton.disabled = false;
+                    statusEl.textContent = 'Chat ended. Click Start Chat to begin a new chat.';
+                };
+
+                nextButton.onclick = async () => {
+                    nextButton.disabled = true;
+                    statusEl.textContent = 'Finding a new stranger...';
+                    await cleanup();
+                    try {
+                        await setupStreams();
+                        await findOrCreateRoom();
+                    } catch (error) {
+                        console.error('Error finding new chat:', error);
+                        nextButton.disabled = false;
+                        statusEl.textContent = 'Error finding new chat. Please try again.';
+                    }
+                };
+                
+                log('All button click handlers attached');
+                
+                await checkMediaPermissions();
+                log('Starting initialization');
+                await initialize();
+                log('Initialization complete');
+            } catch (error) {
+                console.error('Initialization error:', error);
+                if (statusEl) {
+                    statusEl.textContent = 'Failed to initialize. Please refresh the page.';
+                }
+            }
+        });
+        
+        // Clean up presence when page is closed
+        window.addEventListener('beforeunload', async () => {
+            await removePresence();
+        });
+    </script>
+</body>
+</html>

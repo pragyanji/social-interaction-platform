@@ -25,8 +25,40 @@ SECRET_KEY = 'django-insecure-h_^mrp$b6d@ziqz=3n=#^%7v*nr)2=$9q0_1ek4mddc%sjkj%0
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["pragyanpandey.com.np", "www.pragyanpandey.com.np","127.0.0.1", "localhost"]
-CSRF_TRUSTED_ORIGINS = ["https://pragyanpandey.com.np", "https://www.pragyanpandey.com.np"]
+ALLOWED_HOSTS = ["*"]  # Allow all hosts in development
+CSRF_TRUSTED_ORIGINS = [
+    "https://pragyanpandey.com.np",
+    "https://www.pragyanpandey.com.np",
+    "https://192.168.1.6:8000",
+    "http://192.168.1.6:8000",
+    "https://localhost:8000",
+    "http://localhost:8000"
+]
+
+# SSL Settings for development
+SECURE_SSL_REDIRECT = False
+SESSION_COOKIE_SECURE = False
+CSRF_COOKIE_SECURE = False
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# SSL Server settings
+SSLSERVER_CERT_PATH = BASE_DIR / 'ssl' / 'server.crt'
+SSLSERVER_KEY_PATH = BASE_DIR / 'ssl' / 'server.key'
+
+# Additional security settings for development
+CORS_ALLOW_ALL_ORIGINS = True  # Only in development
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOWED_ORIGINS = [
+    "https://192.168.1.6:8000",
+    "http://192.168.1.6:8000",
+    "https://localhost:8000",
+    "http://localhost:8000"
+]
+
+# Security middleware settings
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = 'SAMEORIGIN'
 
 
 
@@ -47,6 +79,8 @@ INSTALLED_APPS = [
     "allauth.socialaccount.providers.google",   # add more providers as needed
     
     'core_chatsphere',  # added app
+    'sslserver',  # SSL development server
+    'corsheaders',  # CORS headers
 ]
 
 SITE_ID = 1
@@ -54,6 +88,7 @@ SITE_ID = 1
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',  # CORS middleware must come before CommonMiddleware
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',

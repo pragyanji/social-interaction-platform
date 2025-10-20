@@ -1,4 +1,58 @@
-venv
-client_secret_*.json
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Django
+*.log
+local_settings.py
 *.sqlite3
+db.sqlite3-journal
 media/
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# Environment variables
+.env
+
+# Firebase
+client_secret_*.json
+video_chat_config.py  # Contains Firebase configuration
+firebase_config.json
+
+# Virtual Environment
+venv/
+ENV/
+
+# Media files
+media/
+static/admin/
+staticfiles/
+
+# Node.js
+node_modules/
+package-lock.json
+
+# Other
+.DS_Store
+Thumbs.db

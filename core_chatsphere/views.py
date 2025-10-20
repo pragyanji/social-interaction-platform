@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import json
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import get_user_model, login, logout, authenticate
+from .video_chat_config import FIREBASE_CONFIG
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.shortcuts import render, redirect, resolve_url
@@ -45,6 +47,13 @@ def _safe_next(request, fallback="home"):
 # ---------- Views ----------
 def landing_page(request):
     return render(request, "landing.html")
+
+@login_required(login_url="signin")
+def start_video_chat(request):
+    context = {
+        'firebase_config': json.dumps(FIREBASE_CONFIG),
+    }
+    return render(request, "start_chat.html", context)
 
 
 @login_required(login_url="signin")
@@ -101,3 +110,6 @@ def logout_view(request):
         logout(request)
         messages.info(request, "You have been signed out.")
     return redirect("landing")
+
+# def start_chat(request):
+#     return render(request, "start_chat.html")
