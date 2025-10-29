@@ -18,6 +18,18 @@
 </head>
 <body class="bg-gray-900 text-white flex items-center justify-center min-h-screen">
     <div class="container mx-auto p-4 max-w-[1400px] w-full">
+        <!-- Profile Button - Top Right -->
+        <div class="absolute top-4 right-4">
+            <a href="/profile/" 
+               class="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-full transition-colors shadow-lg"
+               title="View Profile">
+                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/>
+                </svg>
+                <span class="text-sm font-medium">Profile</span>
+            </a>
+        </div>
+
         <header id="chat-header" class="text-center mb-6">
             <h1 class="text-4xl md:text-5xl font-bold text-indigo-400">Video Chat</h1>
             <p class="text-gray-400 mt-2">Connect with strangers from around the world.</p>
@@ -72,6 +84,12 @@
                         title="Start video chat with a random person">
                         Start Chat
                     </button>
+                    <button id="homeButton" 
+                        class="w-full sm:w-auto bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-8 rounded-full transition-colors shadow-lg focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-75"
+                        aria-label="Back to home"
+                        title="Return to home page">
+                        Back to Home
+                    </button>
                     <button id="stopButton" 
                         class="w-full sm:w-auto bg-red-600 hover:bg-red-700 disabled:bg-red-900 disabled:cursor-not-allowed text-white font-bold py-3 px-8 rounded-full transition-colors shadow-lg hidden focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-opacity-75"
                         aria-label="Stop video chat"
@@ -109,7 +127,7 @@
         const DEBUG = true;
         
         // DOM Elements - will be initialized after page loads
-        let startButton, stopButton, nextButton, localVideo, remoteVideo, statusEl, videoContainer, loadingSpinner, onlineCountEl, waitingUsersEl;
+        let startButton, stopButton, nextButton, homeButton, localVideo, remoteVideo, statusEl, videoContainer, loadingSpinner, onlineCountEl, waitingUsersEl;
         
         function log(...args) {
             if (DEBUG) {
@@ -405,6 +423,7 @@
 
                 videoContainer.classList.remove('hidden');
                 startButton.classList.add('hidden');
+                homeButton.classList.add('hidden');
                 nextButton.classList.remove('hidden');
                 nextButton.disabled = false;
                 stopButton.classList.remove('hidden');
@@ -723,6 +742,7 @@
                 startButton = document.getElementById('startButton');
                 stopButton = document.getElementById('stopButton');
                 nextButton = document.getElementById('nextButton');
+                homeButton = document.getElementById('homeButton');
                 localVideo = document.getElementById('localVideo');
                 remoteVideo = document.getElementById('remoteVideo');
                 statusEl = document.getElementById('status');
@@ -772,10 +792,15 @@
                     videoContainer.classList.add('hidden');
                     startButton.classList.remove('hidden');
                     startButton.disabled = false;
+                    homeButton.classList.remove('hidden');
                     nextButton.classList.add('hidden');
                     stopButton.classList.add('hidden');
                     stopButton.disabled = false;
                     statusEl.textContent = 'Chat ended. Click Start Chat to begin a new chat.';
+                };
+
+                homeButton.onclick = () => {
+                    window.location.href = '/home/';
                 };
 
                 nextButton.onclick = async () => {

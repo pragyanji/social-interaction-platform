@@ -1,25 +1,24 @@
 {% extends "base.html" %}
 {% block title %}Home · Chatsphere{% endblock %}
 {% block content %}
-<h2 class="page-title">Home</h2>
-
+<h2 class="page-title">Message</h2>
 {% if request.user.is_authenticated %}
-  <div class="card">
+  {% comment %} <div class="card">
     <h3>Hi, {{ request.user.get_username }} 👋</h3>
     <p>Your aura: <strong>{{ request.user.aura_point|default:0 }}</strong></p>
     <p>Status: <strong>{{ request.user.get_verification_status_display }}</strong></p>
-  </div>
+  </div> {% endcomment %}
 
   <div class="grid-2">
     <div class="card">
       <h4>Connections</h4>
       <p>Find and manage your connections here.</p>
-      <a class="btn btn-small" href="{% url 'startmessagechat' %}">Open connections</a>
+      <a class="btn btn-small" href="#">Open connections</a>
     </div>
     <div class="card">
-      <h4>Video Chat</h4>
-      <p>Continue your conversations.</p>
-      <a class="btn btn-small" href="{% url 'startvideochat' %}">Talk to strangers</a>
+      <h4>Message Chat</h4>
+      <p>Continue your conversations via messaging.</p>
+      <a class="btn btn-small" href="{% url 'startmessagechat' %}">Chat with connected members</a>
     </div>
   </div>
 {% else %}

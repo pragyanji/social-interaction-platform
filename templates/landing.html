@@ -1,33 +1,127 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}Welcome to Chatsphere{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+<link rel="stylesheet" href="{% static 'css/landing.css' %}" />
+{% endblock %}
+
 {% block content %}
+<!-- Hero Section -->
 <section class="hero">
-  <h1>Real connections. Safer conversations.</h1>
-  <p class="lead">
-    Meet, chat, and build your aura—backed by ratings, reports, and verification.
-  </p>
-  <div class="actions">
-    {% if request.user.is_authenticated %}
-      <a class="btn btn-primary" href="{% url 'home' %}">Go to Home</a>
-    {% else %}
-      <a class="btn btn-primary" href="{% url 'signup' %}">Create account</a>
-      <a class="btn" href="{% url 'signin' %}">Sign in</a>
-    {% endif %}
+  <div class="hero-content">
+    <h1>Connect with People Around the World</h1>
+    <p>Experience meaningful conversations with strangers in a safe, moderated environment. Join our growing community today!</p>
+    <div class="cta-buttons">
+      <a href="{% url 'signup' %}" class="btn-primary">Get Started - It's Free</a>
+      <a href="{% url 'signin' %}" class="btn-secondary">Sign In</a>
+    </div>
   </div>
 </section>
 
-<section class="grid-3">
-  <article>
-    <h3>Verified identity</h3>
-    <p>ID checks keep the community authentic and reduce spam.</p>
-  </article>
-  <article>
-    <h3>Aura points</h3>
-    <p>Positive interactions increase your aura and unlock perks.</p>
-  </article>
-  <article>
-    <h3>Report & moderation</h3>
-    <p>Fast reporting tools and fair actions keep Chatsphere safe.</p>
-  </article>
+<!-- Features Section -->
+<section class="features">
+  <h2 class="section-title">Why Choose ChatSphere?</h2>
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon">
+        <i class="fas fa-video"></i>
+      </div>
+      <h3>Live Video Chat</h3>
+      <p>Connect face-to-face with people from around the world in real-time. Our high-quality video platform makes conversations feel natural and engaging.</p>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon">
+        <i class="fas fa-shield-alt"></i>
+      </div>
+      <h3>Safe & Secure</h3>
+      <p>Your safety is our priority. Our advanced moderation system and reporting tools ensure a respectful and secure environment for everyone.</p>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon">
+        <i class="fas fa-award"></i>
+      </div>
+      <h3>Earn Aura Points</h3>
+      <p>Get rewarded for positive interactions. Build your reputation and unlock exclusive features as you connect with others.</p>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon">
+        <i class="fas fa-globe"></i>
+      </div>
+      <h3>Global Community</h3>
+      <p>Meet people from different cultures and backgrounds. Expand your horizons with every conversation.</p>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon">
+        <i class="fas fa-bolt"></i>
+      </div>
+      <h3>Lightning Fast</h3>
+      <p>Our optimized platform ensures smooth, low-latency video calls, no matter where you are in the world.</p>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-icon">
+        <i class="fas fa-mobile-alt"></i>
+      </div>
+      <h3>Mobile Friendly</h3>
+      <p>Chat on the go with our responsive design. Works perfectly on all your devices, anywhere, anytime.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Testimonials Section -->
+<section class="testimonials">
+  <h2 class="section-title">What Our Users Say</h2>
+  <div class="testimonial-grid">
+    <div class="testimonial-card">
+      <p class="testimonial-text">"I've met amazing people from all over the world on ChatSphere. The video quality is excellent and the community is so welcoming!"</p>
+      <div class="testimonial-author">
+        <div class="testimonial-avatar">JD</div>
+        <div class="testimonial-info">
+          <h4>John D.</h4>
+          <p>Active Member</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="testimonial-card">
+      <p class="testimonial-text">"The aura point system is genius! It really encourages positive interactions. I've made real connections here."</p>
+      <div class="testimonial-author">
+        <div class="testimonial-avatar">MS</div>
+        <div class="testimonial-info">
+          <h4>Maria S.</h4>
+          <p>Community Member</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="testimonial-card">
+      <p class="testimonial-text">"As someone who's shy, I love how easy it is to meet new people here. The moderation team does a great job keeping things safe."</p>
+      <div class="testimonial-author">
+        <div class="testimonial-avatar">AK</div>
+        <div class="testimonial-info">
+          <h4>Alex K.</h4>
+          <p>New Member</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA Section -->
+<section class="cta-section">
+  <div class="cta-content">
+    <h2>Ready to Start Connecting?</h2>
+    <p>Join thousands of users already making meaningful connections on ChatSphere.</p>
+    <div class="cta-buttons">
+      <a href="{% url 'signup' %}" class="btn-primary">Create Free Account</a>
+      <a href="{% url 'signin' %}" class="btn-secondary">Sign In</a>
+    </div>
+  </div>
 </section>
 {% endblock %}

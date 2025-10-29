@@ -13,21 +13,23 @@
 <body>
   <header class="site-header">
     <div class="container header-inner">
-      <a class="brand" href="{% url 'landing' %}">
-        <img src="{% static 'img/logo.png' %}" alt="Chatsphere" class="brand-logo" />
+      <a class="brand" href="{% if request.user.is_authenticated %}{% url 'home' %}{% else %}{% url 'landing' %}{% endif %}">
+        <img src="{% static 'img\logo_chatsphere.png' %}" alt="Chatsphere" class="brand-logo" />
         <span>Chatsphere</span>
       </a>
 
       <nav class="nav">
-        <a href="{% url 'landing' %}">Landing</a>
-        <a href="{% url 'home' %}">Home</a>
         {% if request.user.is_authenticated %}
+          <a href="{% url 'home' %}">Home</a>
+          <a href="{% url 'profile' %}">Profile</a>
           <a href="/admin/">Admin</a>
           <form action="{% url 'logout' %}" method="post" class="inline">
             {% csrf_token %}
             <button type="submit" class="btn btn-link">Logout</button>
           </form>
         {% else %}
+          <a href="{% url 'landing' %}">Landing</a>
+          <a href="{% url 'home' %}">Home</a>
           <a href="{% url 'signin' %}">Sign in</a>
           <a class="btn btn-primary" href="{% url 'signup' %}">Create account</a>
         {% endif %}

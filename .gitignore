@@ -56,3 +56,14 @@ package-lock.json
 # Other
 .DS_Store
 Thumbs.db
+
+# SSL certificates and keys
+ssl/
+*.pem
+*.key
+*.crt
+*.cert
+*.ca-bundle
+*.p12
+*.pfx
+ssl/

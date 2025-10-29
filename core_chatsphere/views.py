@@ -10,7 +10,9 @@ from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.shortcuts import render, redirect, resolve_url
 from django.utils.http import url_has_allowed_host_and_scheme
 
-from .models import AuraPoints
+# from .models import AuraPoints, RatingPoints, IdentityVerification, Connections
+from . import models
+from django.db.models import Avg, Count
 
 User = get_user_model()
 
@@ -55,10 +57,56 @@ def start_video_chat(request):
     }
     return render(request, "start_chat.html", context)
 
+@login_required(login_url="signin")
+def start_message_chat(request):
+    context = {
+        'firebase_config': json.dumps(FIREBASE_CONFIG),
+    }
+    return render(request, "connections.html", context)
+
 
 @login_required(login_url="signin")
 def home(request):
     return render(request, "home.html")
+
+
+@login_required(login_url="signin")
+def profile_view(request):
+    user = request.user
+    connection_with = user
+    # Get or create aura points
+    aura, created = models.AuraPoints.objects.get_or_create(user=user)
+    
+    # Calculate average rating
+    ratings_stats = models.RatingPoints.objects.filter(given_to=user).aggregate(
+        avg_rating=Avg('rate_points'),
+        total_ratings=Count('id')
+    )
+    #
+    verification = models.IdentityVerification.objects.filter(user=user).first()
+    if verification:
+        verification_status = verification.verification_status
+        # print(verification_status)
+    else:
+        # print("No verification record found.")
+        verification_status = "Unverified"
+    # Get total connections
+    total_connections = models.Connection.objects.filter(user = user and connection_with).count()
+    
+    # Calculate streak (placeholder - you can implement actual streak logic)
+    streak_days = 13  # : Implement actual streak calculation
+    
+    context = {
+        'user': user,
+        'aura_points': aura.aura_points,
+        'avg_rating': ratings_stats['avg_rating'] or 0,
+        'total_ratings': ratings_stats['total_ratings'],
+        'total_connections': total_connections or 0,
+        'streak_days': streak_days,
+        'verification_status': verification_status,
+    }
+    
+    return render(request, "profile.html", context)
 
 
 def signup_view(request):
@@ -66,7 +114,7 @@ def signup_view(request):
         form = SignupForm(request.POST, request.FILES)
         if form.is_valid():
             user = form.save()
-            AuraPoints.objects.get_or_create(user=user)
+            models.AuraPoints.objects.get_or_create(user=user)
 
             # Authenticate to set the backend attribute
             raw_password = form.cleaned_data.get("password1")
@@ -110,6 +158,3 @@ def logout_view(request):
         logout(request)
         messages.info(request, "You have been signed out.")
     return redirect("landing")
-
-# def start_chat(request):
-#     return render(request, "start_chat.html")

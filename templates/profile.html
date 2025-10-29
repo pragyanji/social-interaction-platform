@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Profile · Chatsphere{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="{% static 'css/profile.css' %}" />
+{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <h2 class="page-title">My Profile</h2>
+
+    <!-- Profile Header -->
+    <div class="card mb-6">
+        <div class="flex items-center gap-6">
+            {% if user.profile_pic %}
+            <img src="{{ user.profile_pic.url }}" alt="{{ user.username }}" class="w-24 h-24 rounded-full object-cover">
+            {% else %}
+            <div
+                class="w-24 h-24 rounded-full bg-indigo-600 flex items-center justify-center text-white text-3xl font-bold">
+                {{ user.username|first|upper }}
+            </div>
+            {% endif %}
+            <div>
+                <h3 class="text-2xl font-bold text-gray-900">{{ user.full_name|default:user.username }}</h3>
+                <p class="text-gray-700 font-medium">@{{ user.username }}</p>
+                {% if user.email %}
+                <p class="text-gray-600 text-sm">{{ user.email }}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <!-- Aura Points -->
+        <div class="card text-center bg-gradient-to-br from-purple-500 to-indigo-600 text-white">
+            <div class="text-4xl font-bold mb-2">{{ aura_points }}</div>
+            <div class="text-sm opacity-90">Aura Points</div>
+        </div>
+
+        <!-- Average Rating -->
+        <div class="card text-center bg-gradient-to-br from-yellow-400 to-orange-500 text-white">
+            <div class="text-4xl font-bold mb-2">{{ avg_rating|floatformat:1 }}</div>
+            <div class="text-sm opacity-90">Avg Rating</div>
+            <div class="text-xs opacity-75">({{ total_ratings }} ratings)</div>
+        </div>
+
+        <!-- Connections -->
+        <div class="card text-center bg-gradient-to-br from-green-400 to-teal-500 text-white">
+            <div class="text-4xl font-bold mb-2">{{ total_connections }}</div>
+            <div class="text-sm opacity-90">Connections</div>
+        </div>
+
+        <!-- Streak -->
+        <div class="card text-center bg-gradient-to-br from-pink-500 to-red-500 text-white">
+            <div class="text-4xl font-bold mb-2">{{ streak_days }}</div>
+            <div class="text-sm opacity-90">Daily Streak</div>
+        </div>
+    </div>
+
+    <!-- Account Details -->
+    <div class="card mb-6">
+        <h4 class="text-xl font-bold mb-4 text-gray-900">Account Details</h4>
+        <div class="space-y-3">
+            <div class="flex justify-between py-3 border-b border-gray-300">
+                <span class="font-semibold text-gray-900">Username:</span>
+                <span class="text-gray-800 font-medium">{{ user.username }}</span>
+            </div>
+            <div class="flex justify-between py-3 border-b border-gray-300">
+                <span class="font-semibold text-gray-900">Full Name:</span>
+                <span class="text-gray-800 font-medium">{{ user.full_name|default:"Not set" }}</span>
+            </div>
+            <div class="flex justify-between py-3 border-b border-gray-300">
+                <span class="font-semibold text-gray-900">Email:</span>
+                <span class="text-gray-800 font-medium">{{ user.email|default:"Not set" }}</span>
+            </div>
+            <div class="flex justify-between py-3 border-b border-gray-300">
+                <span class="font-semibold text-gray-900">Member Since:</span>
+                <span class="text-gray-800 font-medium">{{ user.date_joined|date:"F d, Y" }}</span>
+            </div>
+            <div class="flex justify-between py-3">
+                <span class="font-semibold text-gray-900">Verification Status:</span>
+
+                {% if verification_status == "VERIFIED" %}
+                <span class="px-3 py-1 rounded-full text-sm font-semibold bg-green-500 text-white">
+                    Verified
+                </span>
+                {% elif verification_status == "PENDING" %}
+                <span class="px-3 py-1 rounded-full text-sm font-semibold bg-yellow-500 text-white">
+                    Pending
+                </span>
+                {% elif verification_status == "REJECTED" %}
+                <span class="px-3 py-1 rounded-full text-sm font-semibold bg-red-500 text-white">
+                    Rejected
+                </span>
+                {% else %}
+                <span class="px-3 py-1 rounded-full text-sm font-semibold bg-gray-600 text-white">
+                    Unverified
+                </span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="flex gap-4">
+        <a href="{% url 'home' %}" class="btn btn-primary">Back to Home</a>
+        <a href="{% url 'startvideochat' %}" class="btn">Start Video Chat</a>
+    </div>
+</div>
+{% endblock %}

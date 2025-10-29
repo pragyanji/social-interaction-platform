@@ -8,6 +8,33 @@ from django.db.models import Q, Sum
 from django.utils import timezone
 
 
+  
+# -----------------------------
+# User
+# -----------------------------
+class User(AbstractUser):
+    """
+    Custom user that keeps your extra fields seen in the ERD.
+    Username + password are inherited from AbstractUser.
+    """
+    full_name = models.CharField(max_length=150, blank=True)
+    profile_pic = models.ImageField(upload_to="profiles/", blank=True, null=True)
+
+    # Link to IdentityVerification for verification status
+    # verification_status = models.CharField(
+    #     max_length=20,
+    #     choices=IdentityVerification.VerificationStatus.choices,
+    #     default=IdentityVerification.VerificationStatus.PENDING,
+    # )
+
+    # # Link to AuraPoints model to show user's aura points
+    # aura_point = models.IntegerField(
+    #     default=0,
+    # )
+
+    def __str__(self) -> str:
+        return self.username
+
 
 # -----------------------------
 # Identity Verification
@@ -35,48 +62,12 @@ class IdentityVerification(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self) -> str:
-        return f"IdentityVerification<{self.user}>"
+        return f"{self.user} - {self.verification_status}"
 
     class Meta:
         verbose_name = "Identity verification"
         verbose_name_plural = "Identity verifications"
         
-  
-# -----------------------------
-# User
-# -----------------------------
-class User(AbstractUser):
-    """
-    Custom user that keeps your extra fields seen in the ERD.
-    Username + password are inherited from AbstractUser.
-    """
-    full_name = models.CharField(max_length=150, blank=True)
-    profile_pic = models.ImageField(upload_to="profiles/", blank=True, null=True)
-
-    # Link to IdentityVerification for verification status
-    verification_status = models.ForeignKey(
-        IdentityVerification,
-        on_delete=models.CASCADE,
-        null=True,
-        blank=True,
-        related_name='user_verification_status',
-    )
-
-    # Link to AuraPoints model to show user's aura points
-    aura_point = models.OneToOneField(
-        'AuraPoints',
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='user_aura_point',
-        help_text='Reference to the user\'s aura points record.'
-    )
-
-    def __str__(self) -> str:
-        return self.username
-
-
-
 
 
 # -----------------------------
@@ -90,7 +81,7 @@ class Connection(models.Model):
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="connected_by"
     )
     created_at = models.DateTimeField(auto_now_add=True)
-
+    # verified = models.OneToOneField(IdentityVerification, on_delete=models.SET_NULL, null=True, blank=True)       
     def clean(self):
         # Prevent self-connection
         if self.user_id == self.connection_with_id:
@@ -200,7 +191,7 @@ class AuraPoints(models.Model):
         return total
 
     def __str__(self) -> str:
-        return f"Aura<{self.user}: {self.aura_points}>"
+        return f"Aura of {self.user}: {self.aura_points}"
 
 
 # -----------------------------
@@ -255,3 +246,5 @@ class BannedAcc(models.Model):
     def __str__(self) -> str:
         state = "active" if self.active else "inactive"
         return f"Ban<{self.user} - {state}>"
+
+
