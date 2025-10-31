@@ -48,6 +48,9 @@ def _safe_next(request, fallback="home"):
 
 # ---------- Views ----------
 def landing_page(request):
+    # Redirect authenticated users to home page
+    if request.user.is_authenticated:
+        return redirect("home")
     return render(request, "landing.html")
 
 @login_required(login_url="signin")
@@ -83,7 +86,7 @@ def profile_view(request):
     connection_with = user
     # Get or create aura points
     aura, created = models.AuraPoints.objects.get_or_create(user=user)
-    
+    # print(f"created = {created}")
     # Calculate average rating
     ratings_stats = models.RatingPoints.objects.filter(given_to=user).aggregate(
         avg_rating=Avg('rate_points'),
@@ -117,6 +120,10 @@ def profile_view(request):
 
 
 def signup_view(request):
+    # Redirect authenticated users to home page
+    if request.user.is_authenticated:
+        return redirect("home")
+    
     if request.method == "POST":
         form = SignupForm(request.POST, request.FILES)
         if form.is_valid():
@@ -143,6 +150,10 @@ def signup_view(request):
 
 
 def signin_view(request):
+    # Redirect authenticated users to home page
+    if request.user.is_authenticated:
+        return redirect("home")
+    
     if request.method == "POST":
         form = AuthenticationForm(request, data=request.POST)
         if form.is_valid():
