@@ -4,7 +4,7 @@ from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.db.models import Q, Sum
+from django.db.models import Q, Sum, UniqueConstraint, CheckConstraint
 from django.utils import timezone
 
 
@@ -19,18 +19,6 @@ class User(AbstractUser):
     """
     full_name = models.CharField(max_length=150, blank=True)
     profile_pic = models.ImageField(upload_to="profiles/", blank=True, null=True)
-
-    # Link to IdentityVerification for verification status
-    # verification_status = models.CharField(
-    #     max_length=20,
-    #     choices=IdentityVerification.VerificationStatus.choices,
-    #     default=IdentityVerification.VerificationStatus.PENDING,
-    # )
-
-    # # Link to AuraPoints model to show user's aura points
-    # aura_point = models.IntegerField(
-    #     default=0,
-    # )
 
     def __str__(self) -> str:
         return self.username

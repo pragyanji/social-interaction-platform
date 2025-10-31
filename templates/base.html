@@ -5,6 +5,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>{% block title %}Chatsphere{% endblock %}</title>
+  <link rel="icon" href="{% static 'img/logo_chatsphere.png' %}" type="image/png" />
 
   <!-- main stylesheet -->
   <link rel="stylesheet" href="{% static 'css/main.css' %}" />
@@ -20,16 +21,57 @@
 
       <nav class="nav">
         {% if request.user.is_authenticated %}
-          <a href="{% url 'home' %}">Home</a>
-          <a href="{% url 'profile' %}">Profile</a>
-          <a href="/admin/">Admin</a>
-          <form action="{% url 'logout' %}" method="post" class="inline">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-link">Logout</button>
-          </form>
+          {% comment %} <a href="{% url 'home' %}">Home</a> {% endcomment %}
+          
+          <!-- Profile Dropdown -->
+          <div class="profile-dropdown">
+            <button class="profile-btn" id="profileBtn" aria-label="Profile menu">
+              {% if request.user.profile_pic %}
+                <img src="{{ request.user.profile_pic.url }}" alt="{{ request.user.get_username }}" class="profile-avatar" />
+              {% else %}
+                <div class="profile-avatar profile-avatar-placeholder">
+                  {{ request.user.get_username|slice:":1"|upper }}
+                </div>
+              {% endif %}
+            </button>
+            <div class="profile-menu" id="profileMenu">
+              <div class="profile-menu-header">
+                <div class="profile-menu-user">
+                  {% if request.user.profile_pic %}
+                    <img src="{{ request.user.profile_pic.url }}" alt="{{ request.user.get_username }}" class="profile-menu-avatar" />
+                  {% else %}
+                    <div class="profile-menu-avatar profile-avatar-placeholder">
+                      {{ request.user.get_username|slice:":1"|upper }}
+                    </div>
+                  {% endif %}
+                  <div>
+                    <div class="profile-menu-name">{{ request.user.get_username }}</div>
+                    {% if request.user.email %}
+                      <div class="profile-menu-email">{{ request.user.email }}</div>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+              <div class="profile-menu-divider"></div>
+              <a href="{% url 'profile' %}" class="profile-menu-item">
+                <span>👤</span> Profile
+              </a>
+              {% if request.user.is_superuser %}
+                <a href="/admin/" class="profile-menu-item">
+                  <span>⚙️</span> Admin
+                </a>
+              {% endif %}
+              <div class="profile-menu-divider"></div>
+              <form action="{% url 'logout' %}" method="post" style="margin: 0;">
+                {% csrf_token %}
+                <button type="submit" class="profile-menu-item profile-menu-logout">
+                  <span>🚪</span> Logout
+                </button>
+              </form>
+            </div>
+          </div>
         {% else %}
-          <a href="{% url 'landing' %}">Landing</a>
-          <a href="{% url 'home' %}">Home</a>
+          {% comment %} <a href="{% url 'landing' %}">Landing</a> {% endcomment %}
           <a href="{% url 'signin' %}">Sign in</a>
           <a class="btn btn-primary" href="{% url 'signup' %}">Create account</a>
         {% endif %}
@@ -59,6 +101,67 @@
 
   <script>document.getElementById('y').textContent = new Date().getFullYear();</script>
   <script src="{% static 'js/app.js' %}"></script>
+  <script>
+    // Profile dropdown toggle
+    (function() {
+      const btn = document.getElementById('profileBtn');
+      const menu = document.getElementById('profileMenu');
+      
+      console.log('Profile dropdown init:', { btn: !!btn, menu: !!menu });
+      
+      if (btn && menu) {
+        btn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          console.log('Profile button clicked, toggling menu');
+          menu.classList.toggle('show');
+        });
+        
+        // Prevent menu from closing when clicking inside it
+        menu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+        
+        // Close when clicking outside
+        document.addEventListener('click', function(e) {
+          if (!menu.contains(e.target) && !btn.contains(e.target)) {
+            menu.classList.remove('show');
+          }
+        });
+        
+        // Close on escape key
+        document.addEventListener('keydown', function(e) {
+          if (e.key === 'Escape' && menu.classList.contains('show')) {
+            menu.classList.remove('show');
+            btn.focus();
+          }
+        });
+      } else {
+        console.error('Profile dropdown elements not found!');
+      }
+    })();
+
+    // Message dismissal
+    document.addEventListener('DOMContentLoaded', function() {
+      const messages = document.querySelectorAll('.messages .msg');
+      console.log('Found messages:', messages.length);
+      messages.forEach(function(msg) {
+        // Click to dismiss
+        msg.addEventListener('click', function() {
+          msg.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+          msg.style.opacity = '0';
+          msg.style.transform = 'translateX(20px)';
+          setTimeout(function() { msg.remove(); }, 300);
+        });
+        // Auto-dismiss after 5 seconds
+        setTimeout(function() {
+          msg.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+          msg.style.opacity = '0';
+          msg.style.transform = 'translateX(20px)';
+          setTimeout(function() { msg.remove(); }, 300);
+        }, 5000);
+      });
+    });
+  </script>
   {% block body_extra %}{% endblock %}
 </body>
 </html>

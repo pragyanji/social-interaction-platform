@@ -26,7 +26,17 @@ SECRET_KEY = 'django-insecure-h_^mrp$b6d@ziqz=3n=#^%7v*nr)2=$9q0_1ek4mddc%sjkj%0
 DEBUG = True
 
 ALLOWED_HOSTS = ["*"]  # Allow all hosts in development
+
+# CORS settings
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+    "https://pragyanpandey.com.np",
+]
 CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
     "https://pragyanpandey.com.np",
     "https://www.pragyanpandey.com.np",
     "https://192.168.1.6:8000",
@@ -34,6 +44,11 @@ CSRF_TRUSTED_ORIGINS = [
     "https://localhost:8000",
     "http://localhost:8000"
 ]
+
+# CSRF and CORS settings
+CSRF_COOKIE_HTTPONLY = False  # Required for AJAX requests to access the CSRF token
+CSRF_COOKIE_SECURE = False    # Set to True in production with HTTPS
+CSRF_USE_SESSIONS = False     # Set to False to use cookies
 
 # SSL Settings for development
 SECURE_SSL_REDIRECT = False
@@ -61,7 +76,6 @@ SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = 'SAMEORIGIN'
 
 
-
 # Application definition
 
 INSTALLED_APPS = [
@@ -79,6 +93,7 @@ INSTALLED_APPS = [
     "allauth.socialaccount.providers.google",   # add more providers as needed
     
     'core_chatsphere',  # added app
+    'rest_framework',  # DRF for APIs
     'sslserver',  # SSL development server
     'corsheaders',  # CORS headers
 ]
@@ -92,6 +107,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'core_chatsphere.middleware.LoggingMiddleware',  # Custom logging middleware - must be after AuthenticationMiddleware
     "allauth.account.middleware.AccountMiddleware",  # <-- allauth
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',

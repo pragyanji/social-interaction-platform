@@ -1,10 +1,18 @@
 /* Profile Page Styles */
 
+/* Override card styles for profile page to match main theme */
 .card {
-    background: #1f2937;
-    border-radius: 12px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
     padding: 1.5rem;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Ensure profile page doesn't interfere with dropdown */
+.page-title {
+    position: relative;
+    z-index: 1;
 }
 
 .mb-6 {
@@ -105,11 +113,11 @@
 }
 
 .border-b {
-    border-bottom: 1px solid #374151;
+    border-bottom: 1px solid var(--border);
 }
 
 .border-gray-300 {
-    border-color: #374151;
+    border-color: var(--border);
 }
 
 .bg-gradient-to-br {
@@ -157,23 +165,23 @@
 }
 
 .text-gray-600 {
-    color: #9ca3af;
+    color: var(--muted);
 }
 
 .text-gray-500 {
-    color: #6b7280;
+    color: var(--muted);
 }
 
 .text-gray-700 {
-    color: #d1d5db;
+    color: var(--text);
 }
 
 .text-gray-800 {
-    color: #e5e7eb;
+    color: var(--text);
 }
 
 .text-gray-900 {
-    color: #f9fafb;
+    color: var(--text);
 }
 
 .text-green-800 {
@@ -186,6 +194,10 @@
 
 .bg-gray-600 {
     background-color: #4b5563;
+}
+
+.bg-indigo-600 {
+    background-color: var(--primary);
 }
 
 .bg-green-100 {

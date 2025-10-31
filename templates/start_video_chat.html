@@ -36,7 +36,7 @@
             <div class="mt-4 inline-flex items-center gap-2 bg-gray-800 px-4 py-2 rounded-full">
                 <div class="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
                 <span class="text-gray-300 text-sm">
-                    <span id="online-count" class="font-bold text-green-400">0</span> users online
+                    <span id="online-count" class="font-bold text-green-400">20</span> users online
                 </span>
             </div>
         </header>
@@ -102,6 +102,12 @@
                         title="End current chat and find a new partner">
                         Next Stranger
                     </button>
+                    <button id="connectButton" 
+                        class="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-900 disabled:cursor-not-allowed text-white font-bold py-3 px-8 rounded-full transition-colors shadow-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-opacity-75 hidden"
+                        aria-label="Connect with stranger"
+                        title="Make connection with current stranger">
+                        Connect
+                    </button>
                 </div>
             </div>
         </main>
@@ -114,7 +120,7 @@
     <!-- Firebase Configuration -->
     <script>
         // @ts-ignore - Django template variable
-        window.FIREBASE_CONFIG = {{ firebase_config|safe }};
+        window.FIREBASE_CONFIG = {{ firebase_config|safe }};    
     </script>
     
     <script type="module">
@@ -126,13 +132,93 @@
         // Debug flag - set to true to see detailed logs
         const DEBUG = true;
         
-        // DOM Elements - will be initialized after page loads
-        let startButton, stopButton, nextButton, homeButton, localVideo, remoteVideo, statusEl, videoContainer, loadingSpinner, onlineCountEl, waitingUsersEl;
+        // DOM Elements        // Variables to store DOM elements
+        let startButton, stopButton, nextButton, homeButton, connectButton, localVideo, remoteVideo, statusEl, videoContainer, loadingSpinner, onlineCountEl, waitingUsersEl;
+        
+        // Helper function to get CSRF token with better error handling
+        function getCsrfToken() {
+            try {
+                const cookieValue = document.cookie
+                    .split('; ')
+                    .find(row => row.startsWith('csrftoken='))
+                    ?.split('=')[1];
+                
+                if (!cookieValue) {
+                    console.error('CSRF token not found in cookies. Available cookies:', document.cookie);
+                    throw new Error('Authentication error. Please refresh the page and try again.');
+                }
+                return cookieValue;
+            } catch (error) {
+                console.error('Error getting CSRF token:', error);
+                throw new Error('Authentication error. Please refresh the page and try again.');
+            }
+        }
+
+        // Function to log request details
+        function logRequestDetails(url, options) {
+            console.log('Making request to:', url);
+            console.log('Request options:', {
+                method: options.method,
+                headers: options.headers,
+                credentials: options.credentials,
+                body: options.body ? JSON.parse(options.body) : null
+            });
+        }
+
+        // Handle stop chat
+        const stopChat = async () => {
+            stopButton.disabled = true;
+            statusEl.textContent = 'Ending chat...';
+            
+            await cleanup();
+            
+            // Reset UI
+            videoContainer.classList.add('hidden');
+            startButton.classList.remove('hidden');
+            startButton.disabled = false;
+            homeButton.classList.remove('hidden');
+            nextButton.classList.add('hidden');
+            stopButton.classList.add('hidden');
+            connectButton.classList.add('hidden');
+            stopButton.disabled = false;
+            statusEl.textContent = 'Chat ended. Click Start Chat to begin a new chat.';
+        };
+        
+        // Handle finding a new chat
+        const findNewChat = async () => {
+            nextButton.disabled = true;
+            statusEl.textContent = 'Finding a new stranger...';
+            await cleanup();
+            try {
+                await setupStreams();
+                await findOrCreateRoom();
+            } catch (error) {
+                console.error('Error finding new chat:', error);
+                nextButton.disabled = false;
+                statusEl.textContent = 'Error finding new chat. Please try again.';
+            }
+        };
         
         function log(...args) {
             if (DEBUG) {
                 console.log('[ChatSphere]', ...args);
             }
+        }
+
+        // Helper function to get CSRF token
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
         }
 
         // Initialize Firebase globally
@@ -428,6 +514,13 @@
                 nextButton.disabled = false;
                 stopButton.classList.remove('hidden');
                 stopButton.disabled = false;
+                connectButton.classList.remove('hidden');
+                
+                // Enable/disable buttons
+                startButton.disabled = true;
+                nextButton.disabled = false;
+                stopButton.disabled = false;
+                connectButton.disabled = false;
             } catch (error) {
                 console.error("Media Error:", error);
                 switch(error.name) {
@@ -743,6 +836,7 @@
                 stopButton = document.getElementById('stopButton');
                 nextButton = document.getElementById('nextButton');
                 homeButton = document.getElementById('homeButton');
+                connectButton = document.getElementById('connectButton');
                 localVideo = document.getElementById('localVideo');
                 remoteVideo = document.getElementById('remoteVideo');
                 statusEl = document.getElementById('status');
@@ -754,7 +848,11 @@
                 log('DOM elements initialized');
                 
                 // Set up all button click handlers
-                startButton.onclick = startChat;
+                startButton.addEventListener('click', startChat);
+                stopButton.addEventListener('click', stopChat);
+                nextButton.addEventListener('click', findNewChat);
+                homeButton.addEventListener('click', () => window.location.href = '/home/');
+                // Removed connect button event listener
                 
                 document.getElementById('toggleAudio').onclick = () => {
                     if (localStream) {
@@ -795,27 +893,12 @@
                     homeButton.classList.remove('hidden');
                     nextButton.classList.add('hidden');
                     stopButton.classList.add('hidden');
+                    connectButton.classList.add('hidden');
                     stopButton.disabled = false;
                     statusEl.textContent = 'Chat ended. Click Start Chat to begin a new chat.';
                 };
 
-                homeButton.onclick = () => {
-                    window.location.href = '/home/';
-                };
-
-                nextButton.onclick = async () => {
-                    nextButton.disabled = true;
-                    statusEl.textContent = 'Finding a new stranger...';
-                    await cleanup();
-                    try {
-                        await setupStreams();
-                        await findOrCreateRoom();
-                    } catch (error) {
-                        console.error('Error finding new chat:', error);
-                        nextButton.disabled = false;
-                        statusEl.textContent = 'Error finding new chat. Please try again.';
-                    }
-                };
+                
                 
                 log('All button click handlers attached');
                 

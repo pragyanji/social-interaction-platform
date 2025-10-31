@@ -55,7 +55,7 @@ def start_video_chat(request):
     context = {
         'firebase_config': json.dumps(FIREBASE_CONFIG),
     }
-    return render(request, "start_chat.html", context)
+    return render(request, "start_video_chat.html", context)
 
 @login_required(login_url="signin")
 def start_message_chat(request):
@@ -67,7 +67,14 @@ def start_message_chat(request):
 
 @login_required(login_url="signin")
 def home(request):
-    return render(request, "home.html")
+    # Get or create aura points and verification status
+    aura, created = models.AuraPoints.objects.get_or_create(user=request.user)
+    verification = models.IdentityVerification.objects.filter(user=request.user).first()
+    if verification:
+        verification_status = verification.verification_status
+    else:
+        verification_status = "Unverified"
+    return render(request, "home.html", {'aura_points': aura.aura_points, 'verification_status': verification_status})
 
 
 @login_required(login_url="signin")

@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from . import views
@@ -12,6 +12,7 @@ urlpatterns = [
     path("logout/", views.logout_view, name="logout"),
     path("start_video_chat/", views.start_video_chat, name="startvideochat"),
     path("start_message_chat/", views.start_message_chat, name="startmessagechat"),
+    
 ]
 
 if settings.DEBUG:

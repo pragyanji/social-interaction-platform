@@ -2,13 +2,43 @@
 const $ = (sel, ctx=document) => ctx.querySelector(sel);
 const $$ = (sel, ctx=document) => Array.from(ctx.querySelectorAll(sel));
 
-// 1) Auto-dismiss Django messages after 4s (click to dismiss sooner)
+// 0) Profile dropdown toggle
+(function initProfileDropdown(){
+  const btn = $("#profileBtn");
+  const menu = $("#profileMenu");
+  if(!btn || !menu) return;
+  
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    menu.classList.toggle("show");
+  });
+  
+  // Close when clicking outside
+  document.addEventListener("click", (e) => {
+    if(!menu.contains(e.target) && !btn.contains(e.target)){
+      menu.classList.remove("show");
+    }
+  });
+  
+  // Close on escape key
+  document.addEventListener("keydown", (e) => {
+    if(e.key === "Escape" && menu.classList.contains("show")){
+      menu.classList.remove("show");
+      btn.focus();
+    }
+  });
+})();
+
+// 1) Auto-dismiss Django messages after 5s (click to dismiss sooner)
 (function initMessages(){
   const items = $$(".messages .msg");
   items.forEach((el) => {
-    const close = () => el.remove();
+    const close = () => {
+      el.classList.add("fade-out");
+      setTimeout(() => el.remove(), 300); // Wait for animation to complete
+    };
     el.addEventListener("click", close, { once:true });
-    setTimeout(close, 4000);
+    setTimeout(close, 5000); // Auto-dismiss after 5 seconds
   });
 })();
 
@@ -32,7 +62,7 @@ function getCookie(name){
   const m = document.cookie.match('(^|;)\\s*'+name+'\\s*=\\s*([^;]+)');
   return m ? m.pop() : "";
 }
-export function csrfHeader(){
+function csrfHeader(){
   return { "X-CSRFToken": getCookie("csrftoken") };
 }
 
