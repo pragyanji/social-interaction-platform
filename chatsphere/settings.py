@@ -11,6 +11,11 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,10 +25,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-h_^mrp$b6d@ziqz=3n=#^%7v*nr)2=$9q0_1ek4mddc%sjkj%0'
+SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-h_^mrp$b6d@ziqz=3n=#^%7v*nr)2=$9q0_1ek4mddc%sjkj%0')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'True') == 'True'
 
 ALLOWED_HOSTS = ["*"]  # Allow all hosts in development
 
@@ -230,8 +235,8 @@ SOCIALACCOUNT_PROVIDERS = {
             'access_type': 'online',
         },
         'APP': {
-            'client_id': 'REDACTED_CLIENT_ID',
-            'secret': 'REDACTED',  # Replace with your actual secret
+            'client_id': os.getenv('GOOGLE_CLIENT_ID', 'REDACTED_CLIENT_ID'),
+            'secret': os.getenv('GOOGLE_CLIENT_SECRET', 'REDACTED'),
             'key': ''
         }
     }

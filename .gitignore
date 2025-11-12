@@ -35,11 +35,15 @@ media/
 
 # Environment variables
 .env
+.env.local
+*.env
 
-# Firebase
+# Firebase and OAuth Secrets
 client_secret_*.json
 video_chat_config.py  # Contains Firebase configuration
 firebase_config.json
+credentials.json
+*.json.secret
 
 # Virtual Environment
 venv/
