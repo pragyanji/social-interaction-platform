@@ -38,11 +38,10 @@
   {% comment %} <a href="{% url 'password_reset' %}">Forgot password?</a>  {% endcomment %}
 
   <div class="card" style="margin-top:12px">
-  <p class="muted">Or continue with</p>
-  <a class="btn btn-outline" href="{% provider_login_url 'google' process='login' %}">
-    Continue with Google
-  </a>
-</div>
-
+    <p class="muted">Or continue with</p>
+    <a class="btn btn-outline" href="{% provider_login_url 'google' process='login' %}">
+      Continue with Google
+    </a>
+  </div>
 </form>
 {% endblock %}

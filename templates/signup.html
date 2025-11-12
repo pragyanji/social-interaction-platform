@@ -63,11 +63,10 @@
   <p class="muted">Already have an account? <a href="{% url 'signin' %}">Sign in</a>.</p>
 
   <div class="card" style="margin-top:12px">
-  <p class="muted">Or continue with</p>
-  <a class="btn btn-outline" href="{% provider_login_url 'google' process='login' %}">
-    Continue with Google
-  </a>
-</div>
-
+    <p class="muted">Or continue with</p>
+    <a class="btn btn-outline" href="{% provider_login_url 'google' process='signup' %}">
+      Continue with Google
+    </a>
+  </div>
 </form>
 {% endblock %}

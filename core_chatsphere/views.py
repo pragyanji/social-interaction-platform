@@ -46,7 +46,7 @@ def _safe_next(request, fallback="home"):
     return resolve_url(fallback)
 
 
-# ---------- Views ----------
+
 def landing_page(request):
     # Redirect authenticated users to home page
     if request.user.is_authenticated:
@@ -61,11 +61,47 @@ def start_video_chat(request):
     return render(request, "start_video_chat.html", context)
 
 @login_required(login_url="signin")
-def start_message_chat(request):
+def start_message_chat(request, user_id=None):
+    if user_id:
+        try:
+            other_user = User.objects.get(id=user_id)
+            # Here you can implement logic to initiate chat with other_user
+        except User.DoesNotExist:
+            messages.error(request, "User not found!")
+            return redirect("home")
     context = {
         'firebase_config': json.dumps(FIREBASE_CONFIG),
     }
+    return render(request, "start_message_chat.html", context)
+
+
+@login_required(login_url="signin")
+def connections(request):
+    # Get all users this user is connected with
+    user_connections = models.Connection.objects.filter(user=request.user).values_list('connection_with', flat=True)
+    connected_users = User.objects.filter(id__in=user_connections)
+    
+    context = {
+        'connections': connected_users,
+        'firebase_config': json.dumps(FIREBASE_CONFIG),
+    }
     return render(request, "connections.html", context)
+
+
+@login_required(login_url="signin")
+def remove_connection(request, user_id):
+    """Remove a connection between the current user and another user"""
+    if request.method == "POST":
+        try:
+            # Delete the connection record
+            models.Connection.objects.filter(user=request.user, connection_with_id=user_id).delete()
+            # Also delete the reverse connection if it exists
+            models.Connection.objects.filter(user_id=user_id, connection_with=request.user).delete()
+            messages.success(request, "Connection removed successfully!")
+        except Exception as e:
+            messages.error(request, f"Error removing connection: {str(e)}")
+    
+    return redirect("connections")
 
 
 @login_required(login_url="signin")
@@ -81,8 +117,17 @@ def home(request):
 
 
 @login_required(login_url="signin")
-def profile_view(request):
-    user = request.user
+def profile_view(request, user_id=None):
+    # If user_id is provided, get that user's profile, otherwise show the current user's profile
+    if user_id:
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            messages.error(request, "User not found!")
+            return redirect("home")
+    else:
+        user = request.user
+    
     connection_with = user
     # Get or create aura points
     aura, created = models.AuraPoints.objects.get_or_create(user=user)

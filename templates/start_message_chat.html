@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Home · Chatsphere{% endblock %}
+{% block content %}
+<h2 class="page-title">Message</h2>
+{% if request.user.is_authenticated %}
+    <div class="card">
+        <h3>Hi, {{ request.user.get_username }} 👋 </h3>
+        <p>Start chatting with your connected members here.</p>
+
+    </div>
+{% else %}
+    <div class="card">
+        <p>You’re not signed in.</p>
+        <div class="actions">
+            <a class="btn btn-primary" href="{% url 'signin' %}">Sign in</a>
+            <a class="btn" href="{% url 'signup' %}">Create account</a>
+        </div>
+    </div>
+{% endif %}
+{% endblock %}

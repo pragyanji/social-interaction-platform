@@ -85,30 +85,26 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    
-    "django.contrib.sites",           # <-- required by allauth
-    "allauth",
-    "allauth.account",
-    "allauth.socialaccount",
-    "allauth.socialaccount.providers.google",   # add more providers as needed
-    
-    'core_chatsphere',  # added app
-    'rest_framework',  # DRF for APIs
-    'sslserver',  # SSL development server
-    'corsheaders',  # CORS headers
+    'django.contrib.sites',
+    'core_chatsphere',
+    'rest_framework',
+    'sslserver',
+    'corsheaders',
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
 ]
-
-SITE_ID = 1
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'corsheaders.middleware.CorsMiddleware',  # CORS middleware must come before CommonMiddleware
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'core_chatsphere.middleware.LoggingMiddleware',  # Custom logging middleware - must be after AuthenticationMiddleware
-    "allauth.account.middleware.AccountMiddleware",  # <-- allauth
+    'allauth.account.middleware.AccountMiddleware',
+    'core_chatsphere.middleware.LoggingMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -204,24 +200,39 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = "core_chatsphere.User"
 
+SITE_ID = 2
+
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
 
-LOGIN_URL = "signin"
-LOGIN_REDIRECT_URL = "home"
-LOGOUT_REDIRECT_URL = "landing"  # not strictly needed since we redirect in view
-
 AUTHENTICATION_BACKENDS = [
-    "django.contrib.auth.backends.ModelBackend",                  # keep default
-    "allauth.account.auth_backends.AuthenticationBackend",        # allauth
+    "django.contrib.auth.backends.ModelBackend",
+    "allauth.account.auth_backends.AuthenticationBackend",
 ]
-# allauth core settings (tweak as you like)
-LOGIN_URL = "account_login"            # allauth’s login view
+LOGIN_URL = "signin"
 LOGIN_REDIRECT_URL = "home"
 LOGOUT_REDIRECT_URL = "landing"
 
-ACCOUNT_LOGIN_METHODS = {"email", "username"}  # login via username or email
-ACCOUNT_SIGNUP_FIELDS = ["email*", "username*", "password1*", "password2*"]
-ACCOUNT_EMAIL_VERIFICATION = "optional"  # dev: "none" | prod: "mandatory"/"optional"
-ACCOUNT_SESSION_REMEMBER = False  # keep user logged out (if they close browser)
+# AllAuth Settings
+ACCOUNT_EMAIL_VERIFICATION = 'optional'
+SOCIALACCOUNT_ADAPTER = 'core_chatsphere.allauth_adapter.CustomSocialAccountAdapter'
+SOCIALACCOUNT_AUTO_SIGNUP = True
+
+# Google OAuth Settings
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'SCOPE': [
+            'profile',
+            'email',
+        ],
+        'AUTH_PARAMS': {
+            'access_type': 'online',
+        },
+        'APP': {
+            'client_id': 'REDACTED_CLIENT_ID',
+            'secret': 'REDACTED',  # Replace with your actual secret
+            'key': ''
+        }
+    }
+}

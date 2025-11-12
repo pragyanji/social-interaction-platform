@@ -6,11 +6,23 @@ const $$ = (sel, ctx=document) => Array.from(ctx.querySelectorAll(sel));
 (function initProfileDropdown(){
   const btn = $("#profileBtn");
   const menu = $("#profileMenu");
-  if(!btn || !menu) return;
+  
+  console.log('Initializing profile dropdown:', { hasBtn: !!btn, hasMenu: !!menu });
+  
+  if(!btn || !menu) {
+    console.error('Profile dropdown elements not found!');
+    return;
+  }
   
   btn.addEventListener("click", (e) => {
     e.stopPropagation();
+    console.log('Profile button clicked, toggling menu');
     menu.classList.toggle("show");
+  });
+  
+  // Prevent menu from closing when clicking inside it
+  menu.addEventListener("click", (e) => {
+    e.stopPropagation();
   });
   
   // Close when clicking outside
@@ -32,10 +44,13 @@ const $$ = (sel, ctx=document) => Array.from(ctx.querySelectorAll(sel));
 // 1) Auto-dismiss Django messages after 5s (click to dismiss sooner)
 (function initMessages(){
   const items = $$(".messages .msg");
+  console.log('Found messages:', items.length);
   items.forEach((el) => {
     const close = () => {
-      el.classList.add("fade-out");
-      setTimeout(() => el.remove(), 300); // Wait for animation to complete
+      el.style.transition = "opacity 0.3s ease, transform 0.3s ease";
+      el.style.opacity = "0";
+      el.style.transform = "translateX(20px)";
+      setTimeout(() => el.remove(), 300);
     };
     el.addEventListener("click", close, { once:true });
     setTimeout(close, 5000); // Auto-dismiss after 5 seconds

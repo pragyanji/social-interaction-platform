@@ -7,11 +7,15 @@ urlpatterns = [
     path("", views.landing_page, name="landing"),
     path("home/", views.home, name="home"),
     path("profile/", views.profile_view, name="profile"),
+    # path("profile/<int:user_id>/", views.profile_view, name="profile"),
     path("signup/", views.signup_view, name="signup"),
     path("signin/", views.signin_view, name="signin"),
     path("logout/", views.logout_view, name="logout"),
     path("start_video_chat/", views.start_video_chat, name="startvideochat"),
     path("start_message_chat/", views.start_message_chat, name="startmessagechat"),
+    path("start_message_chat/<int:user_id>/", views.start_message_chat, name="startmessagechat"),
+    path("connections/", views.connections, name="connections"),
+    path("connections/remove/<int:user_id>/", views.remove_connection, name="remove_connection"),
     
 ]
 
