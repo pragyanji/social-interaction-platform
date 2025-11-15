@@ -40,7 +40,7 @@ media/
 
 # Firebase and OAuth Secrets
 client_secret_*.json
-video_chat_config.py  # Contains Firebase configuration
+video_chat_config.py
 firebase_config.json
 credentials.json
 *.json.secret
