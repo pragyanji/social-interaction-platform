@@ -4,6 +4,7 @@
 
 {% block head_extra %}
 <link rel="stylesheet" href="{% static 'css/profile.css' %}" />
+<link rel="stylesheet" href="{% static 'css/connections.css' %}" />
 {% endblock %}
 
 {% block content %}
@@ -49,18 +50,41 @@
         <div class="card text-center bg-gradient-to-br from-green-400 to-teal-500 text-white">
             <div class="text-4xl font-bold mb-2">{{ total_connections }}</div>
             <div class="text-sm opacity-90">Connections</div>
+            <a href="{% url 'connections' %}" class="connections-view-link">View All</a>
         </div>
 
         <!-- Streak -->
         <div class="card text-center bg-gradient-to-br from-pink-500 to-red-500 text-white">
             <div class="text-4xl font-bold mb-2">{{ streak_days }}</div>
             <div class="text-sm opacity-90">Daily Streak</div>
+            {% if longest_streak and longest_streak != streak_days %}
+                <div class="streak-best-label">Best: {{ longest_streak }} days</div>
+            {% endif %}
         </div>
     </div>
 
-    <!-- Account Details -->
-    <div class="card mb-6">
-        <h4 class="text-xl font-bold mb-4 text-gray-900">Account Details</h4>
+<!-- Connections Section -->
+{% if user_connections %}
+<div class="card mb-6">
+    <h4 class="text-xl font-bold mb-4 text-gray-900">Your Connections ({{ user_connections|length }})</h4>
+    <div class="connections-grid">
+        {% for connection in user_connections %}
+            <div class="connection-card">
+                <div class="connection-card-name">{{ connection.first_name }} {{ connection.last_name }}</div>
+                <div class="connection-card-username">@{{ connection.username }}</div>
+                <a href="{% url 'startmessagechat' connection.id %}" class="btn btn-small connection-card-btn">Message</a>
+            </div>
+        {% endfor %}
+    </div>
+    <div class="connections-header">
+        <a href="{% url 'connections' %}" class="btn btn-outline">View All Connections</a>
+    </div>
+</div>
+{% endif %}
+
+<!-- Account Details -->
+<div class="card mb-6">
+    <h4 class="text-xl font-bold mb-4 text-gray-900">Account Details</h4>
         <div class="space-y-3">
             <div class="flex justify-between py-3 border-b border-gray-300">
                 <span class="font-semibold text-gray-900">Username:</span>

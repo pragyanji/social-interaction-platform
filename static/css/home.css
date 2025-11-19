@@ -1,0 +1,88 @@
+/* ===== HOME PAGE STYLES ===== */
+
+/* Welcome Section */
+.welcome-card {
+  margin-bottom: 24px;
+}
+
+.welcome-card h3 {
+  margin: 0 0 16px 0;
+  font-size: 1.5rem;
+}
+
+.welcome-stats {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-label {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+.stat-value {
+  margin: 4px 0 0 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.stat-value.streak {
+  color: #f97316;
+}
+
+/* Quick Actions Section */
+.quick-actions-title {
+  margin: 0 0 16px 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.quick-actions-grid {
+  margin-bottom: 24px;
+}
+
+.action-card h4 {
+  margin: 0 0 12px 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.action-card p {
+  margin: 0 0 16px 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+/* Hero Section (Unauthenticated) */
+.hero-section {
+  text-align: center;
+  max-width: 600px;
+  margin: 40px auto;
+}
+
+.hero-section h3 {
+  margin: 0 0 16px 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.hero-section p {
+  margin: 0 0 24px 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}

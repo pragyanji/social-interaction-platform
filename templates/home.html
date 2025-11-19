@@ -1,56 +1,55 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}Home · Chatsphere{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="{% static 'css/home.css' %}" />
+{% endblock %}
 
 {% block content %}
 <h2 class="page-title">Home</h2>
 
 {% if request.user.is_authenticated %}
   <!-- User Welcome Section -->
-  <div class="card" style="margin-bottom: 24px;">
-    <h3 style="margin: 0 0 16px 0; font-size: 1.5rem;">Hi, {{ request.user.get_username }} 👋</h3>
-    <div style="display: flex; gap: 24px; flex-wrap: wrap;">
-      <div>
-        <p style="margin: 0; color: var(--muted); font-size: 0.875rem;">Aura Points</p>
-        <p style="margin: 4px 0 0 0; font-size: 1.5rem; font-weight: 700; color: var(--primary);">
-          {{ aura_points }}
-        </p>
+  <div class="card welcome-card">
+    <h3>Hi, {{ request.user.get_username }} 👋</h3>
+    <div class="welcome-stats">
+      <div class="stat-item">
+        <p class="stat-label">Aura Points</p>
+        <p class="stat-value">{{ aura_points }}</p>
       </div>
-      <div>
-        <p style="margin: 0; color: var(--muted); font-size: 0.875rem;">Account Status</p>
-        <p style="margin: 4px 0 0 0; font-size: 1rem; font-weight: 600;">
-          {{ verification_status }}
-        </p>
+      <div class="stat-item">
+        <p class="stat-label">Account Status</p>
+        <p class="stat-value">{{ verification_status }}</p>
+      </div>
+      <div class="stat-item">
+        <p class="stat-label">Daily Streak 🔥</p>
+        <p class="stat-value streak">{{ streak_days }}</p>
       </div>
     </div>
   </div>
 
   <!-- Quick Actions Section -->
-  <h3 style="margin: 0 0 16px 0; font-size: 1.25rem; font-weight: 600;">Quick Actions</h3>
-  <div class="grid-2" style="margin-bottom: 24px;">
-    <div class="card">
-      <h4 style="margin: 0 0 12px 0; font-size: 1.125rem; font-weight: 600;">💬 Connections</h4>
-      <p style="margin: 0 0 16px 0; color: var(--muted); line-height: 1.5;">
-        Find and manage your connections here.
-      </p>
-      <a class="btn btn-primary btn-small" href="{% url 'connections' %}">Open Connections</a>
+  <h3 class="quick-actions-title">Quick Actions</h3>
+  <div class="grid-2 quick-actions-grid">
+    <div class="card action-card">
+      <h4>💬 Messages</h4>
+      <p>Chat and connect with your network.</p>
+      <a class="btn btn-primary btn-small" href="{% url 'startmessagechat' %}">Open Messages</a>
     </div>
-    <div class="card">
-      <h4 style="margin: 0 0 12px 0; font-size: 1.125rem; font-weight: 600;">🎥 Video Chat</h4>
-      <p style="margin: 0 0 16px 0; color: var(--muted); line-height: 1.5;">
-        Continue your conversations with video.
-      </p>
+    <div class="card action-card">
+      <h4>🎥 Video Chat</h4>
+      <p>Continue your conversations with video.</p>
       <a class="btn btn-primary btn-small" href="{% url 'startvideochat' %}">Talk to Strangers</a>
     </div>
   </div>
 
 {% else %}
   <!-- Not Authenticated Section -->
-  <div class="hero" style="text-align: center; max-width: 600px; margin: 40px auto;">
-    <h3 style="margin: 0 0 16px 0; font-size: 1.5rem; font-weight: 600;">Welcome to Chatsphere</h3>
-    <p style="margin: 0 0 24px 0; color: var(--muted); line-height: 1.6;">
-      You're not signed in. Create an account or sign in to start connecting with people around the world.
-    </p>
-    <div class="actions" style="justify-content: center;">
+  <div class="hero-section">
+    <h3>Welcome to Chatsphere</h3>
+    <p>You're not signed in. Create an account or sign in to start connecting with people around the world.</p>
+    <div class="hero-actions">
       <a class="btn btn-primary" href="{% url 'signup' %}">Create Account</a>
       <a class="btn btn-outline" href="{% url 'signin' %}">Sign In</a>
     </div>

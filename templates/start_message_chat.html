@@ -1,16 +1,76 @@
 {% extends "base.html" %}
-{% block title %}Home · Chatsphere{% endblock %}
+{% load static %}
+{% block title %}Message Chat · Chatsphere{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="{% static 'css/messages.css' %}" />
+{% endblock %}
+
 {% block content %}
 <h2 class="page-title">Message</h2>
 {% if request.user.is_authenticated %}
-    <div class="card">
-        <h3>Hi, {{ request.user.get_username }} 👋 </h3>
-        <p>Start chatting with your connected members here.</p>
+    <div class="messages-container">
+        <!-- Connected Users List -->
+        <div class="card">
+            <h3>Your Connections</h3>
+            {% if connected_users %}
+                <div class="users-list">
+                    {% for user in connected_users %}
+                        <div class="user-item">
+                            <div class="user-info">
+                                <a href="{% url 'startmessagechat' user.id %}" class="user-info-link">
+                                    <div class="user-name">
+                                        {{ user.first_name }} {{ user.last_name }}
+                                    </div>
+                                    <div class="user-username">
+                                        @{{ user.username }}
+                                    </div>
+                                </a>
+                            </div>
+                            <a href="{% url 'startmessagechat' user.id %}" class="btn btn-small user-chat-btn">
+                                Chat
+                            </a>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="connections-empty">
+                    You don't have any connections yet.<br>
+                    <a href="{% url 'connections' %}">Add connections</a> to start messaging.
+                </p>
+            {% endif %}
+        </div>
 
+        <!-- Chat Area -->
+        <div class="card chat-container">
+            {% if selected_user %}
+                <div class="chat-header">
+                    <h3>Chat with {{ selected_user.first_name }} {{ selected_user.last_name }}</h3>
+                </div>
+                <div class="chat-messages">
+                    <p>Chat functionality coming soon...</p>
+                </div>
+                <div class="message-input-area">
+                    <input type="text" class="message-input" placeholder="Type your message...">
+                    <button class="btn btn-primary message-send-btn">Send</button>
+                </div>
+            {% else %}
+                <h3>Hi, {{ request.user.get_username }} 👋</h3>
+                <p>Select a connection from the list to start chatting.</p>
+                <div class="no-conversation">
+                    <p>No conversation selected</p>
+                    {% if connected_users %}
+                        <p>Click on a user from the left panel to start messaging.</p>
+                    {% else %}
+                        <p>You need to have connections to message. <a href="{% url 'connections' %}">Add connections</a> first.</p>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
     </div>
 {% else %}
     <div class="card">
-        <p>You’re not signed in.</p>
+        <p>You're not signed in.</p>
         <div class="actions">
             <a class="btn btn-primary" href="{% url 'signin' %}">Sign in</a>
             <a class="btn" href="{% url 'signup' %}">Create account</a>

@@ -1,5 +1,11 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}Connections · Chatsphere{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="{% static 'css/connections.css' %}" />
+{% endblock %}
+
 {% block content %}
 <h2 class="page-title">Connections</h2>
 {% if request.user.is_authenticated %}
@@ -10,23 +16,22 @@
       {% if connections %}
         <div class="connections-list">
           {% for user in connections %}
-            <div class="connection-item" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #f3f1f1ff;">
-              <div>
-                <p style="margin: 0;"><strong>{{ user.first_name }} {{ user.last_name }}</strong></p>
-                {% comment %} <p style="margin: 5px 0 0 0; font-size: 0.9em; color: #666;">@{{ user.username }}</p> {% endcomment %}
+            <div class="connection-item">
+              <div class="connection-info">
+                <p class="connection-name">{{ user.first_name }} {{ user.last_name }}</p>
               </div>
-              <div style="display: flex; gap: 10px;">
-                <a class="btn btn-small" href="{% url 'startmessagechat' user.id %}">Start Message</a>
-                <form method="POST" action="{% url 'remove_connection' user.id %}" style="display: inline;">
+              <div class="connection-actions">
+                <a class="btn btn-small" href="{% url 'startmessagechat' user.id %}">Message</a>
+                <form method="POST" action="{% url 'remove_connection' user.id %}" class="connection-remove-form">
                   {% csrf_token %}
-                  <button type="submit" class="btn btn-small" style="background-color: #e74c3c; color: white;">Remove</button>
+                  <button type="submit" class="connection-remove-btn">Remove</button>
                 </form>
               </div>
             </div>
           {% endfor %}
         </div>
       {% else %}
-        <p style="color: #999;">You don't have any connections yet. Start connecting with other Users!</p>
+        <p class="no-connections">You don't have any connections yet. Start connecting with other Users!</p>
       {% endif %}
     </div>
     <div class="card">

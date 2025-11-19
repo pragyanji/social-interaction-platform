@@ -60,16 +60,27 @@ def start_video_chat(request):
     }
     return render(request, "start_video_chat.html", context)
 
+
 @login_required(login_url="signin")
 def start_message_chat(request, user_id=None):
+    # Get all connected users
+    user_connections = models.Connection.objects.filter(user=request.user).values_list('connection_with', flat=True)
+    connected_users = User.objects.filter(id__in=user_connections)
+    
+    selected_user = None
     if user_id:
         try:
-            other_user = User.objects.get(id=user_id)
-            # Here you can implement logic to initiate chat with other_user
+            selected_user = User.objects.get(id=user_id)
+            if selected_user not in connected_users:
+                messages.error(request, "You can only message connected users!")
+                return redirect("startmessagechat")
         except User.DoesNotExist:
             messages.error(request, "User not found!")
-            return redirect("home")
+            return redirect("startmessagechat")
+    
     context = {
+        'connected_users': connected_users,
+        'selected_user': selected_user,
         'firebase_config': json.dumps(FIREBASE_CONFIG),
     }
     return render(request, "start_message_chat.html", context)
@@ -113,7 +124,17 @@ def home(request):
         verification_status = verification.verification_status
     else:
         verification_status = "Unverified"
-    return render(request, "home.html", {'aura_points': aura.aura_points, 'verification_status': verification_status})
+    
+    # Get or create daily streak and update it
+    streak, streak_created = models.DailyStreak.objects.get_or_create(user=request.user)
+    streak.update_streak()
+    
+    return render(request, "home.html", {
+        'aura_points': aura.aura_points, 
+        'verification_status': verification_status,
+        'streak_days': streak.current_streak,
+        'longest_streak': streak.longest_streak,
+    })
 
 
 @login_required(login_url="signin")
@@ -148,8 +169,14 @@ def profile_view(request, user_id=None):
     # Get total connections
     total_connections = models.Connection.objects.filter(user = user and connection_with).count()
     
-    # Calculate streak (placeholder - you can implement actual streak logic)
-    streak_days = 13  # : Implement actual streak calculation
+    # Get list of connected users
+    user_connections = models.Connection.objects.filter(user=user).values_list('connection_with', flat=True)
+    connected_users_list = User.objects.filter(id__in=user_connections)
+    
+    # Get daily streak information
+    streak, _ = models.DailyStreak.objects.get_or_create(user=user)
+    streak_days = streak.current_streak
+    longest_streak = streak.longest_streak
     
     context = {
         'user': user,
@@ -157,7 +184,9 @@ def profile_view(request, user_id=None):
         'avg_rating': ratings_stats['avg_rating'] or 0,
         'total_ratings': ratings_stats['total_ratings'],
         'total_connections': total_connections or 0,
+        'user_connections': connected_users_list,
         'streak_days': streak_days,
+        'longest_streak': longest_streak,
         'verification_status': verification_status,
     }
     

@@ -236,3 +236,57 @@ class BannedAcc(models.Model):
         return f"Ban<{self.user} - {state}>"
 
 
+# -----------------------------
+# Daily Streak (tracks consecutive days of activity)
+# -----------------------------
+class DailyStreak(models.Model):
+    """
+    Tracks the daily streak for users.
+    A user maintains a streak by visiting/interacting with the app on consecutive days.
+    """
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="daily_streak"
+    )
+    current_streak = models.IntegerField(default=0)
+    longest_streak = models.IntegerField(default=0)
+    last_visit_date = models.DateField(null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Daily streak"
+        verbose_name_plural = "Daily streaks"
+
+    def __str__(self) -> str:
+        return f"{self.user} - Streak: {self.current_streak} days (Best: {self.longest_streak})"
+
+    def update_streak(self):
+        """
+        Updates the daily streak for the user.
+        Called when user visits the app.
+        """
+        from datetime import timedelta
+        today = timezone.now().date()
+        
+        if self.last_visit_date is None:
+            # First visit
+            self.current_streak = 1
+            self.longest_streak = 1
+            self.last_visit_date = today
+        elif self.last_visit_date == today:
+            # Already visited today, no change
+            pass
+        elif self.last_visit_date == today - timedelta(days=1):
+            # Consecutive day, increment streak
+            self.current_streak += 1
+            if self.current_streak > self.longest_streak:
+                self.longest_streak = self.current_streak
+            self.last_visit_date = today
+        else:
+            # Streak broken, start new streak
+            self.current_streak = 1
+            self.last_visit_date = today
+        
+        self.save()
+
+
+
