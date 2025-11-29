@@ -32,6 +32,13 @@ class SignupForm(UserCreationForm):
         if self.cleaned_data.get("email"):
             user.email = self.cleaned_data["email"].strip().lower()
         user.full_name = self.cleaned_data.get("full_name", "")
+        # separate the full name into first and last names
+        name_parts = user.full_name.split()
+        user.first_name = name_parts[0]
+        if len(name_parts) > 1:
+            user.last_name = name_parts[-1]
+        if len(name_parts) > 2:
+            user.first_name = " ".join(name_parts[:-1])
         user.profile_pic = self.cleaned_data.get("profile_pic")
         if commit:
             user.save()
@@ -55,8 +62,15 @@ def landing_page(request):
 
 @login_required(login_url="signin")
 def start_video_chat(request):
+    verification = models.IdentityVerification.objects.filter(user=request.user).first()
+    if verification:
+        verification_status = verification.verification_status
+    else:
+        verification_status = "Unverified"
+    
     context = {
         'firebase_config': json.dumps(FIREBASE_CONFIG),
+        'verification_status': verification_status,
     }
     return render(request, "start_video_chat.html", context)
 
@@ -250,3 +264,15 @@ def logout_view(request):
         logout(request)
         messages.info(request, "You have been signed out.")
     return redirect("landing")
+
+
+def identity_verification(request):
+    """
+    View to handle identity verification process.
+    """
+    if request.method == "POST":
+        # Handle form submission for identity verification
+        pass  # Implementation goes here
+    else:
+        # Display identity verification form
+        pass  # Implementation goes here
