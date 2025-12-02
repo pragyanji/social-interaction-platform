@@ -266,13 +266,43 @@ def logout_view(request):
     return redirect("landing")
 
 
+@login_required(login_url="signin")
 def identity_verification(request):
     """
     View to handle identity verification process.
+    Users can submit their identity documents for verification.
     """
+    from .forms import IdentityVerificationForm
+
+    # Check if user already has a verification record
+    existing_verification = models.IdentityVerification.objects.filter(user=request.user).first()
+
     if request.method == "POST":
-        # Handle form submission for identity verification
-        pass  # Implementation goes here
+        # If user already has verification, update it; otherwise create new
+        if existing_verification:
+            form = IdentityVerificationForm(request.POST, request.FILES, instance=existing_verification)
+        else:
+            form = IdentityVerificationForm(request.POST, request.FILES)
+
+        if form.is_valid():
+            verification = form.save(commit=False)
+            verification.user = request.user
+            # Reset status to PENDING when resubmitting
+            verification.verification_status = models.IdentityVerification.VerificationStatus.PENDING
+            verification.save()
+            messages.success(request, "Your identity verification has been submitted successfully! We'll review it shortly.")
+            return redirect("profile")
+        else:
+            messages.error(request, "Please fix the errors below and try again.")
     else:
-        # Display identity verification form
-        pass  # Implementation goes here
+        # If user has existing verification, pre-populate the form
+        if existing_verification:
+            form = IdentityVerificationForm(instance=existing_verification)
+        else:
+            form = IdentityVerificationForm()
+
+    context = {
+        'form': form,
+        'existing_verification': existing_verification,
+    }
+    return render(request, "identity_verification.html", context)

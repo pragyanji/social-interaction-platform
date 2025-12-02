@@ -104,25 +104,43 @@
             </div>
             <div class="flex justify-between py-3">
                 <span class="font-semibold text-gray-900">Verification Status:</span>
-
-                {% if verification_status == "VERIFIED" %}
-                <span class="px-3 py-1 rounded-full text-sm font-semibold bg-green-500 text-white">
-                    Verified
-                </span>
-                {% elif verification_status == "PENDING" %}
-                <span class="px-3 py-1 rounded-full text-sm font-semibold bg-yellow-500 text-white">
-                    Pending
-                </span>
-                {% elif verification_status == "REJECTED" %}
-                <span class="px-3 py-1 rounded-full text-sm font-semibold bg-red-500 text-white">
-                    Rejected
-                </span>
-                {% else %}
-                <span class="px-3 py-1 rounded-full text-sm font-semibold bg-gray-600 text-white">
-                    Unverified
-                </span>
-                {% endif %}
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    {% if verification_status == "VERIFIED" %}
+                    <span class="px-3 py-1 rounded-full text-sm font-semibold bg-green-500 text-white">
+                        Verified
+                    </span>
+                    {% elif verification_status == "PENDING" %}
+                    <span class="px-3 py-1 rounded-full text-sm font-semibold bg-yellow-500 text-white">
+                        Pending
+                    </span>
+                    {% elif verification_status == "REJECTED" %}
+                    <span class="px-3 py-1 rounded-full text-sm font-semibold bg-red-500 text-white">
+                        Rejected
+                    </span>
+                    {% else %}
+                    <span class="px-3 py-1 rounded-full text-sm font-semibold bg-gray-600 text-white">
+                        Unverified
+                    </span>
+                    {% endif %}
+                </div>
             </div>
+            {% if verification_status != "VERIFIED" and verification_status != "PENDING" %}
+            <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e5e7eb;">
+                <a href="{% url 'identity_verification' %}" class="btn btn-primary" style="display: inline-block; padding: 0.5rem 1rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 0.5rem; font-weight: 600; font-size: 0.9rem;">
+                    {% if verification_status == "REJECTED" %}
+                        Resubmit Verification
+                    {% else %}
+                        Get Verified
+                    {% endif %}
+                </a>
+            </div>
+            {% elif verification_status == "PENDING" %}
+            <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e5e7eb;">
+                <a href="{% url 'identity_verification' %}" style="color: #6366f1; text-decoration: none; font-size: 0.9rem; font-weight: 500;">
+                    View verification status →
+                </a>
+            </div>
+            {% endif %}
         </div>
     </div>
 
