@@ -8,7 +8,7 @@ from django.db.models import Q, Sum, UniqueConstraint, CheckConstraint
 from django.utils import timezone
 
 
-  
+
 # -----------------------------
 # User
 # -----------------------------

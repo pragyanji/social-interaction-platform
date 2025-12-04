@@ -9,6 +9,9 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.shortcuts import render, redirect, resolve_url
 from django.utils.http import url_has_allowed_host_and_scheme
+from django.http import JsonResponse
+from django.views.decorators.http import require_http_methods
+from django.views.decorators.csrf import csrf_exempt
 
 # from .models import AuraPoints, RatingPoints, IdentityVerification, Connections
 from . import models
@@ -138,16 +141,17 @@ def home(request):
         verification_status = verification.verification_status
     else:
         verification_status = "Unverified"
-    
+
     # Get or create daily streak and update it
     streak, streak_created = models.DailyStreak.objects.get_or_create(user=request.user)
     streak.update_streak()
-    
+
     return render(request, "home.html", {
-        'aura_points': aura.aura_points, 
+        'aura_points': aura.aura_points,
         'verification_status': verification_status,
         'streak_days': streak.current_streak,
         'longest_streak': streak.longest_streak,
+        'firebase_config': json.dumps(FIREBASE_CONFIG),
     })
 
 
@@ -306,3 +310,70 @@ def identity_verification(request):
         'existing_verification': existing_verification,
     }
     return render(request, "identity_verification.html", context)
+
+
+@login_required(login_url="signin")
+@require_http_methods(["POST"])
+def report_user(request):
+    """
+    Handle user reports during video chat.
+    Users can report strangers for inappropriate behavior.
+    """
+    try:
+        # Parse JSON data from request body
+        data = json.loads(request.body)
+        room_id = data.get('room_id')
+        reported_user_id = data.get('reported_user_id')
+        reason = data.get('reason')
+        description = data.get('description')
+
+        # Validate required fields
+        if not all([room_id, reported_user_id, reason, description]):
+            return JsonResponse({
+                'success': False,
+                'error': 'Missing required fields'
+            }, status=400)
+
+        # Get the reported user
+        try:
+            reported_user = User.objects.get(id=reported_user_id)
+        except User.DoesNotExist:
+            return JsonResponse({
+                'success': False,
+                'error': 'Reported user not found'
+            }, status=404)
+
+        # Prevent self-reporting
+        if reported_user.id == request.user.id:
+            return JsonResponse({
+                'success': False,
+                'error': 'You cannot report yourself'
+            }, status=400)
+
+        # Format the report description with room context
+        report_desc = f"[Room: {room_id}] [Reason: {reason}]\n\n{description}"
+
+        # Create the report
+        report = models.Report.objects.create(
+            user=request.user,
+            reported_to=reported_user,
+            report_desc=report_desc,
+            report_status=models.Report.Status.OPEN
+        )
+
+        return JsonResponse({
+            'success': True,
+            'message': 'Report submitted successfully',
+            'report_id': report.id
+        })
+
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'success': False,
+            'error': 'Invalid JSON data'
+        }, status=400)
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)

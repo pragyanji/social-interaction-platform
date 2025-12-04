@@ -4,6 +4,10 @@
 
 {% block head_extra %}
 <link rel="stylesheet" href="{% static 'css/home.css' %}" />
+<script>
+  // @ts-ignore - Django template variable
+  window.FIREBASE_CONFIG = {{ firebase_config|safe }};
+</script>
 {% endblock %}
 
 {% block content %}
@@ -40,9 +44,85 @@
     <div class="card action-card">
       <h4>🎥 Video Chat</h4>
       <p>Continue your conversations with video.</p>
+      <div style="display: flex; align-items: center; gap: 8px; margin: 12px 0; padding: 8px 12px; background-color: rgba(34, 197, 94, 0.1); border-radius: 8px; border: 1px solid rgba(34, 197, 94, 0.3);">
+        <div style="width: 8px; height: 8px; background-color: #22c55e; border-radius: 50%; animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;"></div>
+        <span style="color: #22c55e; font-weight: 600; font-size: 14px;">
+          <span id="home-online-count">...</span> users online now
+        </span>
+      </div>
       <a class="btn btn-primary btn-small" href="{% url 'startvideochat' %}">Talk to Strangers</a>
     </div>
   </div>
+
+  <style>
+    @keyframes pulse {
+      0%, 100% {
+        opacity: 1;
+      }
+      50% {
+        opacity: 0.5;
+      }
+    }
+  </style>
+
+  <script type="module">
+    // Firebase Setup for online count on home page
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getDatabase, ref, get, onValue } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
+
+    if (window.FIREBASE_CONFIG) {
+      const app = initializeApp(window.FIREBASE_CONFIG);
+      const db = getDatabase(app);
+
+      const onlineCountEl = document.getElementById('home-online-count');
+
+      async function updateOnlineCount() {
+        try {
+          const roomsRef = ref(db, 'rooms');
+          const waitingRoomsRef = ref(db, 'waiting_rooms');
+
+          const [roomsSnapshot, waitingSnapshot] = await Promise.all([
+            get(roomsRef),
+            get(waitingRoomsRef)
+          ]);
+
+          const rooms = roomsSnapshot.val();
+          const waitingRooms = waitingSnapshot.val();
+          const uniqueUsers = new Set();
+
+          if (rooms) {
+            Object.values(rooms).forEach(room => {
+              if (room.creatorId) uniqueUsers.add(room.creatorId);
+              if (room.joinerId) uniqueUsers.add(room.joinerId);
+            });
+          }
+
+          if (waitingRooms) {
+            Object.values(waitingRooms).forEach(room => {
+              if (room.creatorId) uniqueUsers.add(room.creatorId);
+            });
+          }
+
+          const count = uniqueUsers.size;
+          if (onlineCountEl) {
+            onlineCountEl.textContent = count;
+          }
+        } catch (error) {
+          console.error('Error updating online count:', error);
+          if (onlineCountEl) {
+            onlineCountEl.textContent = '0';
+          }
+        }
+      }
+
+      // Listen to changes
+      onValue(ref(db, 'rooms'), updateOnlineCount);
+      onValue(ref(db, 'waiting_rooms'), updateOnlineCount);
+
+      // Initial update
+      updateOnlineCount();
+    }
+  </script>
 
 {% else %}
   <!-- Not Authenticated Section -->
