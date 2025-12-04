@@ -3,15 +3,16 @@ from __future__ import annotations
 import json
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth import get_user_model, login, logout, authenticate
+from django.contrib.auth import get_user_model, login, logout, authenticate, update_session_auth_hash
 from .video_chat_config import FIREBASE_CONFIG
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
+from django.contrib.auth.forms import AuthenticationForm, UserCreationForm, PasswordChangeForm
 from django.shortcuts import render, redirect, resolve_url
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
+from django import forms
 
 # from .models import AuraPoints, RatingPoints, IdentityVerification, Connections
 from . import models
@@ -29,23 +30,35 @@ class SignupForm(UserCreationForm):
         model = User
         fields = ("username", "full_name", "email", "profile_pic")
 
-    def save(self, commit=True):
-        user = super().save(commit=False)
-        # Optional: normalize email / other fields
-        if self.cleaned_data.get("email"):
-            user.email = self.cleaned_data["email"].strip().lower()
-        user.full_name = self.cleaned_data.get("full_name", "")
-        # separate the full name into first and last names
-        name_parts = user.full_name.split()
-        user.first_name = name_parts[0]
-        if len(name_parts) > 1:
-            user.last_name = name_parts[-1]
-        if len(name_parts) > 2:
-            user.first_name = " ".join(name_parts[:-1])
-        user.profile_pic = self.cleaned_data.get("profile_pic")
-        if commit:
-            user.save()
-        return user
+
+class ProfileEditForm(forms.ModelForm):
+    """
+    Form for editing user profile information.
+    """
+    class Meta:
+        model = User
+        fields = ("full_name", "email", "profile_pic")
+        widgets = {
+            'full_name': forms.TextInput(attrs={
+                'class': 'form-input',
+                'placeholder': 'Enter your full name'
+            }),
+            'email': forms.EmailInput(attrs={
+                'class': 'form-input',
+                'placeholder': 'Enter your email address'
+            }),
+            'profile_pic': forms.FileInput(attrs={
+                'class': 'form-input',
+                'accept': 'image/*'
+            })
+        }
+
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        # Check if email is already used by another user
+        if User.objects.filter(email=email).exclude(pk=self.instance.pk).exists():
+            raise forms.ValidationError('This email is already in use.')
+        return email
 
 
 # ---------- Helpers ----------
@@ -377,3 +390,51 @@ def report_user(request):
             'success': False,
             'error': str(e)
         }, status=500)
+
+
+@login_required(login_url="signin")
+def edit_profile(request):
+    """
+    Allow users to edit their profile information including:
+    - Full name
+    - Email
+    - Profile picture
+    """
+    if request.method == 'POST':
+        form = ProfileEditForm(request.POST, request.FILES, instance=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Your profile has been updated successfully!')
+            return redirect('profile')
+        else:
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        form = ProfileEditForm(instance=request.user)
+
+    return render(request, 'edit_profile.html', {
+        'form': form,
+        'user': request.user
+    })
+
+
+@login_required(login_url="signin")
+def change_password(request):
+    """
+    Allow users to change their password.
+    """
+    if request.method == 'POST':
+        form = PasswordChangeForm(request.user, request.POST)
+        if form.is_valid():
+            user = form.save()
+            # Important: Update the session to prevent logout
+            update_session_auth_hash(request, user)
+            messages.success(request, 'Your password has been changed successfully!')
+            return redirect('profile')
+        else:
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        form = PasswordChangeForm(request.user)
+
+    return render(request, 'change_password.html', {
+        'form': form
+    })
