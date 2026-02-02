@@ -72,3 +72,6 @@ ssl/
 *.p12
 *.pfx
 ssl/
+
+#pgadmin/
+chatsphere/db.py

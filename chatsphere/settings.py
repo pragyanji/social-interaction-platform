@@ -141,18 +141,28 @@ WSGI_APPLICATION = 'chatsphere.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
+
+# For Production, use PostgreSQL 
+
+# create a db.py file in chatsphere directory with db_data function
+# write the following code in db_data function
+# def db_data():
+#     'default': {
+#             'ENGINE': 'django.db.backends.postgresql',
+#             'NAME': '',
+#             'USER': '',
+#             'PASSWORD': '',
+#             'HOST': 'localhost',
+#             'PORT': '5432',
+#             "CONN_MAX_AGE": 60,
+#     }
+# from .db import db_data
+# DATABASES = db_data()
+
+
+# For Development, use SQLite
 DATABASES = {
-    # for production, use PostgreSQL or MySQL
-    # 'default': {
-    #     'ENGINE': 'django.db.backends.postgresql',
-    #     'NAME': '',
-    #     'USER': '',
-    #     'PASSWORD': '',
-    #     'HOST': 'localhost',
-    #     'PORT': '5432',
-    #     "CONN_MAX_AGE": 60,
-    # }
-    # for development, you can use SQLite (uncomment below)
+     
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
