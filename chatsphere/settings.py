@@ -156,18 +156,18 @@ WSGI_APPLICATION = 'chatsphere.wsgi.application'
 #             'PORT': '5432',
 #             "CONN_MAX_AGE": 60,
 #     }
-# from .db import db_data
-# DATABASES = db_data()
+from .db import db_data
+DATABASES = db_data()
 
 
 # For Development, use SQLite
-DATABASES = {
+# DATABASES = {
      
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
-}
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
 
 
 # Password validation

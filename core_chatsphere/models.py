@@ -136,7 +136,13 @@ class RatingPoints(models.Model):
     given_to = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="ratings_received"
     )
-    rate_points = models.IntegerField()  # allow negative/positive if needed
+    class Rating(models.IntegerChoices):
+        VERY_POOR = 1, '1'
+        POOR      = 2, '2'
+        AVERAGE   = 3, '3'
+        GOOD      = 4, '4'
+        EXCELLENT = 5, '5'
+    rate_points = models.IntegerField(choices=Rating.choices)  # Set the limit in application logic (e.g., 1-5)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
