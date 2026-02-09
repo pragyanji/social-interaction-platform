@@ -491,6 +491,109 @@ def submit_rating(request):
 
 
 @login_required(login_url="signin")
+@require_http_methods(["POST"])
+def submit_connection(request):
+    """
+    Handle creating connections during video chat.
+    Immediately creates bidirectional connection (no approval needed).
+    """
+    try:
+        # Parse JSON data from request body
+        data = json.loads(request.body)
+        connection_user_id = data.get('connection_user_id')
+
+        # Validate required fields
+        if not connection_user_id:
+            return JsonResponse({
+                'success': False,
+                'error': 'Missing required fields'
+            }, status=400)
+
+        # Get the user to connect with
+        try:
+            connection_user = User.objects.get(id=connection_user_id)
+        except User.DoesNotExist:
+            return JsonResponse({
+                'success': False,
+                'error': 'User not found'
+            }, status=404)
+
+        # Prevent self-connection
+        if connection_user.id == request.user.id:
+            return JsonResponse({
+                'success': False,
+                'error': 'You cannot connect with yourself'
+            }, status=400)
+
+        # Check if both users are verified
+        try:
+            current_user_verification = models.IdentityVerification.objects.get(user=request.user)
+            if current_user_verification.verification_status != models.IdentityVerification.VerificationStatus.VERIFIED:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'You must be verified to connect with other users'
+                }, status=400)
+        except models.IdentityVerification.DoesNotExist:
+            return JsonResponse({
+                'success': False,
+                'error': 'You must be verified to connect with other users'
+            }, status=400)
+
+        try:
+            other_user_verification = models.IdentityVerification.objects.get(user=connection_user)
+            if other_user_verification.verification_status != models.IdentityVerification.VerificationStatus.VERIFIED:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'The other user must be verified to connect'
+                }, status=400)
+        except models.IdentityVerification.DoesNotExist:
+            return JsonResponse({
+                'success': False,
+                'error': 'The other user must be verified to connect'
+            }, status=400)
+
+        # Check if already connected
+        existing_connection = models.Connection.objects.filter(
+            user=request.user,
+            connection_with=connection_user
+        ).first()
+
+        if existing_connection:
+            return JsonResponse({
+                'success': False,
+                'error': 'You are already connected with this user'
+            }, status=400)
+
+        # Create bidirectional connections immediately
+        connection1 = models.Connection.objects.create(
+            user=request.user,
+            connection_with=connection_user
+        )
+
+        connection2 = models.Connection.objects.create(
+            user=connection_user,
+            connection_with=request.user
+        )
+
+        return JsonResponse({
+            'success': True,
+            'message': 'Connected successfully!',
+            'connection_id': connection1.id
+        })
+
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'success': False,
+            'error': 'Invalid JSON data'
+        }, status=400)
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+
+@login_required(login_url="signin")
 def edit_profile(request):
     """
     Allow users to edit their profile information including:
