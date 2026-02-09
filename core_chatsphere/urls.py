@@ -19,6 +19,7 @@ urlpatterns = [
     path("connections/", views.connections, name="connections"),
     path("connections/remove/<int:user_id>/", views.remove_connection, name="remove_connection"),
     path("report-user/", views.report_user, name="report_user"),
+    path("submit-rating/", views.submit_rating, name="submit_rating"),
 
 ]
 

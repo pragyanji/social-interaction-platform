@@ -393,6 +393,104 @@ def report_user(request):
 
 
 @login_required(login_url="signin")
+@require_http_methods(["POST"])
+def submit_rating(request):
+    """
+    Handle user ratings during video chat.
+    Users can rate strangers on a 1-5 scale.
+    Rate limiting: One rating per user per rated user per day.
+    """
+    try:
+        # Parse JSON data from request body
+        data = json.loads(request.body)
+        rated_user_id = data.get('rated_user_id')
+        rate_points = data.get('rate_points')
+
+        # Validate required fields
+        if not rated_user_id or rate_points is None:
+            return JsonResponse({
+                'success': False,
+                'error': 'Missing required fields'
+            }, status=400)
+
+        # Validate rating value (must be 1-5)
+        try:
+            rate_points = int(rate_points)
+            if rate_points < 1 or rate_points > 5:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Rating must be between 1 and 5'
+                }, status=400)
+        except (ValueError, TypeError):
+            return JsonResponse({
+                'success': False,
+                'error': 'Invalid rating value'
+            }, status=400)
+
+        # Get the rated user
+        try:
+            rated_user = User.objects.get(id=rated_user_id)
+        except User.DoesNotExist:
+            return JsonResponse({
+                'success': False,
+                'error': 'Rated user not found'
+            }, status=404)
+
+        # Prevent self-rating
+        if rated_user.id == request.user.id:
+            return JsonResponse({
+                'success': False,
+                'error': 'You cannot rate yourself'
+            }, status=400)
+
+        # Check for rate limiting - only one rating per day from same user to same target user
+        from django.utils import timezone
+        from datetime import timedelta
+
+        today = timezone.now().date()
+        existing_rating = models.RatingPoints.objects.filter(
+            given_by=request.user,
+            given_to=rated_user,
+            created_at__date=today
+        ).first()
+
+        if existing_rating:
+            return JsonResponse({
+                'success': False,
+                'error': 'You have already rated this user today. Try again tomorrow.'
+            }, status=400)
+
+        # Create the rating
+        rating = models.RatingPoints.objects.create(
+            given_by=request.user,
+            given_to=rated_user,
+            rate_points=rate_points
+        )
+
+        # Update aura points for the rated user
+        aura_obj, _ = models.AuraPoints.objects.get_or_create(user=rated_user)
+        aura_obj.recalc()
+
+        return JsonResponse({
+            'success': True,
+            'message': 'Rating submitted successfully',
+            'rating_id': rating.id,
+            'new_aura_points': aura_obj.aura_points
+        })
+
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'success': False,
+            'error': 'Invalid JSON data'
+        }, status=400)
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+
+@login_required(login_url="signin")
 def edit_profile(request):
     """
     Allow users to edit their profile information including:

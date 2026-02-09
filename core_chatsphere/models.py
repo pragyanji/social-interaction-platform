@@ -180,8 +180,6 @@ class AuraPoints(models.Model):
         )
         self.aura_points = total
         self.save(update_fields=["aura_points", "updated_at"])
-        # keep the cached copy on User in sync (your ERD shows aura_point on User)
-        User.objects.filter(pk=self.user_id).update(aura_point=total)
         return total
 
     def __str__(self) -> str:
