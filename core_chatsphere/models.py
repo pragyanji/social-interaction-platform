@@ -156,17 +156,25 @@ class RatingPoints(models.Model):
 
 
 # -----------------------------
-# Aura points (denormalized sum; calculated from ratings)
+# Aura points (denormalized sum; calculated from ratings, streaks, and reports)
 # -----------------------------
 class AuraPoints(models.Model):
     user = models.OneToOneField(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="aura"
-    )
-    aura_points = models.IntegerField(default=0)
-    # Optional: last rating that triggered this calc (seen in ERD as rate_id)
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="aura")
+
+    # Cached component values (for performance optimization)
+    rating_component = models.IntegerField(default=0, help_text="Points from star ratings")
+    streak_component = models.IntegerField(default=0, help_text="Points from daily streak")
+    report_penalty = models.IntegerField(default=0, help_text="Negative points from reports")
+
+    # Total Aura Points = rating_component + streak_component - report_penalty
+    aura_points = models.IntegerField(default=0, help_text="Total calculated Aura Points")
+
+    # Metadata for recalculation strategy
     last_rating = models.ForeignKey(
         "RatingPoints", null=True, blank=True, on_delete=models.SET_NULL, related_name="aura_updates"
     )
+    last_recalculated = models.DateTimeField(null=True, blank=True, help_text="When components were last recalculated")
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
@@ -174,16 +182,74 @@ class AuraPoints(models.Model):
         verbose_name_plural = "Aura points"
 
     def recalc(self) -> int:
-        total = (
-            RatingPoints.objects.filter(given_to=self.user).aggregate(s=Sum("rate_points"))["s"]
-            or 0
-        )
+        """
+        Recalculate Aura Points using the complete formula:
+
+        Total Aura = (Rating Component) + (Streak Component) + (Verified Bonus) - (Report Penalty)
+
+        Where:
+        - Rating Component = Σ(star_rating × point_value) for all ratings received
+          5★: +50, 4★: +30, 3★: +15, 2★: +5, 1★: -5
+        - Streak Component = current_streak × 5 points per day
+        - Verified Bonus = 50 points if user is verified
+        - Report Penalty = report_count × 50 points
+        """
+        # Rating component: weighted sum by star rating
+        RATING_WEIGHTS = {
+            5: 50,   # 5-star ratings
+            4: 30,   # 4-star ratings
+            3: 15,   # 3-star ratings
+            2: 5,    # 2-star ratings
+            1: -5,   # 1-star ratings
+        }
+
+        rating_component = 0
+        for stars, weight in RATING_WEIGHTS.items():
+            count = RatingPoints.objects.filter(
+                given_to=self.user, rate_points=stars
+            ).count()
+            rating_component += count * weight
+
+        # Streak component: daily streak × 5 points per day
+        streak_component = 0
+        try:
+            from core_chatsphere.models import DailyStreak
+            daily_streak = DailyStreak.objects.get(user=self.user)
+            streak_component = daily_streak.current_streak * 5
+        except DailyStreak.DoesNotExist:
+            streak_component = 0
+
+        # Report penalty: count of reports × 50 points
+        report_count = Report.objects.filter(reported_to=self.user).count()
+        report_penalty = report_count * 50
+
+        # Verified bonus: 50 points if user is verified
+        verified_bonus = 0
+        try:
+            verification = IdentityVerification.objects.get(user=self.user)
+            if verification.verification_status == IdentityVerification.VerificationStatus.VERIFIED:
+                verified_bonus = 50
+        except IdentityVerification.DoesNotExist:
+            verified_bonus = 0
+
+        # Calculate total (minimum 0, cannot go negative)
+        total = max(0, rating_component + streak_component + verified_bonus - report_penalty)
+
+        # Update all components
+        self.rating_component = rating_component
+        self.streak_component = streak_component
+        self.report_penalty = report_penalty
         self.aura_points = total
-        self.save(update_fields=["aura_points", "updated_at"])
+        self.last_recalculated = timezone.now()
+        self.save(update_fields=[
+            "rating_component", "streak_component", "report_penalty",
+            "aura_points", "last_recalculated", "updated_at"
+        ])
+
         return total
 
     def __str__(self) -> str:
-        return f"Aura of {self.user}: {self.aura_points}"
+        return f"Aura of {self.user}: {self.aura_points} (R:{self.rating_component} S:{self.streak_component} V:0 P:{self.report_penalty})"
 
 
 # -----------------------------
@@ -291,6 +357,3 @@ class DailyStreak(models.Model):
             self.last_visit_date = today
         
         self.save()
-
-
-

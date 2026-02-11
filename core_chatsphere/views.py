@@ -14,7 +14,7 @@ from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
 from django import forms
 
-# from .models import AuraPoints, RatingPoints, IdentityVerification, Connections
+
 from . import models
 from django.db.models import Avg, Count
 
@@ -159,6 +159,9 @@ def home(request):
     streak, streak_created = models.DailyStreak.objects.get_or_create(user=request.user)
     streak.update_streak()
 
+    # Recalculate aura points after streak update (streak affects total aura)
+    aura.recalc()
+
     return render(request, "home.html", {
         'aura_points': aura.aura_points,
         'verification_status': verification_status,
@@ -183,7 +186,10 @@ def profile_view(request, user_id=None):
     connection_with = user
     # Get or create aura points
     aura, created = models.AuraPoints.objects.get_or_create(user=user)
-    # print(f"created = {created}")
+
+    # Recalculate to ensure latest values (ratings, streaks, verification, reports)
+    aura.recalc()
+
     # Calculate average rating
     ratings_stats = models.RatingPoints.objects.filter(given_to=user).aggregate(
         avg_rating=Avg('rate_points'),
@@ -373,6 +379,10 @@ def report_user(request):
             report_desc=report_desc,
             report_status=models.Report.Status.OPEN
         )
+
+        # Update aura points for the reported user (report penalty applies)
+        aura_obj, _ = models.AuraPoints.objects.get_or_create(user=reported_user)
+        aura_obj.recalc()
 
         return JsonResponse({
             'success': True,
