@@ -14,6 +14,30 @@
             transform: scaleX(-1);
             -webkit-transform: scaleX(-1);
         }
+        /* Tooltip hover effect */
+        #remoteVideoContainer:hover #peerStatsTooltip {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        #peerStatsTooltip .stat-item {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 0.5rem;
+        }
+        #peerStatsTooltip .stat-item:last-child {
+            margin-bottom: 0;
+        }
+        .new-user-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            color: #1f2937;
+            font-weight: 600;
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            margin-top: 0.25rem;
+        }
     </style>
 </head>
 <body class="bg-gray-900 text-white flex items-center justify-center min-h-screen">
@@ -61,9 +85,15 @@
                         </button>
                     </div>
                 </div>
-                <div class="relative bg-gray-900 rounded-lg overflow-hidden shadow-lg" style="height: 70vh;">
+                <div id="remoteVideoContainer" class="relative bg-gray-900 rounded-lg overflow-hidden shadow-lg" style="height: 70vh;">
                     <video id="remoteVideo" autoplay playsinline class="w-full h-full object-cover"></video>
                     <div class="absolute bottom-2 left-2 bg-black bg-opacity-50 px-3 py-1 rounded-full text-sm">Stranger</div>
+                    <!-- Peer Stats Tooltip - shows on hover -->
+                    <div id="peerStatsTooltip" class="absolute top-4 right-4 bg-gradient-to-r from-indigo-600 to-indigo-700 px-4 py-3 rounded-lg text-sm font-medium shadow-lg opacity-0 pointer-events-none transition-opacity duration-200">
+                        <div id="tooltipContent" class="text-white">
+                            <p class="text-xs text-indigo-200 mb-1">Hover to load...</p>
+                        </div>
+                    </div>
                     <div id="loading-spinner" class="absolute inset-0 flex items-center justify-center bg-gray-900 bg-opacity-75 hidden">
                         <svg class="animate-spin h-10 w-10 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -1062,6 +1092,9 @@
 
                         if (!peerDjangoUserId) {
                             log("⚠️ Warning: Peer Django user ID not found in room data");
+                        } else {
+                            // Load peer stats for tooltip display
+                            loadPeerStats(peerDjangoUserId);
                         }
 
                         // Remove from waiting rooms and update status
@@ -1173,6 +1206,11 @@
                     // Store peer's Django user ID
                     peerDjangoUserId = data.joinerDjangoId;
                     log("Peer Django user ID:", peerDjangoUserId);
+
+                    if (peerDjangoUserId) {
+                        // Load peer stats for tooltip display
+                        loadPeerStats(peerDjangoUserId);
+                    }
 
                     statusEl.textContent = 'Stranger connected!';
                     loadingSpinner.classList.add('hidden');
@@ -1322,6 +1360,7 @@
 
             currentRoomId = null;
             peerDjangoUserId = null;
+            clearPeerStats();
             isAudioEnabled = true;
             isVideoEnabled = true;
 
@@ -1331,6 +1370,75 @@
                 chatHeader.classList.remove('hidden');
             }
         };
+
+        // Function to fetch and display peer stats
+        async function loadPeerStats(userId) {
+            if (!userId) return;
+
+            // Clear previous stats first
+            clearPeerStats();
+
+            try {
+                const response = await fetch(`/get-peer-stats/${userId}/`);
+                if (!response.ok) {
+                    log('Error fetching peer stats:', response.status);
+                    return;
+                }
+
+                const data = await response.json();
+                if (data.success) {
+                    displayPeerStats(data);
+                } else {
+                    log('Error in peer stats response:', data.error);
+                }
+            } catch (error) {
+                log('Error fetching peer stats:', error);
+            }
+        }
+
+        // Function to clear peer stats from tooltip
+        function clearPeerStats() {
+            const tooltipContent = document.getElementById('tooltipContent');
+            const tooltip = document.getElementById('peerStatsTooltip');
+
+            if (tooltipContent) {
+                tooltipContent.innerHTML = '<p class="text-xs text-indigo-200 mb-1">Hover to load...</p>';
+            }
+
+            // Hide the tooltip completely
+            if (tooltip) {
+                tooltip.style.opacity = '0';
+            }
+        }
+
+        // Function to display peer stats in tooltip
+        function displayPeerStats(statsData) {
+            const tooltipContent = document.getElementById('tooltipContent');
+            if (!tooltipContent) return;
+
+            let html = '';
+
+            if (statsData.is_new_user) {
+                html = '<div class="new-user-badge">🆕 NEW USER</div>';
+            } else {
+                html = `
+                    <div class="stat-item">
+                        <span>Aura Points:</span>
+                        <span class="text-indigo-300 font-semibold">${statsData.aura_points}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>Avg Rating:</span>
+                        <span class="text-indigo-300 font-semibold">⭐ ${statsData.avg_rating}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>Ratings:</span>
+                        <span class="text-indigo-300 font-semibold">${statsData.total_ratings}</span>
+                    </div>
+                `;
+            }
+
+            tooltipContent.innerHTML = html;
+        }
 
         // Media Controls and button handlers will be set up in window load event
 
