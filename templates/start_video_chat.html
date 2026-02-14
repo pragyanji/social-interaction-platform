@@ -1405,9 +1405,9 @@
                 tooltipContent.innerHTML = '<p class="text-xs text-indigo-200 mb-1">Hover to load...</p>';
             }
 
-            // Hide the tooltip completely
+            // Remove inline opacity style so CSS hover rule can work
             if (tooltip) {
-                tooltip.style.opacity = '0';
+                tooltip.style.removeProperty('opacity');
             }
         }
 
