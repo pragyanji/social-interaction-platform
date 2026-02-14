@@ -1361,6 +1361,7 @@
             currentRoomId = null;
             peerDjangoUserId = null;
             clearPeerStats();
+            resetMediaButtonStates();
             isAudioEnabled = true;
             isVideoEnabled = true;
 
@@ -1408,6 +1409,27 @@
             // Remove inline opacity style so CSS hover rule can work
             if (tooltip) {
                 tooltip.style.removeProperty('opacity');
+            }
+        }
+
+        // Function to reset audio and video button states
+        function resetMediaButtonStates() {
+            const toggleAudio = document.getElementById('toggleAudio');
+            const toggleVideo = document.getElementById('toggleVideo');
+
+            // Reset states to enabled (true)
+            isAudioEnabled = true;
+            isVideoEnabled = true;
+
+            // Remove red background class that indicates disabled state
+            if (toggleAudio) {
+                toggleAudio.classList.remove('bg-red-500');
+                toggleAudio.setAttribute('aria-pressed', 'false');
+            }
+
+            if (toggleVideo) {
+                toggleVideo.classList.remove('bg-red-500');
+                toggleVideo.setAttribute('aria-pressed', 'false');
             }
         }
 
