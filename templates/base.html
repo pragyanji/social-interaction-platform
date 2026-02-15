@@ -30,8 +30,8 @@
               {% if request.user.profile_pic %}
                 <img src="{{ request.user.profile_pic.url }}" alt="{{ request.user.get_username }}" class="profile-avatar" />
               {% else %}
-                <div class="default-profile-container">
-                    <img src="{% static 'img/default_profile.png' %}" alt="Profile" class="profile-avatar" />
+                <div class="profile-avatar profile-avatar-placeholder">
+                  {{ request.user.get_username|slice:":1"|upper }}
                 </div>
               {% endif %}
             </button>
@@ -41,8 +41,8 @@
                   {% if request.user.profile_pic %}
                     <img src="{{ request.user.profile_pic.url }}" alt="{{ request.user.get_username }}" class="profile-menu-avatar" />
                   {% else %}
-                    <div class="default-profile-container">
-                      <img src="{% static 'img/default_profile.png' %}" alt="Profile" class="profile-menu-avatar" />
+                    <div class="profile-menu-avatar profile-avatar-placeholder">
+                      {{ request.user.get_username|slice:":1"|upper }}
                     </div>
                   {% endif %}
                   <div>
