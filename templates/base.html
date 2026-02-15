@@ -6,12 +6,13 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>{% block title %}Chatsphere{% endblock %}</title>
   <link rel="icon" href="{% static 'img/logo_chatsphere.png' %}" type="image/png" />
+  <script src="https://unpkg.com/@lottiefiles/dotlottie-wc@0.8.11/dist/dotlottie-wc.js" type="module"></script>
 
   <!-- main stylesheet -->
   <link rel="stylesheet" href="{% static 'css/main.css' %}" />
   {% block head_extra %}{% endblock %}
 </head>
-<body>
+<body{% block body_class %}{% endblock %}>
   <header class="site-header">
     <div class="container header-inner">
       <a class="brand" href="{% if request.user.is_authenticated %}{% url 'home' %}{% else %}{% url 'landing' %}{% endif %}">

@@ -3,6 +3,27 @@ body {
     background-color: #0f172a;
     margin: 0;
     padding: 0;
+    position: relative;
+}
+
+/* Doodle background for landing page */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: url('../img/doddleimage.jpg');
+    background-repeat: repeat;
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    background-color: var(--bg);
+    z-index: -1;
+    pointer-events: none;
+    filter: brightness(0.5) contrast(1.1);
+    opacity: 0.9;
 }
 .hero {
     background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
@@ -20,7 +41,8 @@ body {
     left: 0;
     right: 0;
     bottom: 0;
-    background: url('data:image/svg+xml;utf8,<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="25" cy="25" r="3" fill="rgba(255,255,255,0.1)" /><circle cx="75" cy="75" r="3" fill="rgba(255,255,255,0.1)" /><circle cx="25" cy="75" r="3" fill="rgba(255,255,255,0.1)" /><circle cx="75" cy="25" r="3" fill="rgba(255,255,255,0.1)" /></svg>');
+    background-color: #310e68;
+    background-image: linear-gradient(316deg, #310e68 0%, #5f0f40 74%);    background-repeat: no-repeat;
     opacity: 0.3;
 }
 
@@ -40,7 +62,7 @@ body {
 .hero p {
     font-size: 1.25rem;
     margin-bottom: 2rem;
-    opacity: 1;
+    opacity: 1; 
     max-width: 600px;
     margin-left: auto;
     margin-right: auto;
@@ -107,7 +129,8 @@ body {
     padding: 6rem 1rem;
     max-width: 1200px;
     margin: 0 auto;
-    background-color: #0f172a;
+    /* background-color: #0f172a; */
+    background-color: none;
 }
 
 .features .section-title {
@@ -161,7 +184,8 @@ body {
 
 /* Testimonials */
 .testimonials {
-    background-color: #111827;
+    background-color: none;
+    /* background-color: #111827; */
     padding: 6rem 1rem;
     text-align: center;
 }
@@ -256,6 +280,66 @@ body {
     color: #60a5fa;
 }
 
+/* Floating Ribbon Section */
+.floating-ribbon-container {
+    width: 100%;
+    background: none;
+    margin: 0 auto;
+    padding: 1.5rem 0;
+    overflow: hidden;
+    position: relative;
+}
+
+.floating-ribbon {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+}
+
+.ribbon-content {
+    display: flex;
+    gap: 2rem;
+    white-space: nowrap;
+    animation: scrollRibbon 30s linear infinite;
+    padding: 0 1rem;
+}
+
+@keyframes scrollRibbon {
+    0% {
+        transform: translateX(0);
+    }
+    100% {
+        transform: translateX(-50%);
+    }
+}
+
+.ribbon-item {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #60a5fa;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    display: inline-block;
+    flex-shrink: 0;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    background: linear-gradient(135deg, rgba(96, 165, 250, 0.1), rgba(79, 70, 229, 0.1));
+    transition: all 0.3s ease;
+}
+
+.ribbon-item:hover {
+    background: linear-gradient(135deg, rgba(96, 165, 250, 0.3), rgba(79, 70, 229, 0.3));
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
+}
+
+.ribbon-divider {
+    color: rgba(96, 165, 250, 0.5);
+    font-size: 1.5rem;
+    display: inline-block;
+    flex-shrink: 0;
+}
+
 /* Responsive Adjustments */
 @media (max-width: 768px) {
     .hero h1 {
@@ -274,5 +358,24 @@ body {
     .btn-primary, .btn-secondary {
         width: 100%;
         max-width: 300px;
+    }
+
+    /* Responsive Ribbon */
+    .floating-ribbon-container {
+        padding: 1rem 0;
+    }
+
+    .ribbon-content {
+        animation: scrollRibbon 20s linear infinite;
+        gap: 1rem;
+    }
+
+    .ribbon-item {
+        font-size: 0.875rem;
+        padding: 0.4rem 0.75rem;
+    }
+
+    .ribbon-divider {
+        font-size: 1rem;
     }
 }
