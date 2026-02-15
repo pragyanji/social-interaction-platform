@@ -16,26 +16,27 @@
             {% if connected_users %}
                 <div class="users-list">
                     {% for user in connected_users %}
-                        <div class="user-item">
+                        <div class="user-item {% if selected_user.id == user.id %}active{% endif %}">
                             <div class="user-info">
                                 <a href="{% url 'startmessagechat' user.id %}" class="user-info-link">
-                                    <div class="user-name">
-                                        {{ user.first_name }} {{ user.last_name }}
-                                    </div>
-                                    <div class="user-username">
-                                        @{{ user.username }}
+                                    {% if user.profile_pic %}
+                                        <img src="{{ user.profile_pic.url }}" alt="{{ user.get_username }}" class="user-avatar" />
+                                    {% else %}
+                                        <img src="{% static 'img/default_profile.png' %}" alt="Profile" class="user-avatar" />
+                                    {% endif %}
+                                    <div class="user-details">
+                                        <p class="user-name">{{ user.full_name }}</p>
+                                        <p class="user-username">@{{ user.username }}</p>
                                     </div>
                                 </a>
                             </div>
-                            <a href="{% url 'startmessagechat' user.id %}" class="btn btn-small user-chat-btn">
-                                Chat
-                            </a>
+                            <a href="{% url 'startmessagechat' user.id %}" class="user-chat-btn">Chat</a>
                         </div>
                     {% endfor %}
                 </div>
             {% else %}
                 <p class="connections-empty">
-                    You don't have any connections yet.<br>
+                    You don't have any connections yet.<br><br>
                     <a href="{% url 'connections' %}">Add connections</a> to start messaging.
                 </p>
             {% endif %}
@@ -45,24 +46,33 @@
         <div class="card chat-container">
             {% if selected_user %}
                 <div class="chat-header">
-                    <h3>Chat with {{ selected_user.first_name }} {{ selected_user.last_name }}</h3>
+                    {% if selected_user.profile_pic %}
+                        <img src="{{ selected_user.profile_pic.url }}" alt="{{ selected_user.get_username }}" class="chat-header-avatar" />
+                    {% else %}
+                        <img src="{% static 'img/default_profile.png' %}" alt="Profile" class="chat-header-avatar" />
+                    {% endif %}
+                    <div class="chat-header-info">
+                        <h3>{{ selected_user.first_name }} {{ selected_user.last_name }}</h3>
+                        <p class="chat-header-username">@{{ selected_user.username }}</p>
+                    </div>
                 </div>
                 <div class="chat-messages">
-                    <p>Chat functionality coming soon...</p>
+                    <p>💬 Chat functionality coming soon...</p>
                 </div>
                 <div class="message-input-area">
                     <input type="text" class="message-input" placeholder="Type your message...">
-                    <button class="btn btn-primary message-send-btn">Send</button>
+                    <button class="message-send-btn">Send</button>
                 </div>
             {% else %}
-                <h3>Hi, {{ request.user.get_username }} 👋</h3>
-                <p>Select a connection from the list to start chatting.</p>
                 <div class="no-conversation">
-                    <p>No conversation selected</p>
+                    <h3>👋 Hi, {{ request.user.get_username }}</h3>
+                    <p>Select a connection from the list to start chatting.</p>
                     {% if connected_users %}
-                        <p>Click on a user from the left panel to start messaging.</p>
+                        <p style="color: var(--msg-text-secondary); font-size: 14px;">Click on a user from the left panel to begin messaging.</p>
                     {% else %}
-                        <p>You need to have connections to message. <a href="{% url 'connections' %}">Add connections</a> first.</p>
+                        <p style="color: var(--msg-text-secondary); font-size: 14px;">
+                            You need connections to message. <a href="{% url 'connections' %}">Add connections</a> first.
+                        </p>
                     {% endif %}
                 </div>
             {% endif %}
