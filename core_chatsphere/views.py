@@ -204,7 +204,7 @@ def profile_view(request, user_id=None):
         # print("No verification record found.")
         verification_status = "Unverified"
     # Get total connections
-    total_connections = models.Connection.objects.filter(user = user and connection_with).count()
+    total_connections = models.Connection.objects.filter(user=user).count()
     
     # Get list of connected users
     user_connections = models.Connection.objects.filter(user=user).values_list('connection_with', flat=True)
@@ -649,3 +649,56 @@ def change_password(request):
     return render(request, 'change_password.html', {
         'form': form
     })
+
+
+@login_required(login_url="signin")
+@require_http_methods(["GET"])
+def get_peer_stats(request, user_id):
+    """
+    Fetch peer user's aura points, rating, and new user status for video chat display.
+    A user is considered "new" if:
+    - Account age < 4 days AND
+    - Number of ratings received < 3
+    """
+    try:
+        # Get the peer user
+        try:
+            peer_user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return JsonResponse({
+                'success': False,
+                'error': 'User not found'
+            }, status=404)
+
+        # Get or create aura points and recalculate
+        aura, _ = models.AuraPoints.objects.get_or_create(user=peer_user)
+        aura.recalc()
+
+        # Get average rating and total ratings count
+        ratings_stats = models.RatingPoints.objects.filter(given_to=peer_user).aggregate(
+            avg_rating=Avg('rate_points'),
+            total_ratings=Count('id')
+        )
+
+        # Check if user is new
+        from django.utils import timezone
+        from datetime import timedelta
+
+        account_age_days = (timezone.now() - peer_user.date_joined).days
+        total_ratings = ratings_stats['total_ratings'] or 0
+        is_new_user = account_age_days < 4 and total_ratings < 3
+
+        return JsonResponse({
+            'success': True,
+            'aura_points': aura.aura_points,
+            'avg_rating': round(ratings_stats['avg_rating'] or 0, 1),
+            'total_ratings': total_ratings,
+            'is_new_user': is_new_user,
+            'account_age_days': account_age_days
+        })
+
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)

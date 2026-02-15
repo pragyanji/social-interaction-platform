@@ -159,8 +159,7 @@ class RatingPoints(models.Model):
 # Aura points (denormalized sum; calculated from ratings, streaks, and reports)
 # -----------------------------
 class AuraPoints(models.Model):
-    user = models.OneToOneField(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="aura")
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="aura")
 
     # Cached component values (for performance optimization)
     rating_component = models.IntegerField(default=0, help_text="Points from star ratings")
@@ -286,12 +285,8 @@ class Report(models.Model):
 # Banned accounts
 # -----------------------------
 class BannedAcc(models.Model):
-    user = models.OneToOneField(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="ban"
-    )
-    banned_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="bans_issued"
-    )
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="ban")
+    banned_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="bans_issued")
     banned_reason = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     active = models.BooleanField(default=True)
