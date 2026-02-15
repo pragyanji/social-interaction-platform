@@ -2,15 +2,13 @@
 {% load static %}
 {% block title %}Edit Profile · Chatsphere{% endblock %}
 
-{% block body_class %} class="doodle-background"{% endblock %}
-
 {% block content %}
 <div style="max-width: 42rem; margin: 0 auto;">
     <h2 class="page-title">Edit Profile</h2>
 
     <div class="card">
         <!-- Current Profile Picture Preview -->
-        <div style="text-align: center; margin-bottom: 1.5rem;">
+        <div style="text-center margin-bottom: 1.5rem;">
             {% if user.profile_pic %}
                 <img src="{{ user.profile_pic.url }}"
                      alt="{{ user.username }}"

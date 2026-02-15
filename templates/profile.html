@@ -6,7 +6,6 @@
 <link rel="stylesheet" href="{% static 'css/profile.css' %}" />
 <link rel="stylesheet" href="{% static 'css/connections.css' %}" />
 {% endblock %}
-{% block body_class %} class="doodle-background"{% endblock %}
 
 {% block content %}
 <h2 class="page-title">My Profile</h2>
@@ -47,24 +46,12 @@
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <!-- Aura Points -->
         <div class="card text-center bg-gradient-to-br from-purple-500 to-indigo-600 text-white">
-            <dotlottie-wc
-                src="https://lottie.host/62ecf8f3-a496-47f5-a227-b97433a77e86/U1bvYb4nho.lottie"
-                style="width: 100px;height: 100px; display: block; margin: 0 auto;"
-                autoplay
-                loop
-            ></dotlottie-wc>
             <div class="text-4xl font-bold mb-2">{{ aura_points }}</div>
             <div class="text-sm opacity-90">Aura Points</div>
         </div>
 
         <!-- Average Rating -->
         <div class="card text-center bg-gradient-to-br from-yellow-400 to-orange-500 text-white">
-            <dotlottie-wc
-              src="https://lottie.host/6754c690-df78-440d-a361-ec4afe814fcb/BSGJojYIuD.lottie"
-              style="width:100px;height: 100px; display: block; margin: 0 auto;"
-              autoplay
-              loop
-            ></dotlottie-wc>        
             <div class="text-4xl font-bold mb-2">{{ avg_rating|floatformat:1 }}</div>
             <div class="text-sm opacity-90">Avg Rating</div>
             <div class="text-xs opacity-75">({{ total_ratings }} ratings)</div>
@@ -72,24 +59,12 @@
 
         <!-- Connections -->
         <div class="card text-center bg-gradient-to-br from-green-400 to-teal-500 text-white">
-            <dotlottie-wc
-                src="https://lottie.host/adbacd5b-c8e6-43a5-86fe-f213ac963537/1Ajn0qovwc.lottie"
-                style="width:100px;height: 100px; display: block; margin: 0 auto;"
-                autoplay
-                loop
-            ></dotlottie-wc>
             <div class="text-4xl font-bold mb-2">{{ total_connections }}</div>
             <div class="text-sm opacity-90">Connections</div>
         </div>
 
         <!-- Streak -->
         <div class="card text-center bg-gradient-to-br from-pink-500 to-red-500 text-white">
-            <dotlottie-wc
-              src="https://lottie.host/c72081ef-6422-4e67-8df0-1b07dc28a06c/QYSVgB6O8p.lottie"
-              style="width: 100px;height: 100px; display: block; margin: 0 auto;"
-              autoplay
-              loop
-            ></dotlottie-wc>
             <div class="text-4xl font-bold mb-2">{{ streak_days }}</div>
             <div class="text-sm opacity-90">Daily Streak</div>
             {% if longest_streak and longest_streak != streak_days %}
