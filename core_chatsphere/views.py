@@ -78,6 +78,10 @@ def landing_page(request):
 
 @login_required(login_url="signin")
 def start_video_chat(request):
+    # Check if the user's banned status is active or not
+    if models.BannedAcc.objects.filter(user=request.user, active=True).exists():
+        messages.error(request, "You are banned from using Video Chat feature. Please contact support for more information.")
+        return redirect("home")
     verification = models.IdentityVerification.objects.filter(user=request.user).first()
     if verification:
         verification_status = verification.verification_status
@@ -92,7 +96,11 @@ def start_video_chat(request):
 
 
 @login_required(login_url="signin")
-def start_message_chat(request, user_id=None):
+def start_message_chat(request, user_id=None): 
+    # Check if the user's banned status is active or not
+    if models.BannedAcc.objects.filter(user=request.user, active=True).exists():
+        messages.error(request, "You are banned from using Message feature. Please contact support for more information.")
+        return redirect("home")
     # Get all connected users
     user_connections = models.Connection.objects.filter(user=request.user).values_list('connection_with', flat=True)
     connected_users = User.objects.filter(id__in=user_connections)
