@@ -36,6 +36,7 @@ media/
 # VS Code
 .vscode/
 *.code-workspace
+.claude/
 
 # Environment variables
 .env

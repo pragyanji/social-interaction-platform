@@ -286,7 +286,7 @@ def signin_view(request):
         form = AuthenticationForm(request)
     return render(request, "signin.html", {"form": form})
 
-
+@login_required(login_url="signin")
 def logout_view(request):
     """
     Use as a POST action (your base.html already shows a POST form).
@@ -582,16 +582,17 @@ def submit_connection(request):
                 'error': 'You are already connected with this user'
             }, status=400)
 
-        # Create bidirectional connections immediately
+        # Create unidirectional connections immediately
         connection1 = models.Connection.objects.create(
             user=request.user,
             connection_with=connection_user
         )
 
-        connection2 = models.Connection.objects.create(
-            user=connection_user,
-            connection_with=request.user
-        )
+        # Create bidirectional connections immediately
+        # connection2 = models.Connection.objects.create(
+        #     user=connection_user,
+        #     connection_with=request.user
+        # )
 
         return JsonResponse({
             'success': True,
