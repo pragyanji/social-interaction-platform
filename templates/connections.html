@@ -18,7 +18,7 @@
           {% for user in connections %}
             <div class="connection-item">
               <div class="connection-info">
-                <p class="connection-name">{{ user.first_name }} {{ user.last_name }}</p>
+                <p class="connection-name">{{user.full_name}}</p>
               </div>
               <div class="connection-actions">
                 <a class="btn btn-small" href="{% url 'startmessagechat' user.id %}">Message</a>

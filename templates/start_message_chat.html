@@ -52,7 +52,7 @@
                         <img src="{% static 'img/default_profile.png' %}" alt="Profile" class="chat-header-avatar" />
                     {% endif %}
                     <div class="chat-header-info">
-                        <h3>{{ selected_user.first_name }} {{ selected_user.last_name }}</h3>
+                        <h3>{{ selected_user.full_name }}</h3>
                         <p class="chat-header-username">@{{ selected_user.username }}</p>
                     </div>
                 </div>
