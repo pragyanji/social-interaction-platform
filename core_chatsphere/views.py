@@ -216,7 +216,7 @@ def profile_view(request, user_id=None):
     
     # Get list of connected users
     user_connections = models.Connection.objects.filter(user=user).values_list('connection_with', flat=True)
-    connected_users_list = User.objects.filter(id__in=user_connections)
+    connected_users_list = User.objects.filter(id__in=user_connections).all()[:4]  # Show only first 4 connections on profile page
     
     # Get daily streak information
     streak, _ = models.DailyStreak.objects.get_or_create(user=user)

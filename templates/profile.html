@@ -75,11 +75,11 @@
 <!-- Connections Section -->
 {% if user_connections %}
 <div class="card mb-6">
-    <h4 class="text-xl font-bold mb-4 text-gray-900">Your Connections ({{ user_connections|length }})</h4>
+    <h4 class="text-xl font-bold mb-4 text-gray-900">Your Connections </h4>
     <div class="connections-grid">
         {% for connection in user_connections %}
             <div class="connection-card">
-                <div class="connection-card-name">{{ connection.first_name }} {{ connection.last_name }}</div>
+                <div class="connection-card-name">{{ connection.full_name }}</div>
                 <div class="connection-card-username">@{{ connection.username }}</div>
                 <a href="{% url 'startmessagechat' connection.id %}" class="btn btn-small connection-card-btn">Message</a>
             </div>
