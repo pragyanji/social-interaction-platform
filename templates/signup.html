@@ -1,72 +1,106 @@
 {% extends "base.html" %}
+{% load static %}
 {% load socialaccount %}
 
 {% block title %}Create account · Chatsphere{% endblock %}
 
+{% block head_extra %}
+<link rel="stylesheet" href="{% static 'css/signup.css' %}" />
+{% endblock %}
+
 {% block content %}
-<h2 class="page-title">Create your account</h2>
+<div class="auth-container">
+  <div class="auth-grid">
+    <!-- Sign Up Form -->
+    <div class="auth-form-wrapper">
+      <form method="post" action="{% url 'signup' %}" class="auth-form" enctype="multipart/form-data">
+        <div>
+          <h2>Create Account</h2>
+          <p class="auth-form-subtitle">Join our community of global connectors</p>
+        </div>
 
-<form method="post" action="{% url 'signup' %}" class="form card" enctype="multipart/form-data">
-  {% csrf_token %}
+        {% csrf_token %}
 
-  {# If you pass a Django form (e.g., UserCreationForm subclass), show non-field errors #}
-  {% if form and form.non_field_errors %}
-    <div class="form-errors">
-      {% for e in form.non_field_errors %}<p>{{ e }}</p>{% endfor %}
+        {# Non-field errors #}
+        {% if form and form.non_field_errors %}
+          <div class="form-errors">
+            {% for e in form.non_field_errors %}<p>{{ e }}</p>{% endfor %}
+          </div>
+        {% endif %}
+
+        <!-- Username Field -->
+        <div class="auth-field">
+          <label for="id_username">Username <span class="auth-required">*</span></label>
+          <input id="id_username" name="username" type="text"
+             value="{{ form.username.value|default_if_none:''}}"
+             placeholder="Choose a unique username"
+             required />
+          {% if form and form.username.errors %}
+            <small class="error-text">{% for e in form.username.errors %}{{ e }}{% if not forloop.last %}<br>{% endif %}{% endfor %}</small>
+          {% endif %}
+        </div>
+
+        <!-- Full Name Field -->
+        <div class="auth-field">
+          <label for="id_full_name">Full Name <span class="auth-required">*</span></label>
+          <input id="id_full_name" name="full_name" type="text"
+             value="{{ form.full_name.value|default_if_none:''}}"
+             placeholder="Your full name"
+             required />
+        </div>
+
+        <!-- Email Field -->
+        <div class="auth-field">
+          <label for="id_email">Email</label>
+          <input id="id_email" name="email" type="email"
+             value="{{ form.email.value|default_if_none:''}}"
+             placeholder="your@email.com" />
+          {% if form and form.email.errors %}
+            <small class="error-text">{% for e in form.email.errors %}{{ e }}{% if not forloop.last %}<br>{% endif %}{% endfor %}</small>
+          {% endif %}
+        </div>
+
+        <!-- Password Field -->
+        <div class="auth-field">
+          <label for="id_password1">Password <span class="auth-required">*</span></label>
+          <input id="id_password1" name="password1" type="password"
+             placeholder="Create a strong password"
+             required />
+          <p class="field-hint">Use at least 8 characters with numbers and letters <br>
+            Password should not be too similar to username <br>
+          Password should not be too common</p>
+        </div>
+
+        <!-- Confirm Password Field -->
+        <div class="auth-field">
+          <label for="id_password2">Confirm Password <span class="auth-required">*</span></label>
+          <input id="id_password2" name="password2" type="password"
+             placeholder="Re-enter your password"
+             required />
+          {% if form and form.password2.errors %}
+            <small class="error-text">{% for e in form.password2.errors %}{{ e }}{% if not forloop.last %}<br>{% endif %}{% endfor %}</small>
+          {% endif %}
+        </div>
+
+        <button type="submit" class="auth-submit-btn">Create Account</button>
+
+        <!-- Divider -->
+        <div class="auth-divider">
+          <div class="auth-divider-text">or</div>
+        </div>
+
+        <!-- Google Sign Up -->
+        <a class="google-btn" href="{% provider_login_url 'google' process='signup' %}">
+          <span>🔐</span>
+          <span>Continue with Google</span>
+        </a>
+
+        <!-- Sign In Link -->
+        <p class="auth-signin-link">
+          Already have an account? <a href="{% url 'signin' %}">Sign in →</a>
+        </p>
+      </form>
     </div>
-  {% endif %}
-
-  <div class="field">
-    <label for="id_username">Username*</label>
-    <input id="id_username" name="username" type="text"
-           value="{{ form.username.value|default_if_none:''}}" required />
-    {% if form and form.username.errors %}
-      <small class="error">{% for e in form.username.errors %}{{ e }}{% if not forloop.last %}<br>{% endif %}{% endfor %}</small>
-    {% endif %}
   </div>
-
-  <div class="field">
-    <label for="id_full_name">Full name</label>
-    <input id="id_full_name" name="full_name" type="text"
-           value="{{ form.full_name.value|default_if_none:''}}" required/>
-  </div>
-
-  <div class="field">
-    <label for="id_email">Email</label>
-    <input id="id_email" name="email" type="email"
-           value="{{ form.email.value|default_if_none:''}}" />
-    {% if form and form.email.errors %}
-      <small class="error">{% for e in form.email.errors %}{{ e }}{% if not forloop.last %}<br>{% endif %}{% endfor %}</small>
-    {% endif %}
-  </div>
-
-  <div class="field">
-    <label for="id_password1">Password*</label>
-    <input id="id_password1" name="password1" type="password" required />
-  </div>
-
-  <div class="field">
-    <label for="id_password2">Confirm password*</label>
-    <input id="id_password2" name="password2" type="password" required />
-    {% if form and form.password2.errors %}
-      <small class="error">{% for e in form.password2.errors %}{{ e }}{% if not forloop.last %}<br>{% endif %}{% endfor %}</small>
-    {% endif %}
-  </div>
-
-  {# Optional: profile picture upload (matches your User.profile_pic) #}
-  <div class="field">
-    <label for="id_profile_pic">Profile picture</label>
-    <input id="id_profile_pic" name="profile_pic" type="file" accept="image/*" />
-  </div>
-
-  <button type="submit" class="btn btn-primary">Create account</button>
-  <p class="muted">Already have an account? <a href="{% url 'signin' %}">Sign in</a>.</p>
-
-  <div class="card" style="margin-top:12px">
-    <p class="muted">Or continue with</p>
-    <a class="btn btn-outline" href="{% provider_login_url 'google' process='signup' %}">
-      Continue with Google
-    </a>
-  </div>
-</form>
+</div>
 {% endblock %}
