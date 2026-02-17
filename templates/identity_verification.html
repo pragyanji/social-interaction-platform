@@ -8,52 +8,68 @@
 
 {% block content %}
 <div class="verification-container">
-    <h2 class="page-title">Identity Verification</h2>
+    <div class="verification-header">
+        <h2 class="verification-title">🛡️ Identity Verification</h2>
+        <p class="verification-subtitle">Secure your account with verified identity</p>
+    </div>
 
     {% if existing_verification %}
-    <div class="verification-card">
-        <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem; color: #111827;">Current Status</h3>
-        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
-            <span style="color: #6b7280; font-weight: 500;">Verification Status:</span>
-            {% if existing_verification.verification_status == "VERIFIED" %}
-                <span class="status-badge status-verified">✓ Verified</span>
-            {% elif existing_verification.verification_status == "PENDING" %}
-                <span class="status-badge status-pending">⏳ Pending Review</span>
-            {% elif existing_verification.verification_status == "REJECTED" %}
-                <span class="status-badge status-rejected">✗ Rejected</span>
-            {% endif %}
+    <div class="verification-card status-card">
+        <div class="status-section">
+            <h3 class="card-title">Current Status</h3>
+            <div class="status-display">
+                <span class="status-label">Verification Status:</span>
+                {% if existing_verification.verification_status == "VERIFIED" %}
+                    <span class="status-badge status-verified">✓ Verified</span>
+                {% elif existing_verification.verification_status == "PENDING" %}
+                    <span class="status-badge status-pending">⏳ Pending Review</span>
+                {% elif existing_verification.verification_status == "REJECTED" %}
+                    <span class="status-badge status-rejected">✗ Rejected</span>
+                {% endif %}
+            </div>
         </div>
 
         {% if existing_verification.verification_status == "VERIFIED" %}
-        <div class="info-box">
-            <div class="info-box-title">Your identity has been verified!</div>
-            <div class="info-box-text">
-                You can now access all features of Chatsphere. If you need to update your verification document, you can submit a new one below.
+        <div class="info-box info-success">
+            <span class="info-icon">✓</span>
+            <div>
+                <div class="info-title">Your identity has been verified!</div>
+                <div class="info-text">You can now access all features of Chatsphere. If you need to update your verification document, you can submit a new one below.</div>
             </div>
         </div>
         {% elif existing_verification.verification_status == "PENDING" %}
-        <div class="info-box">
-            <div class="info-box-title">Your verification is being reviewed</div>
-            <div class="info-box-text">
-                Our team is currently reviewing your submitted documents. This typically takes 24-48 hours. You'll be notified once the review is complete.
+        <div class="info-box info-pending">
+            <span class="info-icon">⏳</span>
+            <div>
+                <div class="info-title">Your verification is being reviewed</div>
+                <div class="info-text">Our team is currently reviewing your submitted documents. This typically takes 24-48 hours. You'll be notified once the review is complete.</div>
             </div>
         </div>
         {% elif existing_verification.verification_status == "REJECTED" %}
-        <div class="error-message">
-            <strong>Verification Rejected</strong><br>
-            Your previous verification attempt was not approved. Please ensure your document is clear, valid, and matches the required format, then submit again.
+        <div class="info-box info-error">
+            <span class="info-icon">✗</span>
+            <div>
+                <div class="info-title">Verification Rejected</div>
+                <div class="info-text">Your previous verification attempt was not approved. Please ensure your document is clear, valid, and matches the required format, then submit again.</div>
+            </div>
         </div>
         {% endif %}
 
-        <p style="color: #6b7280; font-size: 0.9rem; margin-top: 1rem;">
-            <strong>Document Type:</strong> {{ existing_verification.get_document_type_display }}<br>
-            <strong>Submitted on:</strong> {{ existing_verification.created_at|date:"F d, Y at g:i A" }}
-        </p>
+        <div class="document-info">
+            <div class="info-item">
+                <span class="info-label">Document Type:</span>
+                <span class="info-value">{{ existing_verification.get_document_type_display }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Submitted on:</span>
+                <span class="info-value">{{ existing_verification.created_at|date:"F d, Y at g:i A" }}</span>
+            </div>
+        </div>
     </div>
     {% endif %}
 
-    <div class="verification-card">
-        <h3 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem; color: #111827;">
+    <div class="verification-card form-card">
+        <h3 class="card-title">
             {% if existing_verification and existing_verification.verification_status == "VERIFIED" %}
                 Update Verification Document
             {% elif existing_verification %}
@@ -63,15 +79,18 @@
             {% endif %}
         </h3>
 
-        <div class="info-box" style="background-color: #fef3c7; border-left-color: #f59e0b;">
-            <div class="info-box-title" style="color: #92400e;">Before you submit</div>
-            <div class="info-box-text" style="color: #78350f;">
-                <ul style="margin: 0.5rem 0 0 1.5rem; padding: 0;">
-                    <li>Ensure your document is clear and all text is readable</li>
-                    <li>The document should be valid and not expired</li>
-                    <li>Your photo should be clearly visible</li>
-                    <li>Accepted formats: JPG, PNG, PDF (max 5MB)</li>
-                </ul>
+        <div class="info-box info-warning">
+            <span class="info-icon">⚠️</span>
+            <div>
+                <div class="info-title">Before you submit</div>
+                <div class="info-text">
+                    <ul class="checklist">
+                        <li>Ensure your document is clear and all text is readable</li>
+                        <li>The document should be valid and not expired</li>
+                        <li>Your photo should be clearly visible</li>
+                        <li>Accepted formats: JPG, PNG, PDF (max 5MB)</li>
+                    </ul>
+                </div>
             </div>
         </div>
 
@@ -79,47 +98,48 @@
             {% csrf_token %}
 
             {% if form.non_field_errors %}
-            <div class="error-message">
-                {{ form.non_field_errors }}
+            <div class="error-alert">
+                <span class="error-icon">⚠️</span>
+                <div>{{ form.non_field_errors }}</div>
             </div>
             {% endif %}
 
             <div class="form-group">
                 <label for="{{ form.document_type.id_for_label }}" class="form-label">
-                    {{ form.document_type.label }}
+                    📋 {{ form.document_type.label }}
                 </label>
                 {{ form.document_type }}
                 {% if form.document_type.errors %}
-                <div style="color: #dc2626; font-size: 0.875rem; margin-top: 0.25rem;">
-                    {{ form.document_type.errors }}
-                </div>
+                <div class="field-error">{{ form.document_type.errors }}</div>
                 {% endif %}
             </div>
 
             <div class="form-group">
                 <label for="{{ form.document_pic.id_for_label }}" class="form-label">
-                    {{ form.document_pic.label }}
+                    📸 {{ form.document_pic.label }}
                 </label>
                 <div class="file-input-wrapper">
                     {{ form.document_pic }}
+                    <div class="file-input-label">
+                        <span class="file-icon">📁</span>
+                        <span class="file-text">Click to select or drag and drop</span>
+                    </div>
                     <div id="filePreview" class="file-preview"></div>
                 </div>
                 {% if form.document_pic.help_text %}
                 <span class="form-help">{{ form.document_pic.help_text }}</span>
                 {% endif %}
                 {% if form.document_pic.errors %}
-                <div style="color: #dc2626; font-size: 0.875rem; margin-top: 0.25rem;">
-                    {{ form.document_pic.errors }}
-                </div>
+                <div class="field-error">{{ form.document_pic.errors }}</div>
                 {% endif %}
             </div>
 
-            <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+            <div class="form-actions">
                 <button type="submit" class="btn btn-primary">
                     {% if existing_verification %}
-                        Resubmit for Verification
+                        🔄 Resubmit for Verification
                     {% else %}
-                        Submit for Verification
+                        ✓ Submit for Verification
                     {% endif %}
                 </button>
                 <a href="{% url 'profile' %}" class="btn btn-secondary">Cancel</a>
@@ -130,14 +150,46 @@
 
 <script>
     // File input preview
-    document.getElementById('{{ form.document_pic.id_for_label }}').addEventListener('change', function(e) {
-        const filePreview = document.getElementById('filePreview');
+    const fileInput = document.getElementById('{{ form.document_pic.id_for_label }}');
+    const filePreview = document.getElementById('filePreview');
+    const fileInputWrapper = document.querySelector('.file-input-wrapper');
+    const fileInputLabel = document.querySelector('.file-input-label');
+
+    // Make label clickable to open file dialog
+    fileInputLabel.addEventListener('click', (e) => {
+        e.preventDefault();
+        fileInput.click();
+    });
+
+    fileInput.addEventListener('change', function(e) {
         if (this.files && this.files[0]) {
             const fileName = this.files[0].name;
-            const fileSize = (this.files[0].size / 1024 / 1024).toFixed(2); // Convert to MB
-            filePreview.innerHTML = `✓ Selected: ${fileName} (${fileSize} MB)`;
+            const fileSize = (this.files[0].size / 1024 / 1024).toFixed(2);
+            filePreview.innerHTML = `<span class="preview-check">✓</span> Selected: ${fileName} (${fileSize} MB)`;
+            filePreview.style.display = 'block';
         } else {
             filePreview.innerHTML = '';
+            filePreview.style.display = 'none';
+        }
+    });
+
+    // Drag and drop functionality
+    fileInputWrapper.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        fileInputWrapper.classList.add('dragover');
+    });
+
+    fileInputWrapper.addEventListener('dragleave', () => {
+        fileInputWrapper.classList.remove('dragover');
+    });
+
+    fileInputWrapper.addEventListener('drop', (e) => {
+        e.preventDefault();
+        fileInputWrapper.classList.remove('dragover');
+        if (e.dataTransfer.files) {
+            fileInput.files = e.dataTransfer.files;
+            const event = new Event('change', { bubbles: true });
+            fileInput.dispatchEvent(event);
         }
     });
 </script>
