@@ -7,21 +7,26 @@
 {% endblock %}
 
 {% block content %}
-<h2 class="page-title">Connections</h2>
+<h2 class="page-title">👥 Connections</h2>
 {% if request.user.is_authenticated %}
-  <div class="card">
-    <h3>Your Connections ({{ connections.count }})</h3>
+  <div class="connections-card">
+    <div class="connections-header">
+      <h3>Your Connections</h3>
+      <span class="connections-count">{{ connections.count }}</span>
+    </div>
     {% if connections %}
       <div class="users-list">
         {% for user in connections %}
           <div class="user-item">
             <div class="user-info">
               <div class="user-info-content">
-                {% if user.profile_pic %}
-                  <img src="{{ user.profile_pic.url }}" alt="{{ user.get_username }}" class="user-avatar" />
-                {% else %}
-                  <img src="{% static 'img/default_profile.png' %}" alt="Profile" class="user-avatar" />
-                {% endif %}
+                <div class="user-avatar-container">
+                  {% if user.profile_pic %}
+                    <img src="{{ user.profile_pic.url }}" alt="{{ user.get_username }}" class="user-avatar" />
+                  {% else %}
+                    <img src="{% static 'img/default_profile.png' %}" alt="Profile" class="user-avatar" />
+                  {% endif %}
+                </div>
                 <div class="user-details">
                   <p class="user-name">{{ user.full_name }}</p>
                   <p class="user-username">@{{ user.username }}</p>
@@ -29,17 +34,21 @@
               </div>
             </div>
             <div class="connection-actions">
-              <a href="{% url 'startmessagechat' user.id %}" class="user-chat-btn" >Message</a>
-              <button type="button" class="connection-remove-btn" data-user-id="{{ user.id }}" data-user-name="{{ user.full_name }}">Remove</button>
+              <a href="{% url 'startmessagechat' user.id %}" class="user-chat-btn">💬 Message</a>
+              <button type="button" class="connection-remove-btn" data-user-id="{{ user.id }}" data-user-name="{{ user.full_name }}">🗑 Remove</button>
             </div>
           </div>
         {% endfor %}
       </div>
     {% else %}
-      <p class="connections-empty">
-        You don't have any connections yet.<br><br>
-        <a href="{% url 'connections' %}">Start connecting</a> with other users!
-      </p>
+      <div class="connections-empty">
+        <div class="empty-icon">👥</div>
+        <p class="empty-title">No Connections Yet</p>
+        <p class="empty-text">
+          You don't have any connections yet.<br>
+          <a href="{% url 'startvideochat' %}" class="empty-action">Start Video Chat</a> to make connections!
+        </p>
+      </div>
     {% endif %}
   </div>
 
