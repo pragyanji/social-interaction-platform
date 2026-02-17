@@ -55,7 +55,8 @@ body {
   position: sticky;
   top: 0;
   backdrop-filter: saturate(180%) blur(6px);
-  background: color-mix(in oklab, var(--bg) 86%, transparent)
+  background: color-mix(in oklab, var(--bg) 86%, transparent);
+  z-index: 999;
 }
 
 .header-inner {
