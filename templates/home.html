@@ -34,7 +34,7 @@
       <div class="stat-card stat-status">
         <div class="stat-icon">✨</div>
         <div class="stat-content">
-          <p class="stat-label">Status</p>
+          <p class="stat-label">Verification Status</p>
           <p class="stat-value">{{ verification_status }}</p>
         </div>
       </div>
@@ -61,8 +61,8 @@
           <span class="card-icon">💬</span>
           <span class="card-badge">Messages</span>
         </div>
-        <h3 class="card-title">Chat & Connect</h3>
-        <p class="card-description">Send messages and connect one-on-one with people who share your interests.</p>
+        <h3 class="card-title">Message Chat</h3>
+        <p class="card-description">Only the connected users can message each other.<br> You can make connections in Video Chat.</p>
         <a class="btn btn-primary btn-action" href="{% url 'startmessagechat' %}">
           <span>Open Messages</span>
           <span class="arrow">→</span>
@@ -75,7 +75,7 @@
           <span class="card-badge">Live</span>
         </div>
         <h3 class="card-title">Video Chat</h3>
-        <p class="card-description">Have face-to-face conversations and meet interesting strangers from around the globe.</p>
+        <p class="card-description">Have face-to-face conversations with strangers from around the globe.<br><br> NOTE: You need to GET VERIFIED to make connections.</p>
         <div class="online-indicator">
           <span class="pulse-dot"></span>
           <span id="home-online-count">Loading...</span> users online

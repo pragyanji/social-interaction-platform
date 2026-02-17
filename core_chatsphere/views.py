@@ -103,6 +103,12 @@ def start_message_chat(request, user_id=None):
         return redirect("home")
     # Get all connected users
     user_connections = models.Connection.objects.filter(user=request.user).values_list('connection_with', flat=True)
+    verified_status = models.IdentityVerification.objects.filter(user=request.user).first()
+    if not verified_status:
+        verification_status = "UNVERIFIED"
+    else:
+        verification_status = verified_status.verification_status
+        
     connected_users = User.objects.filter(id__in=user_connections)
     
     selected_user = None
@@ -119,6 +125,7 @@ def start_message_chat(request, user_id=None):
     context = {
         'connected_users': connected_users,
         'selected_user': selected_user,
+        'verification_status': verification_status,
         'firebase_config': json.dumps(FIREBASE_CONFIG),
     }
     return render(request, "start_message_chat.html", context)
@@ -161,7 +168,7 @@ def home(request):
     if verification:
         verification_status = verification.verification_status
     else:
-        verification_status = "Unverified"
+        verification_status = "UNVERIFIED"
 
     # Get or create daily streak and update it
     streak, streak_created = models.DailyStreak.objects.get_or_create(user=request.user)

@@ -37,7 +37,9 @@
             {% else %}
                 <p class="connections-empty">
                     You don't have any connections yet.<br><br>
-                    <a href="{% url 'startvideochat' %}">Add connections</a> to start messaging.
+                    {% if verification_status == "UNVERIFIED" %}
+                    First You need to <a href="{% url 'identity_verification' %}">Get verified</a> to make connections and messaging.<br><br>
+                    {% endif %}
                 </p>
             {% endif %}
         </div>
