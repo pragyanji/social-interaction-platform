@@ -9,44 +9,98 @@
 {% block content %}
 <h2 class="page-title">Connections</h2>
 {% if request.user.is_authenticated %}
-  
-  <div class="grid-2">
-    <div class="card">
-      <h4>Your Connections ({{ connections.count }})</h4>
-      {% if connections %}
-        <div class="connections-list">
-          {% for user in connections %}
-            <div class="connection-item">
-              <div class="connection-info">
-                <p class="connection-name">{{user.full_name}}</p>
-              </div>
-              <div class="connection-actions">
-                <a class="btn btn-small" href="{% url 'startmessagechat' user.id %}">Message</a>
-                <form method="POST" action="{% url 'remove_connection' user.id %}" class="connection-remove-form">
-                  {% csrf_token %}
-                  <button type="submit" class="connection-remove-btn">Remove</button>
-                </form>
+  <div class="card">
+    <h3>Your Connections ({{ connections.count }})</h3>
+    {% if connections %}
+      <div class="users-list">
+        {% for user in connections %}
+          <div class="user-item">
+            <div class="user-info">
+              <div class="user-info-content">
+                {% if user.profile_pic %}
+                  <img src="{{ user.profile_pic.url }}" alt="{{ user.get_username }}" class="user-avatar" />
+                {% else %}
+                  <img src="{% static 'img/default_profile.png' %}" alt="Profile" class="user-avatar" />
+                {% endif %}
+                <div class="user-details">
+                  <p class="user-name">{{ user.full_name }}</p>
+                  <p class="user-username">@{{ user.username }}</p>
+                </div>
               </div>
             </div>
-          {% endfor %}
-        </div>
-      {% else %}
-        <p class="no-connections">You don't have any connections yet. Start connecting with other Users!</p>
-      {% endif %}
+            <div class="connection-actions">
+              <a href="{% url 'startmessagechat' user.id %}" class="user-chat-btn" >Message</a>
+              <button type="button" class="connection-remove-btn" data-user-id="{{ user.id }}" data-user-name="{{ user.full_name }}">Remove</button>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="connections-empty">
+        You don't have any connections yet.<br><br>
+        <a href="{% url 'connections' %}">Start connecting</a> with other users!
+      </p>
+    {% endif %}
+  </div>
+
+  <!-- Confirmation Modal -->
+  <div id="confirmationModal" class="modal-overlay hidden">
+    <div class="modal-box">
+      <p class="modal-text">Are you sure you want to remove <span id="modalUserName"></span>? This action cannot be undone.</p>
+      <div class="modal-actions">
+        <button type="button" class="modal-btn modal-cancel" onclick="closeModal()">Cancel</button>
+        <button type="button" class="modal-btn modal-confirm" onclick="confirmRemove()">Yes, Remove</button>
+      </div>
     </div>
+  </div>
+
+  <form id="removeForm" method="POST" style="display: none;">
+    {% csrf_token %}
+  </form>
+  
+  
+  
+  <script>
+    let pendingUserId = null;
+
+    document.querySelectorAll('.connection-remove-btn').forEach(btn => {
+      btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        pendingUserId = this.getAttribute('data-user-id');
+        const userName = this.getAttribute('data-user-name');
+        document.getElementById('modalUserName').textContent = userName;
+        document.getElementById('confirmationModal').classList.remove('hidden');
+      });
+    });
+
+    function closeModal() {
+      document.getElementById('confirmationModal').classList.add('hidden');
+      pendingUserId = null;
+    }
+
+    function confirmRemove() {
+      if (pendingUserId) {
+        const form = document.getElementById('removeForm');
+        form.action = `/connections/remove/${pendingUserId}/`;
+        form.submit();
+      }
+    }
+
+    // Close modal when clicking outside
+    document.getElementById('confirmationModal').addEventListener('click', function(e) {
+      if (e.target === this) {
+        closeModal();
+      }
+    });
+  </script>
+  
+  {% else %}
     <div class="card">
-      <h4>Message Chat</h4>
-      <p>Continue your conversations via messaging.</p>
-      <a class="btn btn-small" href="{% url 'startmessagechat' %}">Chat with connected members</a>
+      <p>You’re not signed in.</p>
+      <div class="actions">
+        <a class="btn btn-primary" href="{% url 'signin' %}">Sign in</a>
+        <a class="btn" href="{% url 'signup' %}">Create account</a>
+      </div>
     </div>
-  </div>
-{% else %}
-  <div class="card">
-    <p>You’re not signed in.</p>
-    <div class="actions">
-      <a class="btn btn-primary" href="{% url 'signin' %}">Sign in</a>
-      <a class="btn" href="{% url 'signup' %}">Create account</a>
-    </div>
-  </div>
-{% endif %}
-{% endblock %}
+  {% endif %}
+  {% endblock %}
