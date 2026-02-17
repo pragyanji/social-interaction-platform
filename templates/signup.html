@@ -28,7 +28,7 @@
   <div class="field">
     <label for="id_full_name">Full name</label>
     <input id="id_full_name" name="full_name" type="text"
-           value="{{ form.full_name.value|default_if_none:''}}" />
+           value="{{ form.full_name.value|default_if_none:''}}" required/>
   </div>
 
   <div class="field">

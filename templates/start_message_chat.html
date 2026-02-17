@@ -37,7 +37,7 @@
             {% else %}
                 <p class="connections-empty">
                     You don't have any connections yet.<br><br>
-                    <a href="{% url 'connections' %}">Add connections</a> to start messaging.
+                    <a href="{% url 'startvideochat' %}">Add connections</a> to start messaging.
                 </p>
             {% endif %}
         </div>
@@ -71,7 +71,7 @@
                         <p style="color: var(--msg-text-secondary); font-size: 14px;">Click on a user from the left panel to begin messaging.</p>
                     {% else %}
                         <p style="color: var(--msg-text-secondary); font-size: 14px;">
-                            You need connections to message. <a href="{% url 'connections' %}">Add connections</a> first.
+                            You need connections to message. <a href="{% url 'startvideochat' %}">Add connections</a> first.
                         </p>
                     {% endif %}
                 </div>
