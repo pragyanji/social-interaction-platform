@@ -11,48 +11,82 @@
 {% endblock %}
 
 {% block content %}
-<h2 class="page-title">Home</h2>
 
 {% if request.user.is_authenticated %}
-  <!-- User Welcome Section -->
-  <div class="card welcome-card">
-    <h3>Hi, {{ request.user.get_username }} 👋</h3>
-    <div class="welcome-stats">
-      <div class="stat-item">
-        <p class="stat-label">Aura Points</p>
-        <p class="stat-value">{{ aura_points }}</p>
+  <!-- Modern Welcome Hero Section -->
+  <div class="welcome-hero">
+    <div class="welcome-header">
+      <div class="welcome-text">
+        <p class="welcome-greeting">Welcome back, <span class="username">{{ request.user.get_username }}</span> 👋</p>
+        <p class="welcome-subtitle">Let's make some meaningful connections today</p>
       </div>
-      <div class="stat-item">
-        <p class="stat-label">Account Status</p>
-        <p class="stat-value">{{ verification_status }}</p>
+    </div>
+
+    <!-- Stats Cards in Modern Layout -->
+    <div class="stats-container">
+      <div class="stat-card stat-aura">
+        <div class="stat-icon">⭐</div>
+        <div class="stat-content">
+          <p class="stat-label">Aura Points</p>
+          <p class="stat-value">{{ aura_points }}</p>
+        </div>
       </div>
-      <div class="stat-item">
-        <p class="stat-label">Daily Streak 🔥</p>
-        <p class="stat-value streak">{{ streak_days }}</p>
+      <div class="stat-card stat-status">
+        <div class="stat-icon">✨</div>
+        <div class="stat-content">
+          <p class="stat-label">Status</p>
+          <p class="stat-value">{{ verification_status }}</p>
+        </div>
+      </div>
+      <div class="stat-card stat-streak">
+        <div class="stat-icon">🔥</div>
+        <div class="stat-content">
+          <p class="stat-label">Daily Streak</p>
+          <p class="stat-value">{{ streak_days }} days</p>
+        </div>
       </div>
     </div>
   </div>
 
   <!-- Quick Actions Section -->
-  <h3 class="quick-actions-title">Quick Actions</h3>
-  <div class="grid-2 quick-actions-grid">
-    <div class="card action-card">
-      <h4>💬 Messages</h4>
-      <p>Chat and connect with your network.</p>
-      <a class="btn btn-primary btn-small" href="{% url 'startmessagechat' %}">Open Messages</a>
+  <section class="actions-section">
+    <div class="section-header">
+      <h2 class="section-title">What would you like to do?</h2>
+      <p class="section-subtitle">Connect and interact with people around the world</p>
     </div>
-    <div class="card action-card">
-      <h4>🎥 Video Chat</h4>
-      <p>Continue your conversations with video.</p>
-      <div style="display: flex; align-items: center; gap: 8px; margin: 12px 0; padding: 8px 12px; background-color: rgba(34, 197, 94, 0.1); border-radius: 8px; border: 1px solid rgba(34, 197, 94, 0.3);">
-        {% comment %}<div style="width: 8px; height: 8px; background-color: #22c55e; border-radius: 50%; animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;"></div>
-        {% comment %} <span style="color: #22c55e; font-weight: 600; font-size: 14px;">
-          <span id="home-online-count">...</span> users online now
-          </span> 
-        </div>{% endcomment %}
-      <a class="btn btn-primary btn-small" href="{% url 'startvideochat' %}">Talk to Strangers</a>
+
+    <div class="grid-2 quick-actions-grid">
+      <div class="action-card message-card">
+        <div class="card-header">
+          <span class="card-icon">💬</span>
+          <span class="card-badge">Messages</span>
+        </div>
+        <h3 class="card-title">Chat & Connect</h3>
+        <p class="card-description">Send messages and connect one-on-one with people who share your interests.</p>
+        <a class="btn btn-primary btn-action" href="{% url 'startmessagechat' %}">
+          <span>Open Messages</span>
+          <span class="arrow">→</span>
+        </a>
+      </div>
+
+      <div class="action-card video-card">
+        <div class="card-header">
+          <span class="card-icon">🎥</span>
+          <span class="card-badge">Live</span>
+        </div>
+        <h3 class="card-title">Video Chat</h3>
+        <p class="card-description">Have face-to-face conversations and meet interesting strangers from around the globe.</p>
+        <div class="online-indicator">
+          <span class="pulse-dot"></span>
+          <span id="home-online-count">Loading...</span> users online
+        </div>
+        <a class="btn btn-primary btn-action" href="{% url 'startvideochat' %}">
+          <span>Start Video Chat</span>
+          <span class="arrow">→</span>
+        </a>
+      </div>
     </div>
-  </div>
+  </section>
 
   <style>
     @keyframes pulse {
