@@ -2,144 +2,152 @@
 {% load static %}
 {% block title %}Edit Profile · Chatsphere{% endblock %}
 
+{% block head_extra %}
+<link rel="stylesheet" href="{% static 'css/edit_profile.css' %}" />
+{% endblock %}
+
 {% block content %}
-<div style="max-width: 42rem; margin: 0 auto;">
-    <h2 class="page-title">Edit Profile</h2>
 
-    <div class="card">
-        <!-- Current Profile Picture Preview -->
-        <div style="text-center margin-bottom: 1.5rem;">
-            {% if user.profile_pic %}
-                <img src="{{ user.profile_pic.url }}"
-                     alt="{{ user.username }}"
-                     style="width: 8rem; height: 8rem; border-radius: 9999px; margin: 0 auto; object-fit: cover; border: 4px solid #667eea;"
-                     id="current-profile-pic">
-            {% else %}
-                <div style="width: 8rem; height: 8rem; border-radius: 9999px; margin: 0 auto; background-color: #667eea; display: flex; align-items: center; justify-content: center; border: 4px solid #667eea;">
-                    <span style="font-size: 2.25rem; color: white;">{{ user.username|first|upper }}</span>
-                </div>
-            {% endif %}
-            <p style="margin-top: 0.5rem; font-size: 0.875rem; color: #9ca3af;">Current Profile Picture</p>
-        </div>
+<div class="edit-profile-container">
+  <div class="edit-profile-header">
+    <h2>Edit Your Profile</h2>
+    <p>Update your information and profile picture</p>
+  </div>
 
-        <form method="post" enctype="multipart/form-data" style="display: flex; flex-direction: column; gap: 1.5rem;">
-            {% csrf_token %}
-
-            <!-- Display non-field errors -->
-            {% if form.non_field_errors %}
-                <div class="form-error" style="padding: 0.75rem; background-color: #fee2e2; border-radius: 0.5rem; border-left: 4px solid #ef4444;">
-                    {% for error in form.non_field_errors %}
-                        {{ error }}
-                    {% endfor %}
-                </div>
-            {% endif %}
-
-            <!-- Full Name -->
-            <div class="form-group">
-                <label for="{{ form.full_name.id_for_label }}" class="form-label">
-                    Full Name
-                </label>
-                {{ form.full_name }}
-                {% if form.full_name.errors %}
-                    <p class="form-error">{{ form.full_name.errors|first }}</p>
-                {% endif %}
-            </div>
-
-            <!-- Email -->
-            <div class="form-group">
-                <label for="{{ form.email.id_for_label }}" class="form-label">
-                    Email Address
-                </label>
-                {{ form.email }}
-                {% if form.email.errors %}
-                    <p class="form-error">{{ form.email.errors|first }}</p>
-                {% endif %}
-                <p class="form-help">We'll never share your email with anyone else.</p>
-            </div>
-
-            <!-- Profile Picture -->
-            <div class="form-group">
-                <label for="{{ form.profile_pic.id_for_label }}" class="form-label">
-                    Profile Picture
-                </label>
-                {{ form.profile_pic }}
-                {% if form.profile_pic.errors %}
-                    <p class="form-error">{{ form.profile_pic.errors|first }}</p>
-                {% endif %}
-                <p class="form-help">Choose a new profile picture (JPG, PNG, or GIF, max 5MB)</p>
-
-                <!-- Image Preview -->
-                <div id="image-preview" style="margin-top: 1rem; display: fit;">
-                    <p style="font-size: 0.875rem; color: #9ca3af; margin-bottom: 0.5rem;">New Image Preview:</p>
-                    <img id="preview-image" style="width: 8rem; height: 8rem; border-radius: 9999px; object-fit: cover; border: 2px solid #4b5563;" alt="Preview">
-                </div>
-            </div>
-
-            <!-- Username (Read-only) -->
-            <div class="form-group">
-                <label class="form-label">Username</label>
-                <input type="text"
-                       value="{{ user.username }}"
-                       disabled
-                       style="opacity: 0.5; cursor: not-allowed;"
-                       class="form-input">
-                <p class="form-help">Username cannot be changed.</p>
-            </div>
-
-            <!-- Buttons -->
-            <div style="display: flex; gap: 1rem;">
-                <button type="submit" class="btn btn-primary" style="flex: 1;">
-                    Save Changes
-                </button>
-                <a href="{% url 'profile' %}" class="btn btn-outline" style="flex: 1; text-align: center; display: flex; align-items: center; justify-content: center;">
-                    Cancel
-                </a>
-            </div>
-
-            <!-- Change Password Link -->
-            <div style="text-align: center; padding-top: 1rem; border-top: 1px solid #e5e7eb; margin-top: 0.5rem;">
-                <a href="{% url 'change_password' %}" style="color: #667eea; text-decoration: none; font-weight: 500;">
-                    Change Password →
-                </a>
-            </div>
-        </form>
+  <div class="edit-profile-card">
+    <!-- Current Profile Picture Preview -->
+    <div class="profile-pic-preview">
+      <div class="profile-pic-container">
+        {% if user.profile_pic %}
+          <img src="{{ user.profile_pic.url }}"
+               alt="{{ user.username }}"
+               id="current-profile-pic">
+        {% else %}
+          <div class="profile-pic-placeholder">
+            {{ user.username|first|upper }}
+          </div>
+        {% endif %}
+      </div>
+      <p class="profile-pic-label">Current Profile Picture</p>
     </div>
+
+    <form method="post" enctype="multipart/form-data" style="display: flex; flex-direction: column; gap: 0;">
+      {% csrf_token %}
+
+      <!-- Display non-field errors -->
+      {% if form.non_field_errors %}
+        <div class="non-field-errors" style="margin-bottom: 24px;">
+          {% for error in form.non_field_errors %}
+            <p style="margin: 0;">{{ error }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      <!-- Full Name -->
+      <div class="form-group">
+        <label for="{{ form.full_name.id_for_label }}" class="form-label">
+          Full Name
+        </label>
+        {{ form.full_name }}
+        {% if form.full_name.errors %}
+          <p class="form-error">{{ form.full_name.errors|first }}</p>
+        {% endif %}
+      </div>
+
+      <!-- Email -->
+      <div class="form-group">
+        <label for="{{ form.email.id_for_label }}" class="form-label">
+          Email Address
+        </label>
+        {{ form.email }}
+        {% if form.email.errors %}
+          <p class="form-error">{{ form.email.errors|first }}</p>
+        {% endif %}
+        <p class="form-help">We'll never share your email with anyone else.</p>
+      </div>
+
+      <!-- Profile Picture -->
+      <div class="form-group">
+        <label for="{{ form.profile_pic.id_for_label }}" class="form-label">
+          Profile Picture
+        </label>
+        {{ form.profile_pic }}
+        {% if form.profile_pic.errors %}
+          <p class="form-error">{{ form.profile_pic.errors|first }}</p>
+        {% endif %}
+        <p class="form-help">Choose a new profile picture (JPG, PNG, or GIF, max 5MB)</p>
+
+        <!-- Image Preview -->
+        <div id="image-preview" style="display: none;">
+          <p class="preview-label">New Image Preview:</p>
+          <img id="preview-image" alt="Preview">
+        </div>
+      </div>
+
+      <!-- Username (Read-only) -->
+      <div class="form-group">
+        <label class="form-label">Username</label>
+        <input type="text"
+               value="{{ user.username }}"
+               disabled>
+        <p class="form-help">Username cannot be changed.</p>
+      </div>
+
+      <!-- Buttons -->
+      <div class="form-actions">
+        <button type="submit" class="btn-save">
+          💾 Save Changes
+        </button>
+        <a href="{% url 'profile' %}" class="btn-cancel">
+          ✕ Cancel
+        </a>
+      </div>
+
+      <!-- Change Password Link -->
+      <div class="form-divider">
+        <a href="{% url 'change_password' %}" class="change-password-link">
+          🔐 Change Password →
+        </a>
+      </div>
+    </form>
+  </div>
 </div>
 
 <script>
-    // Image preview functionality
-    const fileInput = document.getElementById('{{ form.profile_pic.id_for_label }}');
-    const previewContainer = document.getElementById('image-preview');
-    const previewImage = document.getElementById('preview-image');
+  // Image preview functionality
+  const fileInput = document.getElementById('{{ form.profile_pic.id_for_label }}');
+  const previewContainer = document.getElementById('image-preview');
+  const previewImage = document.getElementById('preview-image');
 
-    if (fileInput) {
-        fileInput.addEventListener('change', function(e) {
-            const file = e.target.files[0];
+  if (fileInput) {
+    fileInput.addEventListener('change', function(e) {
+      const file = e.target.files[0];
 
-            if (file) {
-                // Check file type
-                if (!file.type.match('image.*')) {
-                    alert('Please select an image file');
-                    return;
-                }
+      if (file) {
+        // Check file type
+        if (!file.type.match('image.*')) {
+          alert('Please select an image file');
+          return;
+        }
 
-                // Check file size (max 5MB)
-                if (file.size > 5 * 1024 * 1024) {
-                    alert('Image must be less than 5MB');
-                    return;
-                }
+        // Check file size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+          alert('Image must be less than 5MB');
+          return;
+        }
 
-                // Create preview
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    previewImage.src = e.target.result;
-                    previewContainer.classList.remove('hidden');
-                };
-                reader.readAsDataURL(file);
-            } else {
-                previewContainer.classList.add('hidden');
-            }
-        });
-    }
+        // Create preview
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          previewImage.src = e.target.result;
+          previewContainer.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+      } else {
+        previewContainer.style.display = 'none';
+      }
+    });
+  }
 </script>
+
 {% endblock %}
