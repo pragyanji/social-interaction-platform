@@ -23,8 +23,11 @@
                alt="{{ user.username }}"
                id="current-profile-pic">
         {% else %}
+        
           <div class="profile-pic-placeholder">
-            {{ user.username|first|upper }}
+            <img src="{% static 'img/default_profile.png' %}"
+                 alt="Default Profile"
+                 id="current-profile-pic">
           </div>
         {% endif %}
       </div>
