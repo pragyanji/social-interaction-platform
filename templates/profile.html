@@ -7,154 +7,164 @@
 {% endblock %}
 
 {% block content %}
-<h2 class="page-title">My Profile</h2>
 
-<!-- Profile Header -->
-<div class="card mb-6">
-    <div class="flex items-center justify-between gap-6">
-        <div class="flex items-center gap-6">
-            {% if user.profile_pic %}
-            <img src="{{ user.profile_pic.url }}" alt="{{ user.username }}" class="w-24 h-24 rounded-full object-cover">
-            {% else %}
-            <div class="default-profile-container">
-                <img src="{% static 'img/default_profile.png' %}" alt="Profile" class="w-24 h-24 rounded-full object-cover">
+<!-- Profile Header Section -->
+<div class="profile-hero">
+    <div class="profile-header-card">
+        <div class="profile-header-content">
+            <div class="profile-pic-container">
+                {% if user.profile_pic %}
+                <img src="{{ user.profile_pic.url }}" alt="{{ user.username }}" class="profile-pic">
+                {% else %}
+                <img src="{% static 'img/default_profile.png' %}" alt="Profile" class="profile-pic">
+                {% endif %}
             </div>
-            {% endif %}
-            <div>
-                <h3 class="text-2xl font-bold text-gray-900">{{ user.full_name|default:user.username }}</h3>
-                <p class="text-gray-700 font-medium">@{{ user.username }}</p>
+            <div class="profile-info">
+                <h1 class="profile-name">{{ user.full_name|default:user.username }}</h1>
+                <p class="profile-username">@{{ user.username }}</p>
                 {% if user.email %}
-                <p class="text-gray-600 text-sm">{{ user.email }}</p>
+                <p class="profile-email">{{ user.email }}</p>
                 {% endif %}
             </div>
         </div>
-        <div>
-            <a href="{% url 'edit_profile' %}" class="btn btn-primary">
-                <svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                </svg>
-                Edit Profile
-            </a>
+        <div class="profile-actions">
+            <a href="{% url 'edit_profile' %}" class="btn-edit-profile">✏️ Edit Profile</a>
         </div>
     </div>
 </div>
 
-
-    <!-- Stats Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <!-- Aura Points -->
-        <div class="card text-center bg-gradient-to-br from-purple-500 to-indigo-600 text-white">
-            <div class="text-4xl font-bold mb-2">{{ aura_points }}</div>
-            <div class="text-sm opacity-90">Aura Points</div>
+<!-- Stats Grid -->
+<div class="stats-container profile-stats">
+    <!-- Aura Points -->
+    <div class="stat-card stat-aura">
+        <div class="stat-icon">💫</div>
+        <div class="stat-content">
+            <p class="stat-label">Aura Points</p>
+            <p class="stat-value">{{ aura_points }}</p>
         </div>
+    </div>
 
-        <!-- Average Rating -->
-        <div class="card text-center bg-gradient-to-br from-yellow-400 to-orange-500 text-white">
-            <div class="text-4xl font-bold mb-2">{{ avg_rating|floatformat:1 }}</div>
-            <div class="text-sm opacity-90">Avg Rating</div>
-            <div class="text-xs opacity-75">({{ total_ratings }} ratings)</div>
+    <!-- Average Rating -->
+    <div class="stat-card stat-rating">
+        <div class="stat-icon">⭐</div>
+        <div class="stat-content">
+            <p class="stat-label">Avg Rating</p>
+            <p class="stat-value">{{ avg_rating|floatformat:1 }}</p>
+            <p class="stat-subtext">({{ total_ratings }} ratings)</p>
         </div>
+    </div>
 
-        <!-- Connections -->
-        <div class="card text-center bg-gradient-to-br from-green-400 to-teal-500 text-white">
-            <div class="text-4xl font-bold mb-2">{{ total_connections }}</div>
-            <div class="text-sm opacity-90">Connections</div>
+    <!-- Connections -->
+    <div class="stat-card stat-connections">
+        <div class="stat-icon">👥</div>
+        <div class="stat-content">
+            <p class="stat-label">Connections</p>
+            <p class="stat-value">{{ total_connections }}</p>
         </div>
+    </div>
 
-        <!-- Streak -->
-        <div class="card text-center bg-gradient-to-br from-pink-500 to-red-500 text-white">
-            <div class="text-4xl font-bold mb-2">{{ streak_days }}</div>
-            <div class="text-sm opacity-90">Daily Streak</div>
+    <!-- Streak -->
+    <div class="stat-card stat-streak">
+        <div class="stat-icon">🔥</div>
+        <div class="stat-content">
+            <p class="stat-label">Daily Streak</p>
+            <p class="stat-value">{{ streak_days }}</p>
             {% if longest_streak and longest_streak != streak_days %}
-                <div class="streak-best-label">Best: {{ longest_streak }} days</div>
+                <p class="stat-subtext">Best: {{ longest_streak }} days</p>
             {% endif %}
         </div>
     </div>
+</div>
 
 <!-- Connections Section -->
 {% if user_connections %}
-<div class="card mb-6">
-    <h4 class="text-xl font-bold mb-4 text-gray-900">Your Connections </h4>
+<div class="connections-section">
+    <div class="section-header">
+        <h2 class="section-title">Your Connections</h2>
+        <p class="section-subtitle">People you've connected with</p>
+    </div>
     <div class="connections-grid">
         {% for connection in user_connections %}
             <div class="connection-card">
-                <div class="connection-card-name">{{ connection.full_name }}</div>
-                <div class="connection-card-username">@{{ connection.username }}</div>
-                <a href="{% url 'startmessagechat' connection.id %}" class="btn btn-small connection-card-btn">Message</a>
+                <div class="connection-avatar">
+                    {% if connection.profile_pic %}
+                    <img src="{{ connection.profile_pic.url }}" alt="{{ connection.username }}" />
+                    {% else %}
+                    <img src="{% static 'img/default_profile.png' %}" alt="Avatar" />
+                    {% endif %}
+                </div>
+                <div class="connection-info">
+                    <h4 class="connection-name">{{ connection.full_name }}</h4>
+                    <p class="connection-username">@{{ connection.username }}</p>
+                </div>
+                <a href="{% url 'startmessagechat' connection.id %}" class="btn-message">💬</a>
             </div>
         {% endfor %}
     </div>
-    <div class="connections-header">
-        <a href="{% url 'connections' %}" class="btn btn-outline">View All Connections</a>
+    <div class="connections-footer">
+        <a href="{% url 'connections' %}" class="btn-view-all">View All Connections →</a>
     </div>
 </div>
 {% endif %}
 
 <!-- Account Details -->
-<div class="card mb-6">
-    <h4 class="text-xl font-bold mb-4 text-gray-900">Account Details</h4>
-        <div class="space-y-3">
-            <div class="flex justify-between py-3 border-b border-gray-300">
-                <span class="font-semibold text-gray-900">Username:</span>
-                <span class="text-gray-800 font-medium">{{ user.username }}</span>
-            </div>
-            <div class="flex justify-between py-3 border-b border-gray-300">
-                <span class="font-semibold text-gray-900">Full Name:</span>
-                <span class="text-gray-800 font-medium">{{ user.full_name|default:"Not set" }}</span>
-            </div>
-            <div class="flex justify-between py-3 border-b border-gray-300">
-                <span class="font-semibold text-gray-900">Email:</span>
-                <span class="text-gray-800 font-medium">{{ user.email|default:"Not set" }}</span>
-            </div>
-            <div class="flex justify-between py-3 border-b border-gray-300">
-                <span class="font-semibold text-gray-900">Member Since:</span>
-                <span class="text-gray-800 font-medium">{{ user.date_joined|date:"F d, Y" }}</span>
-            </div>
-            <div class="flex justify-between py-3">
-                <span class="font-semibold text-gray-900">Verification Status:</span>
-                <div style="display: flex; align-items: center; gap: 0.75rem;">
-                    {% if verification_status == "VERIFIED" %}
-                    <span class="px-3 py-1 rounded-full text-sm font-semibold bg-green-500 text-white">
-                        Verified
-                    </span>
-                    {% elif verification_status == "PENDING" %}
-                    <span class="px-3 py-1 rounded-full text-sm font-semibold bg-yellow-500 text-white">
-                        Pending
-                    </span>
-                    {% elif verification_status == "REJECTED" %}
-                    <span class="px-3 py-1 rounded-full text-sm font-semibold bg-red-500 text-white">
-                        Rejected
-                    </span>
-                    {% else %}
-                    <span class="px-3 py-1 rounded-full text-sm font-semibold bg-gray-600 text-white">
-                        Unverified
-                    </span>
-                    {% endif %}
-                </div>
-            </div>
-            {% if verification_status != "VERIFIED" and verification_status != "PENDING" %}
-            <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e5e7eb;">
-                <a href="{% url 'identity_verification' %}" class="btn btn-primary" style="display: inline-block; padding: 0.5rem 1rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 0.5rem; font-weight: 600; font-size: 0.9rem;">
-                    {% if verification_status == "REJECTED" %}
-                        Resubmit Verification
-                    {% else %}
-                        Get Verified
-                    {% endif %}
-                </a>
-            </div>
-            {% elif verification_status == "PENDING" %}
-            <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e5e7eb;">
-                <a href="{% url 'identity_verification' %}" style="color: #6366f1; text-decoration: none; font-size: 0.9rem; font-weight: 500;">
-                    View verification status →
-                </a>
-            </div>
-            {% endif %}
-        </div>
+<div class="account-details-section">
+    <div class="section-header">
+        <h2 class="section-title">Account Details</h2>
+        <p class="section-subtitle">Your profile information</p>
     </div>
+    <div class="details-card">
+        <div class="detail-row">
+            <span class="detail-label">Username</span>
+            <span class="detail-value">{{ user.username }}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Full Name</span>
+            <span class="detail-value">{{ user.full_name|default:"Not set" }}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Email</span>
+            <span class="detail-value">{{ user.email|default:"Not set" }}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Member Since</span>
+            <span class="detail-value">{{ user.date_joined|date:"F d, Y" }}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Verification Status</span>
+            <div class="verification-badge">
+                {% if verification_status == "VERIFIED" %}
+                    <span class="badge badge-verified">✓ Verified</span>
+                {% elif verification_status == "PENDING" %}
+                    <span class="badge badge-pending">⏳ Pending</span>
+                {% elif verification_status == "REJECTED" %}
+                    <span class="badge badge-rejected">✗ Rejected</span>
+                {% else %}
+                    <span class="badge badge-unverified">○ Unverified</span>
+                {% endif %}
+            </div>
+        </div>
 
-<!-- Actions -->
-<div class="flex gap-4">
-    <a href="{% url 'home' %}" class="btn btn-primary">Back to Home</a>
-    <a href="{% url 'startvideochat' %}" class="btn">Start Video Chat</a>
+        {% if verification_status != "VERIFIED" and verification_status != "PENDING" %}
+        <div class="verification-action">
+            <a href="{% url 'identity_verification' %}" class="btn-verify">
+                🔐 {% if verification_status == "REJECTED" %}Resubmit Verification{% else %}Get Verified{% endif %}
+            </a>
+        </div>
+        {% elif verification_status == "PENDING" %}
+        <div class="verification-action">
+            <a href="{% url 'identity_verification' %}" class="btn-check-status">
+                View verification status →
+            </a>
+        </div>
+        {% endif %}
+    </div>
 </div>
+
+<!-- Quick Actions -->
+<div class="quick-actions">
+    <a href="{% url 'home' %}" class="btn-action-primary">← Back to Home</a>
+    <a href="{% url 'startvideochat' %}" class="btn-action-secondary">📹 Start Video Chat</a>
+</div>
+
 {% endblock %}
