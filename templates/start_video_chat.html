@@ -1,152 +1,116 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ChatSphere - Video Chat</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-        }
-        video {
-            transform: scaleX(-1);
-            -webkit-transform: scaleX(-1);
-        }
-        /* Tooltip hover effect */
-        #remoteVideoContainer:hover #peerStatsTooltip {
-            opacity: 1;
-            pointer-events: auto;
-        }
-        #peerStatsTooltip .stat-item {
-            display: flex;
-            justify-content: space-between;
-            gap: 1rem;
-            margin-bottom: 0.5rem;
-        }
-        #peerStatsTooltip .stat-item:last-child {
-            margin-bottom: 0;
-        }
-        .new-user-badge {
-            display: inline-block;
-            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
-            color: #1f2937;
-            font-weight: 600;
-            font-size: 0.75rem;
-            padding: 0.25rem 0.5rem;
-            border-radius: 0.25rem;
-            margin-top: 0.25rem;
-        }
-    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/start_video_chat.css' %}">
 </head>
-<body class="bg-gray-900 text-white flex items-center justify-center min-h-screen">
-    <div class="container mx-auto p-4 max-w-[1400px] w-full">
+<body class="video-chat-body">
+    <div class="video-chat-wrapper">
         <!-- Profile Button - Top Right -->
-        <div class="absolute top-4 right-4">
-            <a href="/profile/" 
-               class="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-full transition-colors shadow-lg"
-               title="View Profile">
-                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/>
-                </svg>
-                <span class="text-sm font-medium">Profile</span>
-            </a>
-        </div>
+        <a href="/profile/" class="profile-button" title="View Profile">
+            <svg class="profile-icon" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/>
+            </svg>
+            <span>Profile</span>
+        </a>
 
-        <header id="chat-header" class="text-center mb-6">
-            <h1 class="text-4xl md:text-5xl font-bold text-indigo-400">Video Chat</h1>
-            <p class="text-gray-400 mt-2">Connect with strangers from around the world.</p>
-            <div class="mt-4 inline-flex items-center gap-2 bg-gray-800 px-4 py-2 rounded-full">
-                <div class="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                <span class="text-gray-300 text-sm">
-                    <span id="online-count" class="font-bold text-green-400">0</span> users online
+        <header id="chat-header" class="chat-header">
+            <h1 class="header-title">🎥 Video Chat</h1>
+            <p class="header-subtitle">Connect with strangers from around the world.</p>
+            <div class="online-indicator">
+                <div class="status-dot"></div>
+                <span class="online-text">
+                    <span id="online-count" class="online-count">0</span> users online
                 </span>
             </div>
         </header>
 
-        <main id="main-content" class="bg-gray-800 rounded-2xl shadow-2xl p-4 md:p-8">
+        <main id="main-content" class="main-content">
             <!-- Video feeds -->
-            <div id="video-container" class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 mb-6 hidden max-w-[1400px] mx-auto">
-                <div class="relative bg-gray-900 rounded-lg overflow-hidden shadow-lg" style="height: 70vh;">
-                    <video id="localVideo" autoplay muted playsinline class="w-full h-full object-cover"></video>
-                    <div class="absolute bottom-2 left-2 bg-black bg-opacity-50 px-3 py-1 rounded-full text-sm">You</div>
-                    <div class="absolute bottom-2 right-2 flex gap-2">
-                        <button id="toggleAudio" aria-label="Toggle microphone" class="bg-black bg-opacity-50 p-2 rounded-full hover:bg-opacity-75 transition-all">
-                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+            <div id="video-container" class="video-container hidden">
+                <div class="video-local-wrapper">
+                    <video id="localVideo" autoplay muted playsinline class="video-element"></video>
+                    <div class="video-label local-label">You</div>
+                    <div class="video-controls">
+                        <button id="toggleAudio" aria-label="Toggle microphone" class="media-button" title="Toggle microphone">
+                            <svg class="button-icon" fill="currentColor" viewBox="0 0 20 20">
                                 <path d="M10 12a2 2 0 0 0 2-2V5a2 2 0 1 0-4 0v5a2 2 0 0 0 2 2z"/>
                                 <path d="M16 9v1a6 6 0 0 1-12 0V9h2v1a4 4 0 0 0 8 0V9h2z"/>
                             </svg>
                         </button>
-                        <button id="toggleVideo" aria-label="Toggle camera" class="bg-black bg-opacity-50 p-2 rounded-full hover:bg-opacity-75 transition-all">
-                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <button id="toggleVideo" aria-label="Toggle camera" class="media-button" title="Toggle camera">
+                            <svg class="button-icon" fill="currentColor" viewBox="0 0 20 20">
                                 <path d="M2 6a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2h2a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6z"/>
                             </svg>
                         </button>
                     </div>
                 </div>
-                <div id="remoteVideoContainer" class="relative bg-gray-900 rounded-lg overflow-hidden shadow-lg" style="height: 70vh;">
-                    <video id="remoteVideo" autoplay playsinline class="w-full h-full object-cover"></video>
-                    <div class="absolute bottom-2 left-2 bg-black bg-opacity-50 px-3 py-1 rounded-full text-sm">Stranger</div>
+                <div id="remoteVideoContainer" class="video-remote-wrapper">
+                    <video id="remoteVideo" autoplay playsinline class="video-element"></video>
+                    <div class="video-label remote-label">Stranger</div>
                     <!-- Peer Stats Tooltip - shows on hover -->
-                    <div id="peerStatsTooltip" class="absolute top-4 right-4 bg-gradient-to-r from-indigo-600 to-indigo-700 px-4 py-3 rounded-lg text-sm font-medium shadow-lg opacity-0 pointer-events-none transition-opacity duration-200">
-                        <div id="tooltipContent" class="text-white">
-                            <p class="text-xs text-indigo-200 mb-1">Hover to load...</p>
+                    <div id="peerStatsTooltip" class="peer-stats-tooltip">
+                        <div id="tooltipContent">
+                            <p class="tooltip-text">Hover to load...</p>
                         </div>
                     </div>
-                    <div id="loading-spinner" class="absolute inset-0 flex items-center justify-center bg-gray-900 bg-opacity-75 hidden">
-                        <svg class="animate-spin h-10 w-10 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    <div id="loading-spinner" class="loading-spinner hidden">
+                        <svg class="spinner-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="spinner-bg" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="spinner-fg" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
                     </div>
                 </div>
             </div>
 
             <!-- Status and controls -->
-            <div class="text-center">
-                <p id="status" class="text-gray-400 mb-6 h-6">Ready to connect.</p>
-                <p id="waiting-users" class="text-gray-500 text-sm mb-4 h-4"></p>
-                <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
-                    <button id="startButton" 
-                        class="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-900 disabled:cursor-not-allowed text-white font-bold py-3 px-8 rounded-full transition-colors shadow-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-opacity-75"
+            <div class="controls-section">
+                <p id="status" class="status-text">Ready to connect.</p>
+                <p id="waiting-users" class="waiting-users"></p>
+                <div class="button-group">
+                    <button id="startButton"
+                        class="btn btn-primary"
                         aria-label="Start video chat"
                         title="Start video chat with a random person">
                         Start Chat
                     </button>
-                    <button id="homeButton" 
-                        class="w-full sm:w-auto bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-8 rounded-full transition-colors shadow-lg focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-75"
+                    <button id="homeButton"
+                        class="btn btn-secondary"
                         aria-label="Back to home"
                         title="Return to home page">
                         Back to Home
                     </button>
-                    <button id="stopButton" 
-                        class="w-full sm:w-auto bg-red-600 hover:bg-red-700 disabled:bg-red-900 disabled:cursor-not-allowed text-white font-bold py-3 px-8 rounded-full transition-colors shadow-lg hidden focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-opacity-75"
+                    <button id="stopButton"
+                        class="btn btn-danger hidden"
                         aria-label="Stop video chat"
                         title="End current chat">
                         Stop Chat
                     </button>
                     <button id="nextButton"
-                        class="w-full sm:w-auto bg-green-500 hover:bg-green-600 disabled:bg-green-800 disabled:cursor-not-allowed text-white font-bold py-3 px-8 rounded-full transition-colors shadow-lg hidden focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-opacity-75"
+                        class="btn btn-success hidden"
                         aria-label="Find next chat partner"
                         title="End current chat and find a new partner">
                         Next Stranger
                     </button>
                     <button id="reportButton"
-                        class="w-full sm:w-auto bg-orange-600 hover:bg-orange-700 disabled:bg-orange-900 disabled:cursor-not-allowed text-white font-bold py-3 px-8 rounded-full transition-colors shadow-lg hidden focus:outline-none focus:ring-2 focus:ring-orange-400 focus:ring-opacity-75"
+                        class="btn btn-warning hidden"
                         aria-label="Report user"
                         title="Report this stranger for inappropriate behavior">
                         Report User
                     </button>
                     <button id="rateButton"
-                        class="w-full sm:w-auto bg-yellow-600 hover:bg-yellow-700 disabled:bg-yellow-900 disabled:cursor-not-allowed text-white font-bold py-3 px-8 rounded-full transition-colors shadow-lg hidden focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-opacity-75"
+                        class="btn btn-info hidden"
                         aria-label="Rate user"
                         title="Rate this stranger">
                         Rate User
                     </button>
                     {% if verification_status == "VERIFIED" %}
-                    <button id="connectButton" 
-                        class="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-900 disabled:cursor-not-allowed text-white font-bold py-3 px-8 rounded-full transition-colors shadow-lg focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-opacity-75 hidden"
+                    <button id="connectButton"
+                        class="btn btn-primary hidden"
                         aria-label="Connect with stranger"
                         title="Make connection with current stranger">
                         Connect
@@ -155,31 +119,30 @@
                 </div>
             </div>
         </main>
-        
-        <footer class="text-center mt-8 text-gray-500 text-sm">
+
+        <footer class="footer">
             <p>&copy; 2024 ChatSphere. All rights reserved.</p>
         </footer>
     </div>
 
     <!-- Report Modal -->
-    <div id="reportModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-        <div class="bg-gray-800 rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-bold text-white">Report User</h2>
-                <button id="closeModal" class="text-gray-400 hover:text-white transition-colors">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div id="reportModal" class="modal hidden">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h2 class="modal-title">Report User</h2>
+                <button id="closeModal" class="modal-close" aria-label="Close dialog">
+                    <svg class="close-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                     </svg>
                 </button>
             </div>
 
             <form id="reportForm">
-                <div class="mb-4">
-                    <label class="block text-gray-300 text-sm font-bold mb-2" for="reportReason">
+                <div class="form-group">
+                    <label class="form-label" for="reportReason">
                         Reason for Report
                     </label>
-                    <select id="reportReason" name="reason" required
-                        class="w-full bg-gray-700 text-white border border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400">
+                    <select id="reportReason" name="reason" required class="form-select">
                         <option value="">Select a reason...</option>
                         <option value="inappropriate_behavior">Inappropriate Behavior</option>
                         <option value="harassment">Harassment</option>
@@ -191,36 +154,32 @@
                     </select>
                 </div>
 
-                <div class="mb-6">
-                    <label class="block text-gray-300 text-sm font-bold mb-2" for="reportDescription">
+                <div class="form-group">
+                    <label class="form-label" for="reportDescription">
                         Additional Details
                     </label>
-                    <textarea id="reportDescription" name="description" rows="4" required
-                        class="w-full bg-gray-700 text-white border border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400 resize-none"
+                    <textarea id="reportDescription" name="description" rows="4" required class="form-textarea"
                         placeholder="Please provide details about why you're reporting this user..."></textarea>
                 </div>
 
-                <div class="flex gap-4">
-                    <button type="submit" id="submitReport"
-                        class="flex-1 bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 px-6 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-orange-400">
+                <div class="modal-actions">
+                    <button type="submit" id="submitReport" class="btn btn-warning">
                         Submit Report
                     </button>
-                    <button type="button" id="cancelReport"
-                        class="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400">
+                    <button type="button" id="cancelReport" class="btn btn-secondary">
                         Cancel
                     </button>
                 </div>
             </form>
 
             <div id="reportSuccess" class="hidden">
-                <div class="text-center">
-                    <svg class="w-16 h-16 text-green-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="success-content">
+                    <svg class="success-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
-                    <h3 class="text-xl font-bold text-white mb-2">Report Submitted</h3>
-                    <p class="text-gray-300 mb-4">Thank you for helping keep ChatSphere safe. We will review your report shortly.</p>
-                    <button id="closeSuccessModal"
-                        class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-full transition-colors">
+                    <h3 class="success-title">Report Submitted</h3>
+                    <p class="success-text">Thank you for helping keep ChatSphere safe. We will review your report shortly.</p>
+                    <button id="closeSuccessModal" class="btn btn-primary">
                         Close
                     </button>
                 </div>
@@ -229,74 +188,71 @@
     </div>
 
     <!-- Rating Modal -->
-    <div id="ratingModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-        <div class="bg-gray-800 rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-bold text-white">Rate User</h2>
-                <button id="closeRatingModal" class="text-gray-400 hover:text-white transition-colors">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div id="ratingModal" class="modal hidden">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h2 class="modal-title">Rate User</h2>
+                <button id="closeRatingModal" class="modal-close" aria-label="Close dialog">
+                    <svg class="close-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                     </svg>
                 </button>
             </div>
 
             <form id="ratingForm">
-                <div class="mb-6">
-                    <label class="block text-gray-300 text-sm font-bold mb-4">
+                <div class="form-group">
+                    <label class="form-label">
                         Rate this user (Click a star)
                     </label>
-                    <div class="flex justify-center gap-4">
+                    <div class="star-rating">
                         <button type="button" class="rating-star" data-rating="1" title="Poor">
-                            <svg class="w-12 h-12 text-gray-500 hover:text-yellow-500 cursor-pointer transition-colors" fill="currentColor" viewBox="0 0 20 20">
+                            <svg class="star-icon" fill="currentColor" viewBox="0 0 20 20">
                                 <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
                             </svg>
                         </button>
                         <button type="button" class="rating-star" data-rating="2" title="Average">
-                            <svg class="w-12 h-12 text-gray-500 hover:text-yellow-500 cursor-pointer transition-colors" fill="currentColor" viewBox="0 0 20 20">
+                            <svg class="star-icon" fill="currentColor" viewBox="0 0 20 20">
                                 <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
                             </svg>
                         </button>
                         <button type="button" class="rating-star" data-rating="3" title="Good">
-                            <svg class="w-12 h-12 text-gray-500 hover:text-yellow-500 cursor-pointer transition-colors" fill="currentColor" viewBox="0 0 20 20">
+                            <svg class="star-icon" fill="currentColor" viewBox="0 0 20 20">
                                 <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
                             </svg>
                         </button>
                         <button type="button" class="rating-star" data-rating="4" title="Excellent">
-                            <svg class="w-12 h-12 text-gray-500 hover:text-yellow-500 cursor-pointer transition-colors" fill="currentColor" viewBox="0 0 20 20">
+                            <svg class="star-icon" fill="currentColor" viewBox="0 0 20 20">
                                 <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
                             </svg>
                         </button>
                         <button type="button" class="rating-star" data-rating="5" title="Outstanding">
-                            <svg class="w-12 h-12 text-gray-500 hover:text-yellow-500 cursor-pointer transition-colors" fill="currentColor" viewBox="0 0 20 20">
+                            <svg class="star-icon" fill="currentColor" viewBox="0 0 20 20">
                                 <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
                             </svg>
                         </button>
                     </div>
-                    <p class="text-center text-gray-400 text-sm mt-3">Selected: <span id="selectedRating" class="text-yellow-400 font-bold">-</span></p>
+                    <p class="rating-display">Selected: <span id="selectedRating">-</span></p>
                     <input type="hidden" id="ratingValue" name="rating" value="">
                 </div>
 
-                <div class="flex gap-4">
-                    <button type="submit" id="submitRating"
-                        class="flex-1 bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-3 px-6 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-yellow-400">
+                <div class="modal-actions">
+                    <button type="submit" id="submitRating" class="btn btn-info">
                         Submit Rating
                     </button>
-                    <button type="button" id="cancelRating"
-                        class="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400">
+                    <button type="button" id="cancelRating" class="btn btn-secondary">
                         Cancel
                     </button>
                 </div>
             </form>
 
             <div id="ratingSuccess" class="hidden">
-                <div class="text-center">
-                    <svg class="w-16 h-16 text-green-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="success-content">
+                    <svg class="success-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
-                    <h3 class="text-xl font-bold text-white mb-2">Rating Submitted</h3>
-                    <p class="text-gray-300 mb-4">Thank you for rating this user!</p>
-                    <button id="closeRatingSuccessModal"
-                        class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-6 rounded-full transition-colors">
+                    <h3 class="success-title">Rating Submitted</h3>
+                    <p class="success-text">Thank you for rating this user!</p>
+                    <button id="closeRatingSuccessModal" class="btn btn-info">
                         Close
                     </button>
                 </div>
@@ -305,43 +261,40 @@
     </div>
 
     <!-- Connect Modal -->
-    <div id="connectModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-        <div class="bg-gray-800 rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-bold text-white">Connect?</h2>
-                <button id="closeConnectModal" class="text-gray-400 hover:text-white transition-colors">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div id="connectModal" class="modal hidden">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h2 class="modal-title">Connect?</h2>
+                <button id="closeConnectModal" class="modal-close" aria-label="Close dialog">
+                    <svg class="close-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                     </svg>
                 </button>
             </div>
 
             <div id="connectForm">
-                <p class="text-gray-300 mb-6">
+                <p class="modal-text">
                     Would you like to connect with this user? You'll be able to message them later!
                 </p>
 
-                <div class="flex gap-4">
-                    <button id="confirmConnect"
-                        class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                <div class="modal-actions">
+                    <button id="confirmConnect" class="btn btn-primary">
                         Connect
                     </button>
-                    <button id="cancelConnect"
-                        class="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400">
+                    <button id="cancelConnect" class="btn btn-secondary">
                         Cancel
                     </button>
                 </div>
             </div>
 
             <div id="connectSuccess" class="hidden">
-                <div class="text-center">
-                    <svg class="w-16 h-16 text-green-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="success-content">
+                    <svg class="success-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
-                    <h3 class="text-xl font-bold text-white mb-2">Connected!</h3>
-                    <p class="text-gray-300 mb-4">You can now message this user in your connections.</p>
-                    <button id="closeConnectSuccessModal"
-                        class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-full transition-colors">
+                    <h3 class="success-title">Connected!</h3>
+                    <p class="success-text">You can now message this user in your connections.</p>
+                    <button id="closeConnectSuccessModal" class="btn btn-primary">
                         Close
                     </button>
                 </div>
@@ -352,1507 +305,11 @@
     <!-- Firebase Configuration -->
     <script>
         // @ts-ignore - Django template variable
-        window.FIREBASE_CONFIG = {{ firebase_config|safe }};    
+        window.FIREBASE_CONFIG = {{ firebase_config|safe }};
+        // Pass Django user ID to JavaScript
+        window.DJANGO_USER_ID = "{{ request.user.id }}";
     </script>
-    
-    <script type="module">
-        // Firebase Setup
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getDatabase, ref, set, get, onValue, push, remove, update, serverTimestamp, onDisconnect } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        
-        // Debug flag - set to true to see detailed logs
-        const DEBUG = true;
-        
-        // DOM Elements        // Variables to store DOM elements
-        let startButton, stopButton, nextButton, homeButton, connectButton, reportButton, rateButton, localVideo, remoteVideo, statusEl, videoContainer, loadingSpinner, onlineCountEl, waitingUsersEl;
-        let reportModal, reportForm, reportSuccess, closeModalBtn, cancelReportBtn, closeSuccessModalBtn;
-        let ratingModal, ratingForm, ratingSuccess, closeRatingModalBtn, cancelRatingBtn, closeRatingSuccessModalBtn, selectedRatingValue;
-        let connectModal, connectForm, connectSuccess, closeConnectModalBtn, confirmConnectBtn, cancelConnectBtn, closeConnectSuccessModalBtn;
-        
-        // Helper function to get CSRF token with better error handling
-        function getCsrfToken() {
-            try {
-                const cookieValue = document.cookie
-                    .split('; ')
-                    .find(row => row.startsWith('csrftoken='))
-                    ?.split('=')[1];
-                
-                if (!cookieValue) {
-                    console.error('CSRF token not found in cookies. Available cookies:', document.cookie);
-                    throw new Error('Authentication error. Please refresh the page and try again.');
-                }
-                return cookieValue;
-            } catch (error) {
-                console.error('Error getting CSRF token:', error);
-                throw new Error('Authentication error. Please refresh the page and try again.');
-            }
-        }
 
-        // Function to log request details
-        function logRequestDetails(url, options) {
-            console.log('Making request to:', url);
-            console.log('Request options:', {
-                method: options.method,
-                headers: options.headers,
-                credentials: options.credentials,
-                body: options.body ? JSON.parse(options.body) : null
-            });
-        }
-
-        // Handle stop chat
-        const stopChat = async () => {
-            stopButton.disabled = true;
-            statusEl.textContent = 'Ending chat...';
-
-            await cleanup();
-
-            // Reset UI
-            videoContainer.classList.add('hidden');
-            startButton.classList.remove('hidden');
-            startButton.disabled = false;
-            homeButton.classList.remove('hidden');
-            nextButton.classList.add('hidden');
-            stopButton.classList.add('hidden');
-            reportButton.classList.add('hidden');
-            rateButton.classList.add('hidden');
-            if (connectButton) {
-                connectButton.classList.add('hidden');
-            }
-            stopButton.disabled = false;
-            statusEl.textContent = 'Chat ended. Click Start Chat to begin a new chat.';
-        };
-        
-        // Handle finding a new chat
-        const findNewChat = async () => {
-            nextButton.disabled = true;
-            statusEl.textContent = 'Finding a new stranger...';
-            await cleanup();
-            try {
-                await setupStreams();
-                await findOrCreateRoom();
-            } catch (error) {
-                console.error('Error finding new chat:', error);
-                console.error('Error stack:', error.stack);
-                nextButton.disabled = false;
-                statusEl.textContent = `Error: ${error.message || 'Error finding new chat. Please try again.'}`;
-            }
-        };
-        
-        function log(...args) {
-            if (DEBUG) {
-                console.log('[ChatSphere]', ...args);
-            }
-        }
-
-        // Helper function to get CSRF token
-        function getCookie(name) {
-            let cookieValue = null;
-            if (document.cookie && document.cookie !== '') {
-                const cookies = document.cookie.split(';');
-                for (let i = 0; i < cookies.length; i++) {
-                    const cookie = cookies[i].trim();
-                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                        break;
-                    }
-                }
-            }
-            return cookieValue;
-        }
-
-        // Initialize Firebase globally
-        let app, db, auth;
-        try {
-            log('Loading Firebase config from global variable');
-            const firebaseConfig = window.FIREBASE_CONFIG;
-            log('Firebase config loaded:', firebaseConfig);
-            
-            app = initializeApp(firebaseConfig);
-            db = getDatabase(app);
-            auth = getAuth(app);
-            
-            log('Firebase initialized successfully');
-        } catch (error) {
-            console.error('Error initializing Firebase:', error);
-            log('Firebase initialization failed:', error.message);
-            throw error;
-        }
-
-                        // WebRTC Configuration
-                
-                // Debug logging
-                async function checkMediaPermissions() {
-                    try {
-                        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-                        console.log('Media permissions granted:', stream.getTracks());
-                        stream.getTracks().forEach(track => track.stop());
-                        document.getElementById('status').textContent = 'Camera and microphone access granted';
-                        return true;
-                    } catch (error) {
-                        console.error('Media permission error:', error);
-                        document.getElementById('status').textContent = 'Error: ' + error.message;
-                        return false;
-                    }
-                }
-        
-        const servers = {
-            iceServers: [
-                { urls: ['stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302'] },
-            ],
-            iceCandidatePoolSize: 10,
-        };
-        let pc = new RTCPeerConnection(servers);
-        
-        // App State
-        let localStream = null;
-        let remoteStream = null;
-        let currentRoomId = null;
-        let userId = null;
-        let djangoUserId = "{{ request.user.id }}"; // Django user ID
-        let peerDjangoUserId = null; // Store peer's Django user ID
-        let isAudioEnabled = true;
-        let isVideoEnabled = true;
-        let roomListener = null; // To track room status changes
-        let isReconnecting = false; // Flag to prevent infinite reconnection loops
-
-        // Debug: Check if Django user ID is set
-        log('Django User ID:', djangoUserId);
-        
-        // Debug function
-        function updateStatus(message, isError = false) {
-            console.log(message);
-            statusEl.textContent = message;
-            if (isError) {
-                statusEl.classList.add('text-red-500');
-            } else {
-                statusEl.classList.remove('text-red-500');
-            }
-        }
-        
-        // Function to start the chat
-        async function startChat() {
-            log('Start button clicked');
-            try {
-                // Validate user is authenticated
-                if (!userId) {
-                    throw new Error('Not authenticated. Please wait for authentication or refresh the page.');
-                }
-
-                log('Disabling start button');
-                startButton.disabled = true;
-                updateStatus('Starting video chat...');
-
-                log('Setting up media streams');
-                await setupStreams();
-
-                log('Finding or creating room');
-                await findOrCreateRoom();
-            } catch (error) {
-                console.error('Error starting chat:', error);
-                console.error('Error stack:', error.stack);
-                startButton.disabled = false;
-
-                // Show the header again if it was hidden
-                const chatHeader = document.getElementById('chat-header');
-                if (chatHeader) {
-                    chatHeader.classList.remove('hidden');
-                }
-
-                updateStatus('Failed to start chat: ' + error.message, true);
-            }
-        }
-
-        // Add connection state listener
-        pc.onconnectionstatechange = (event) => {
-            console.log("Connection state changed:", pc.connectionState);
-            updateStatus("WebRTC Connection State: " + pc.connectionState);
-        };
-        
-        // Add ICE connection state listener
-        pc.oniceconnectionstatechange = (event) => {
-            console.log("ICE Connection state:", pc.iceConnectionState);
-            updateStatus("ICE Connection State: " + pc.iceConnectionState);
-        };
-        
-        // Add signaling state listener
-        pc.onsignalingstatechange = (event) => {
-            console.log("Signaling state:", pc.signalingState);
-            updateStatus("Signaling State: " + pc.signalingState);
-        };
-        
-        // Presence System Functions
-        async function setupPresence() {
-            log('setupPresence called, userId:', userId);
-            if (!userId) {
-                log('setupPresence skipped: userId not set');
-                return;
-            }
-
-            try {
-                const presenceRef = ref(db, `presence/${userId}`);
-
-                // Function to update presence
-                async function updatePresence() {
-                    const userStatusData = {
-                        online: true,
-                        lastSeen: Date.now()
-                    };
-                    await set(presenceRef, userStatusData);
-                    log('Presence updated for user:', userId);
-                }
-
-                // Set initial presence
-                await updatePresence();
-
-                // Update presence every 30 seconds to show user is still active
-                const presenceInterval = setInterval(updatePresence, 30000);
-
-                // Store interval ID so we can clear it on cleanup
-                window.presenceInterval = presenceInterval;
-
-                // Remove user from presence when they disconnect
-                onDisconnect(presenceRef).remove();
-
-                // Also handle page visibility changes
-                document.addEventListener('visibilitychange', async () => {
-                    if (document.hidden) {
-                        // User switched tabs or minimized window
-                        await update(presenceRef, { online: false, lastSeen: Date.now() });
-                    } else {
-                        // User came back
-                        await updatePresence();
-                    }
-                });
-
-                // Clean up on page unload
-                window.addEventListener('beforeunload', () => {
-                    // Try to set offline (may not always work due to browser restrictions)
-                    navigator.sendBeacon && set(presenceRef, { online: false, lastSeen: Date.now() });
-                });
-
-                log('Presence tracking setup complete for user:', userId);
-            } catch (error) {
-                console.error('Error setting up presence:', error);
-            }
-        }
-        
-        function trackOnlineUsers() {
-            log('Setting up online user tracking');
-            const roomsRef = ref(db, 'rooms');
-            const waitingRoomsRef = ref(db, 'waiting_rooms');
-
-            // Function to count online users from rooms and waiting rooms
-            async function updateOnlineCount() {
-                try {
-                    const [roomsSnapshot, waitingSnapshot] = await Promise.all([
-                        get(roomsRef),
-                        get(waitingRoomsRef)
-                    ]);
-
-                    const rooms = roomsSnapshot.val();
-                    const waitingRooms = waitingSnapshot.val();
-                    const uniqueUsers = new Set();
-
-                    // Count users in active rooms (users currently in video chat)
-                    if (rooms) {
-                        Object.values(rooms).forEach(room => {
-                            if (room.creatorId) uniqueUsers.add(room.creatorId);
-                            if (room.joinerId) uniqueUsers.add(room.joinerId);
-                        });
-                    }
-
-                    // Count users waiting for a match
-                    if (waitingRooms) {
-                        Object.values(waitingRooms).forEach(room => {
-                            if (room.creatorId) uniqueUsers.add(room.creatorId);
-                        });
-                    }
-
-                    const count = uniqueUsers.size;
-                    if (onlineCountEl) {
-                        onlineCountEl.textContent = count;
-                    }
-                    log('Online users count:', count, 'Unique UIDs:', Array.from(uniqueUsers));
-                } catch (error) {
-                    console.error('Error updating online count:', error);
-                    if (onlineCountEl) {
-                        onlineCountEl.textContent = '0';
-                    }
-                }
-            }
-
-            // Listen to changes in both rooms and waiting_rooms
-            onValue(roomsRef, () => {
-                log('Rooms changed, updating online count');
-                updateOnlineCount();
-            }, (error) => {
-                console.error('Error listening to rooms:', error);
-            });
-
-            onValue(waitingRoomsRef, () => {
-                log('Waiting rooms changed, updating online count');
-                updateOnlineCount();
-            }, (error) => {
-                console.error('Error listening to waiting_rooms:', error);
-            });
-
-            // Initial count
-            updateOnlineCount();
-        }
-        
-        function trackWaitingUsers() {
-            const waitingRoomsRef = ref(db, 'waiting_rooms');
-            
-            onValue(waitingRoomsRef, (snapshot) => {
-                const waitingRooms = snapshot.val();
-                const count = waitingRooms ? Object.keys(waitingRooms).length : 0;
-                
-                if (count > 0) {
-                    waitingUsersEl.textContent = `${count} ${count === 1 ? 'person' : 'people'} waiting to chat`;
-                } else {
-                    waitingUsersEl.textContent = '';
-                }
-                log('Waiting users:', count);
-            });
-        }
-        
-        async function removePresence() {
-            if (!userId) return;
-            
-            try {
-                await remove(ref(db, `presence/${userId}`));
-                log('User presence removed');
-            } catch (error) {
-                console.warn('Error removing presence:', error);
-            }
-        }
-        
-        // Monitor room for peer disconnection
-        function monitorRoomStatus() {
-            if (!currentRoomId) return;
-            
-            const roomRef = ref(db, `rooms/${currentRoomId}`);
-            
-            // Remove previous listener if exists
-            if (roomListener) {
-                roomListener();
-            }
-            
-            roomListener = onValue(roomRef, async (snapshot) => {
-                const roomData = snapshot.val();
-                
-                // If room is deleted (peer clicked Next/Stop)
-                if (!roomData && !isReconnecting) {
-                    log('Room deleted - peer has left');
-                    isReconnecting = true;
-                    updateStatus('Stranger has left. Finding a new partner...');
-                    
-                    // Stop listening
-                    if (roomListener) {
-                        roomListener();
-                        roomListener = null;
-                    }
-                    
-                    // Automatically find new partner
-                    const oldRoomId = currentRoomId;
-                    currentRoomId = null; // Clear room ID to prevent cleanup from deleting again
-                    
-                    // Clean up local resources only
-                    if (localStream) {
-                        localStream.getTracks().forEach(track => track.stop());
-                    }
-                    if (remoteStream) {
-                        remoteStream.getTracks().forEach(track => track.stop());
-                    }
-                    if (pc) {
-                        pc.close();
-                        pc = new RTCPeerConnection(servers);
-                    }
-                    
-                    try {
-                        await setupStreams();
-                        await findOrCreateRoom();
-                    } catch (error) {
-                        console.error('Error finding new chat after peer left:', error);
-                        updateStatus('Error finding new chat. Please try again.');
-                    } finally {
-                        isReconnecting = false;
-                    }
-                }
-            });
-            
-            log('Room monitoring started');
-        }
-        
-        // Clean up all stale rooms and waiting rooms globally
-        async function cleanupAllStaleRooms() {
-            log('Cleaning up all stale rooms...');
-            try {
-                const roomsRef = ref(db, 'rooms');
-                const waitingRoomsRef = ref(db, 'waiting_rooms');
-                const STALE_TIMEOUT = 120000; // 2 minutes (reduced from 5 minutes)
-                const now = Date.now();
-
-                // Clean up stale rooms
-                const roomsSnapshot = await get(roomsRef);
-                if (roomsSnapshot.exists()) {
-                    const rooms = roomsSnapshot.val();
-                    let cleanedCount = 0;
-
-                    for (const [roomId, room] of Object.entries(rooms)) {
-                        // Check if room has a createdAt timestamp
-                        if (room.createdAt && typeof room.createdAt === 'number') {
-                            const roomAge = now - room.createdAt;
-                            if (roomAge > STALE_TIMEOUT) {
-                                log(`Removing stale room: ${roomId}, age: ${Math.round(roomAge / 1000)}s`);
-                                await remove(ref(db, `rooms/${roomId}`));
-                                cleanedCount++;
-                            }
-                        } else if (!room.createdAt) {
-                            // Remove rooms without timestamp (legacy data)
-                            log(`Removing room without timestamp: ${roomId}`);
-                            await remove(ref(db, `rooms/${roomId}`));
-                            cleanedCount++;
-                        }
-                    }
-
-                    if (cleanedCount > 0) {
-                        log(`Cleaned up ${cleanedCount} stale rooms`);
-                    }
-                }
-
-                // Clean up stale waiting rooms
-                const waitingSnapshot = await get(waitingRoomsRef);
-                if (waitingSnapshot.exists()) {
-                    const waitingRooms = waitingSnapshot.val();
-                    let cleanedCount = 0;
-
-                    for (const [roomId, room] of Object.entries(waitingRooms)) {
-                        if (room.createdAt && typeof room.createdAt === 'number') {
-                            const roomAge = now - room.createdAt;
-                            if (roomAge > STALE_TIMEOUT) {
-                                log(`Removing stale waiting room: ${roomId}, age: ${Math.round(roomAge / 1000)}s`);
-                                await remove(ref(db, `waiting_rooms/${roomId}`));
-                                cleanedCount++;
-                            }
-                        } else if (!room.createdAt) {
-                            // Remove waiting rooms without timestamp (legacy data)
-                            log(`Removing waiting room without timestamp: ${roomId}`);
-                            await remove(ref(db, `waiting_rooms/${roomId}`));
-                            cleanedCount++;
-                        }
-                    }
-
-                    if (cleanedCount > 0) {
-                        log(`Cleaned up ${cleanedCount} stale waiting rooms`);
-                    }
-                }
-
-                log('Stale room cleanup complete');
-            } catch (error) {
-                console.error('Error cleaning up stale rooms:', error);
-            }
-        }
-
-        async function initialize() {
-            log('Initializing application');
-            try {
-                // Validate Firebase configuration
-                if (!window.FIREBASE_CONFIG) {
-                    throw new Error('Firebase configuration not found');
-                }
-
-                log('Initializing Firebase');
-                updateStatus("Initializing Firebase connection...");
-
-                log('Signing in anonymously...');
-                const userCredential = await signInAnonymously(auth);
-                log('Anonymous auth successful. User UID:', userCredential.user.uid);
-                updateStatus("Firebase initialized, authenticating...");
-            } catch (error) {
-                console.error("Authentication failed:", error);
-                updateStatus("Error: Could not authenticate with Firebase. " + error.message, true);
-                return;
-            }
-
-            onAuthStateChanged(auth, async (user) => {
-                if (user) {
-                    log('User authenticated. Firebase UID:', user.uid, '| Django User ID:', djangoUserId);
-                    userId = user.uid;
-
-                    // Debug: Check if multiple users have same UID (shouldn't happen)
-                    if (window.allUserIds === undefined) {
-                        window.allUserIds = new Set();
-                    }
-                    window.allUserIds.add(userId);
-                    log('Total unique Firebase UIDs in this session:', window.allUserIds.size);
-
-                    // Clean up stale rooms before starting tracking
-                    await cleanupAllStaleRooms();
-
-                    // Start tracking online users after cleanup
-                    log('Starting online user tracking...');
-                    trackOnlineUsers();
-                    trackWaitingUsers();
-
-                    startButton.disabled = false;
-                    startButton.classList.remove('opacity-50');
-                    updateStatus("Authentication successful. Click 'Start Chat' to begin.");
-
-                    // Setup presence tracking
-                    try {
-                        await setupPresence();
-                        log('Presence setup complete, user should now be visible in online count');
-                    } catch (error) {
-                        console.error('Error setting up presence:', error);
-                        // Don't fail the whole initialization if presence fails
-                    }
-                } else {
-                    log('User not authenticated');
-                    userId = null;
-                    startButton.disabled = true;
-                    startButton.classList.add('opacity-50');
-                    updateStatus("Authentication required to start.", true);
-                }
-            });
-
-            // Add manual check for Firebase config
-            log('Firebase config loaded:', !!window.FIREBASE_CONFIG);
-            log('Start button status:', !startButton.disabled);
-        }
-
-        const setupStreams = async () => {
-            try {
-                if (!statusEl) {
-                    throw new Error('Status element not found');
-                }
-                statusEl.textContent = "Setting up video chat...";
-                // Hide the header when starting chat
-                const chatHeader = document.getElementById('chat-header');
-                if (chatHeader) {
-                    chatHeader.classList.add('hidden');
-                }
-                
-                statusEl.textContent = "Requesting camera and microphone access...";
-                localStream = await navigator.mediaDevices.getUserMedia({ 
-                    video: true, 
-                    audio: true 
-                });
-                statusEl.textContent = "Camera and microphone access granted";
-                remoteStream = new MediaStream();
-                
-                // Log device information
-                const devices = await navigator.mediaDevices.enumerateDevices();
-                console.log("Available devices:", devices);
-
-                localStream.getTracks().forEach((track) => {
-                    pc.addTrack(track, localStream);
-                });
-
-                pc.ontrack = (event) => {
-                    event.streams[0].getTracks().forEach((track) => {
-                        remoteStream.addTrack(track);
-                    });
-                };
-
-                localVideo.srcObject = localStream;
-                remoteVideo.srcObject = remoteStream;
-
-                videoContainer.classList.remove('hidden');
-                startButton.classList.add('hidden');
-                homeButton.classList.add('hidden');
-                nextButton.classList.remove('hidden');
-                nextButton.disabled = false;
-                stopButton.classList.remove('hidden');
-                stopButton.disabled = false;
-                reportButton.classList.remove('hidden');
-                reportButton.disabled = false;
-                rateButton.classList.remove('hidden');
-                rateButton.disabled = false;
-
-                // Only show connect button if it exists (for verified users)
-                if (connectButton) {
-                    connectButton.classList.remove('hidden');
-                    connectButton.disabled = false;
-                }
-
-                // Enable/disable buttons
-                startButton.disabled = true;
-                nextButton.disabled = false;
-                stopButton.disabled = false;
-                reportButton.disabled = false;
-            } catch (error) {
-                console.error("Media Error:", error);
-                switch(error.name) {
-                    case 'NotAllowedError':
-                        statusEl.textContent = "Camera/Microphone access denied. Please check your permissions.";
-                        break;
-                    case 'NotFoundError':
-                        statusEl.textContent = "No camera or microphone found. Please connect a device.";
-                        break;
-                    case 'NotReadableError':
-                        statusEl.textContent = "Camera/Microphone is already in use by another application.";
-                        break;
-                    default:
-                        statusEl.textContent = "Could not access camera/microphone. Please try again.";
-                }
-                throw error;
-            }
-        };
-
-        // Helper function to clean up rooms
-        async function cleanupRooms() {
-            console.log("Cleaning up existing rooms for user:", userId);
-            const roomsRef = ref(db, 'rooms');
-            const waitingRoomsRef = ref(db, 'waiting_rooms');
-            
-            // Clean rooms
-            const existingRooms = await get(roomsRef);
-            if (existingRooms.exists()) {
-                const rooms = existingRooms.val();
-                for (const [key, room] of Object.entries(rooms)) {
-                    if (room.creatorId === userId || room.joinerId === userId) {
-                        console.log("Removing existing room:", key);
-                        await remove(ref(db, `rooms/${key}`));
-                    }
-                }
-            }
-            
-            // Clean waiting rooms
-            const existingWaitingRooms = await get(waitingRoomsRef);
-            if (existingWaitingRooms.exists()) {
-                const rooms = existingWaitingRooms.val();
-                for (const [key, room] of Object.entries(rooms)) {
-                    if (room.creatorId === userId) {
-                        console.log("Removing existing waiting room:", key);
-                        await remove(ref(db, `waiting_rooms/${key}`));
-                    }
-                }
-            }
-        }
-
-        async function findOrCreateRoom() {
-            try {
-                statusEl.textContent = 'Looking for a stranger...';
-                loadingSpinner.classList.remove('hidden');
-                nextButton.disabled = true;
-
-                // Validate Django user ID
-                if (!djangoUserId || djangoUserId === 'None' || djangoUserId === '') {
-                    throw new Error('Django user ID not set. Please refresh and try again.');
-                }
-
-                log('Creating/joining room with Django user ID:', djangoUserId);
-
-                const roomsRef = ref(db, 'rooms');
-                const waitingRoomsRef = ref(db, 'waiting_rooms');
-
-                // Try to find an existing room BEFORE cleaning up
-                log('🔍 Fetching waiting rooms...');
-                statusEl.textContent = 'Checking for available strangers...';
-                const waitingRooms = await get(waitingRoomsRef);
-
-                if (waitingRooms.exists()) {
-                    const rooms = waitingRooms.val();
-                    log("📋 Searching for available room. My userId:", userId);
-                    log("📋 Available waiting rooms:", JSON.stringify(rooms, null, 2));
-
-                    const availableRoom = Object.entries(rooms).find(([_, room]) => {
-                        const isAvailable = room.creatorId !== userId;
-                        log(`🔍 Room check: creatorId=${room.creatorId}, myId=${userId}, available=${isAvailable}`);
-                        return isAvailable;
-                    });
-
-                    if (availableRoom) {
-                        const [roomId, roomData] = availableRoom;
-                        log("✅ Found available room:", roomId, "Created by:", roomData.creatorId);
-                        statusEl.textContent = 'Found a stranger! Connecting...';
-                        currentRoomId = roomId;
-
-                        // Get the full room data from the main rooms collection
-                        log(`📡 Fetching main room data for ${roomId}...`);
-                        const existingRoomSnapshot = await get(ref(db, `rooms/${roomId}`));
-                        const existingRoomData = existingRoomSnapshot.val();
-                        log("📋 Main room data:", JSON.stringify(existingRoomData, null, 2));
-
-                        if (!existingRoomData) {
-                            log("❌ Room data not found in main rooms collection");
-                            throw new Error('Room data not found in main rooms collection. Room may have been closed.');
-                        }
-
-                        if (!existingRoomData.offer) {
-                            log("❌ No offer found in room data");
-                            throw new Error('No offer found in room. Peer may not be ready.');
-                        }
-
-                        // Store peer's Django user ID
-                        peerDjangoUserId = existingRoomData.creatorDjangoId;
-                        log("👤 Peer Django user ID:", peerDjangoUserId);
-
-                        if (!peerDjangoUserId) {
-                            log("⚠️ Warning: Peer Django user ID not found in room data");
-                        } else {
-                            // Load peer stats for tooltip display
-                            loadPeerStats(peerDjangoUserId);
-                        }
-
-                        // Remove from waiting rooms and update status
-                        log(`🔄 Removing room ${roomId} from waiting_rooms...`);
-                        await remove(ref(db, `waiting_rooms/${roomId}`));
-
-                        log(`🔄 Updating room ${roomId} status to 'full'...`);
-                        await update(ref(db, `rooms/${roomId}`), {
-                            status: 'full',
-                            joinerId: userId,
-                            joinerDjangoId: djangoUserId
-                        });
-
-                        log('✅ Successfully joined room. Starting as callee...');
-                        statusEl.textContent = 'Connecting to stranger...';
-                        await startCallAsCallee();
-                        return;
-                    } else {
-                        log("❌ No available rooms found (all rooms have same creator as me)");
-                    }
-                } else {
-                    log("📭 No waiting rooms exist in database");
-                }
-
-                // No available rooms - cleanup old rooms and create a new one
-                log('No available rooms found. Cleaning up old rooms for this user...');
-                await cleanupRooms();
-
-                log('Creating new room');
-                const newRoomRef = push(roomsRef);
-                currentRoomId = newRoomRef.key;
-
-                const timestamp = Date.now();
-
-                // First, create the WebRTC offer BEFORE adding to waiting rooms
-                log('Creating WebRTC offer first...');
-                const offerDescription = await pc.createOffer();
-                await pc.setLocalDescription(offerDescription);
-                log('Offer created:', offerDescription.type);
-
-                const offer = {
-                    sdp: offerDescription.sdp,
-                    type: offerDescription.type,
-                };
-
-                // Now create the room WITH the offer already included
-                await set(newRoomRef, {
-                    creatorId: userId,
-                    creatorDjangoId: djangoUserId,
-                    status: 'waiting',
-                    createdAt: timestamp,
-                    offer: offer  // Include offer from the start!
-                });
-
-                log('Room created with offer');
-
-                // Add to waiting rooms
-                await set(ref(db, `waiting_rooms/${currentRoomId}`), {
-                    creatorId: userId,
-                    creatorDjangoId: djangoUserId,
-                    status: 'waiting',
-                    createdAt: timestamp
-                });
-
-                log('Room added to waiting_rooms with ID:', currentRoomId, 'timestamp:', timestamp);
-
-                log('Setting up caller listeners');
-                await startCallAsCaller();
-            } catch (error) {
-                console.error("Error in findOrCreateRoom:", error);
-                console.error("Error details:", error.message, error.stack);
-
-                if (error.message === 'Timeout waiting for offer') {
-                    statusEl.textContent = "Connection timeout. The other user may have left. Try again.";
-                } else {
-                    statusEl.textContent = `Error: ${error.message}. Please try again.`;
-                }
-
-                loadingSpinner.classList.add('hidden');
-                nextButton.disabled = false;
-
-                // Clean up the room if it was created
-                if (currentRoomId) {
-                    await cleanup();
-                }
-
-                throw error;
-            }
-        }        const startCallAsCaller = async () => {
-            const roomRef = ref(db, `rooms/${currentRoomId}`);
-
-            log('Setting up ICE candidate handler');
-            pc.onicecandidate = async (event) => {
-                if (event.candidate) {
-                    log('Sending ICE candidate to Firebase');
-                    await push(ref(db, `rooms/${currentRoomId}/callerCandidates`), event.candidate.toJSON());
-                }
-            };
-
-            log('Offer already created and saved, waiting for answer...');
-
-            // Listen for answer
-            onValue(roomRef, async (snapshot) => {
-                const data = snapshot.val();
-                if (!pc.currentRemoteDescription && data?.answer) {
-                    const answerDescription = new RTCSessionDescription(data.answer);
-                    await pc.setRemoteDescription(answerDescription);
-
-                    // Store peer's Django user ID
-                    peerDjangoUserId = data.joinerDjangoId;
-                    log("Peer Django user ID:", peerDjangoUserId);
-
-                    if (peerDjangoUserId) {
-                        // Load peer stats for tooltip display
-                        loadPeerStats(peerDjangoUserId);
-                    }
-
-                    statusEl.textContent = 'Stranger connected!';
-                    loadingSpinner.classList.add('hidden');
-                    nextButton.disabled = false;
-
-                    // Start monitoring room for peer disconnection
-                    monitorRoomStatus();
-                }
-            });
-
-            // Listen for remote ICE candidates
-            onValue(ref(db, `rooms/${currentRoomId}/calleeCandidates`), (snapshot) => {
-                snapshot.forEach((childSnapshot) => {
-                    const candidate = new RTCIceCandidate(childSnapshot.val());
-                    pc.addIceCandidate(candidate);
-                });
-            });
-        };
-
-        const startCallAsCallee = async () => {
-            const roomRef = ref(db, `rooms/${currentRoomId}`);
-
-            pc.onicecandidate = async (event) => {
-                if (event.candidate) {
-                    log('📤 Sending ICE candidate to Firebase (callee)');
-                    await push(ref(db, `rooms/${currentRoomId}/calleeCandidates`), event.candidate.toJSON());
-                }
-            };
-
-            log('🎯 Starting as callee for room:', currentRoomId);
-            statusEl.textContent = 'Connecting to stranger...';
-
-            try {
-                // First, get the current room data to check if offer exists
-                log('📡 Fetching current room data...');
-                const roomSnapshot = await get(roomRef);
-                const roomData = roomSnapshot.val();
-
-                log('📋 Current room data:', JSON.stringify(roomData, null, 2));
-
-                if (!roomData) {
-                    throw new Error('Room data not found');
-                }
-
-                if (!roomData.offer || !roomData.offer.type || !roomData.offer.sdp) {
-                    throw new Error('No valid offer found in room');
-                }
-
-                log('✅ Offer found in room! Type:', roomData.offer.type);
-                const offerDescription = roomData.offer;
-
-                log('🔄 Setting remote description (offer)...');
-                await pc.setRemoteDescription(new RTCSessionDescription(offerDescription));
-
-                log('🔄 Creating answer...');
-                const answerDescription = await pc.createAnswer();
-
-                log('🔄 Setting local description (answer)...');
-                await pc.setLocalDescription(answerDescription);
-
-                const answer = {
-                    type: answerDescription.type,
-                    sdp: answerDescription.sdp,
-                };
-
-                log('📤 Saving answer to Firebase...');
-                await update(roomRef, { answer });
-                log('✅ Answer saved to Firebase successfully');
-
-                // Listen for ICE candidates from caller
-                log('👂 Listening for caller ICE candidates...');
-                onValue(ref(db, `rooms/${currentRoomId}/callerCandidates`), (snapshot) => {
-                    snapshot.forEach((childSnapshot) => {
-                        const candidate = new RTCIceCandidate(childSnapshot.val());
-                        log('📥 Received ICE candidate from caller');
-                        pc.addIceCandidate(candidate).catch(e => log('Error adding ICE candidate:', e));
-                    });
-                });
-
-                statusEl.textContent = 'Connected to stranger!';
-                loadingSpinner.classList.add('hidden');
-                nextButton.disabled = false;
-
-                log('✅ Callee setup complete!');
-
-                // Start monitoring room for peer disconnection
-                monitorRoomStatus();
-
-                return Promise.resolve();
-            } catch (error) {
-                console.error('❌ Error in startCallAsCallee:', error);
-                statusEl.textContent = `Connection failed: ${error.message}`;
-                throw error;
-            }
-        };
-
-        const cleanup = async () => {
-            // Stop room monitoring
-            if (roomListener) {
-                roomListener();
-                roomListener = null;
-                log('Room monitoring stopped');
-            }
-
-            if (currentRoomId) {
-                try {
-                    // Remove room and waiting room entries
-                    await remove(ref(db, `rooms/${currentRoomId}`));
-                    await remove(ref(db, `waiting_rooms/${currentRoomId}`));
-                } catch (error) {
-                    console.warn('Error cleaning up room:', error);
-                }
-            }
-
-            // Stop all tracks
-            if (localStream) {
-                localStream.getTracks().forEach(track => {
-                    track.stop();
-                    localStream.removeTrack(track);
-                });
-                localStream = null;
-            }
-
-            if (remoteStream) {
-                remoteStream.getTracks().forEach(track => {
-                    track.stop();
-                    remoteStream.removeTrack(track);
-                });
-                remoteStream = null;
-            }
-
-            // Clean up WebRTC connection
-            if (pc) {
-                pc.ontrack = null;
-                pc.onicecandidate = null;
-                pc.close();
-                pc = new RTCPeerConnection(servers);
-            }
-
-            // Clear video elements
-            if (remoteVideo.srcObject) {
-                remoteVideo.srcObject = null;
-            }
-            if (localVideo.srcObject) {
-                localVideo.srcObject = null;
-            }
-
-            currentRoomId = null;
-            peerDjangoUserId = null;
-            clearPeerStats();
-            resetMediaButtonStates();
-            isAudioEnabled = true;
-            isVideoEnabled = true;
-
-            // Show the header when chat ends
-            const chatHeader = document.getElementById('chat-header');
-            if (chatHeader) {
-                chatHeader.classList.remove('hidden');
-            }
-        };
-
-        // Function to fetch and display peer stats
-        async function loadPeerStats(userId) {
-            if (!userId) return;
-
-            // Clear previous stats first
-            clearPeerStats();
-
-            try {
-                const response = await fetch(`/get-peer-stats/${userId}/`);
-                if (!response.ok) {
-                    log('Error fetching peer stats:', response.status);
-                    return;
-                }
-
-                const data = await response.json();
-                if (data.success) {
-                    displayPeerStats(data);
-                } else {
-                    log('Error in peer stats response:', data.error);
-                }
-            } catch (error) {
-                log('Error fetching peer stats:', error);
-            }
-        }
-
-        // Function to clear peer stats from tooltip
-        function clearPeerStats() {
-            const tooltipContent = document.getElementById('tooltipContent');
-            const tooltip = document.getElementById('peerStatsTooltip');
-
-            if (tooltipContent) {
-                tooltipContent.innerHTML = '<p class="text-xs text-indigo-200 mb-1">Hover to load...</p>';
-            }
-
-            // Remove inline opacity style so CSS hover rule can work
-            if (tooltip) {
-                tooltip.style.removeProperty('opacity');
-            }
-        }
-
-        // Function to reset audio and video button states
-        function resetMediaButtonStates() {
-            const toggleAudio = document.getElementById('toggleAudio');
-            const toggleVideo = document.getElementById('toggleVideo');
-
-            // Reset states to enabled (true)
-            isAudioEnabled = true;
-            isVideoEnabled = true;
-
-            // Remove red background class that indicates disabled state
-            if (toggleAudio) {
-                toggleAudio.classList.remove('bg-red-500');
-                toggleAudio.setAttribute('aria-pressed', 'false');
-            }
-
-            if (toggleVideo) {
-                toggleVideo.classList.remove('bg-red-500');
-                toggleVideo.setAttribute('aria-pressed', 'false');
-            }
-        }
-
-        // Function to display peer stats in tooltip
-        function displayPeerStats(statsData) {
-            const tooltipContent = document.getElementById('tooltipContent');
-            if (!tooltipContent) return;
-
-            let html = '';
-
-            if (statsData.is_new_user) {
-                html = '<div class="new-user-badge">🆕 NEW USER</div>';
-            } else {
-                html = `
-                    <div class="stat-item">
-                        <span>Aura Points:</span>
-                        <span class="text-indigo-300 font-semibold">${statsData.aura_points}</span>
-                    </div>
-                    <div class="stat-item">
-                        <span>Avg Rating:</span>
-                        <span class="text-indigo-300 font-semibold">⭐ ${statsData.avg_rating}</span>
-                    </div>
-                    <div class="stat-item">
-                        <span>Ratings:</span>
-                        <span class="text-indigo-300 font-semibold">${statsData.total_ratings}</span>
-                    </div>
-                `;
-            }
-
-            tooltipContent.innerHTML = html;
-        }
-
-        // Media Controls and button handlers will be set up in window load event
-
-        // Initialize when the page loads
-        window.addEventListener('load', async () => {
-            try {
-                log('Page loaded');
-                
-                // Initialize DOM elements
-                startButton = document.getElementById('startButton');
-                stopButton = document.getElementById('stopButton');
-                nextButton = document.getElementById('nextButton');
-                homeButton = document.getElementById('homeButton');
-                connectButton = document.getElementById('connectButton');
-                reportButton = document.getElementById('reportButton');
-                rateButton = document.getElementById('rateButton');
-                localVideo = document.getElementById('localVideo');
-                remoteVideo = document.getElementById('remoteVideo');
-                statusEl = document.getElementById('status');
-                videoContainer = document.getElementById('video-container');
-                loadingSpinner = document.getElementById('loading-spinner');
-                onlineCountEl = document.getElementById('online-count');
-                waitingUsersEl = document.getElementById('waiting-users');
-
-                // Initialize report modal elements
-                reportModal = document.getElementById('reportModal');
-                reportForm = document.getElementById('reportForm');
-                reportSuccess = document.getElementById('reportSuccess');
-                closeModalBtn = document.getElementById('closeModal');
-                cancelReportBtn = document.getElementById('cancelReport');
-                closeSuccessModalBtn = document.getElementById('closeSuccessModal');
-
-                // Initialize rating modal elements
-                ratingModal = document.getElementById('ratingModal');
-                ratingForm = document.getElementById('ratingForm');
-                ratingSuccess = document.getElementById('ratingSuccess');
-                closeRatingModalBtn = document.getElementById('closeRatingModal');
-                cancelRatingBtn = document.getElementById('cancelRating');
-                closeRatingSuccessModalBtn = document.getElementById('closeRatingSuccessModal');
-
-                // Initialize connect modal elements
-                connectModal = document.getElementById('connectModal');
-                connectForm = document.getElementById('connectForm');
-                connectSuccess = document.getElementById('connectSuccess');
-                closeConnectModalBtn = document.getElementById('closeConnectModal');
-                confirmConnectBtn = document.getElementById('confirmConnect');
-                cancelConnectBtn = document.getElementById('cancelConnect');
-                closeConnectSuccessModalBtn = document.getElementById('closeConnectSuccessModal');
-
-                // Check for missing elements
-                const requiredElements = {
-                    startButton, stopButton, nextButton, homeButton, reportButton,
-                    localVideo, remoteVideo, statusEl, videoContainer, loadingSpinner,
-                    onlineCountEl, waitingUsersEl, reportModal, reportForm, reportSuccess,
-                    closeModalBtn, cancelReportBtn, closeSuccessModalBtn
-                };
-
-                for (const [name, element] of Object.entries(requiredElements)) {
-                    if (!element) {
-                        console.error(`Missing element: ${name}`);
-                    }
-                }
-
-                log('DOM elements initialized');
-                
-                // Set up all button click handlers
-                startButton.addEventListener('click', startChat);
-                stopButton.addEventListener('click', stopChat);
-                nextButton.addEventListener('click', findNewChat);
-                homeButton.addEventListener('click', () => window.location.href = '/home/');
-                // Removed connect button event listener
-                
-                document.getElementById('toggleAudio').onclick = () => {
-                    if (localStream) {
-                        const audioTrack = localStream.getAudioTracks()[0];
-                        if (audioTrack) {
-                            isAudioEnabled = !isAudioEnabled;
-                            audioTrack.enabled = isAudioEnabled;
-                            const button = document.getElementById('toggleAudio');
-                            button.classList.toggle('bg-red-500', !isAudioEnabled);
-                            button.setAttribute('aria-pressed', !isAudioEnabled);
-                        }
-                    }
-                };
-
-                document.getElementById('toggleVideo').onclick = () => {
-                    if (localStream) {
-                        const videoTrack = localStream.getVideoTracks()[0];
-                        if (videoTrack) {
-                            isVideoEnabled = !isVideoEnabled;
-                            videoTrack.enabled = isVideoEnabled;
-                            const button = document.getElementById('toggleVideo');
-                            button.classList.toggle('bg-red-500', !isVideoEnabled);
-                            button.setAttribute('aria-pressed', !isVideoEnabled);
-                        }
-                    }
-                };
-
-                stopButton.onclick = async () => {
-                    stopButton.disabled = true;
-                    statusEl.textContent = 'Ending chat...';
-
-                    await cleanup();
-
-                    // Reset UI
-                    videoContainer.classList.add('hidden');
-                    startButton.classList.remove('hidden');
-                    startButton.disabled = false;
-                    homeButton.classList.remove('hidden');
-                    nextButton.classList.add('hidden');
-                    stopButton.classList.add('hidden');
-                    reportButton.classList.add('hidden');
-                    rateButton.classList.add('hidden');
-                    if (connectButton) {
-                        connectButton.classList.add('hidden');
-                    }
-                    stopButton.disabled = false;
-                    statusEl.textContent = 'Chat ended. Click Start Chat to begin a new chat.';
-                };
-
-                // Report modal handlers
-                reportButton.onclick = () => {
-                    reportModal.classList.remove('hidden');
-                    reportModal.classList.add('flex');
-                };
-
-                closeModalBtn.onclick = () => {
-                    reportModal.classList.add('hidden');
-                    reportModal.classList.remove('flex');
-                    reportForm.reset();
-                };
-
-                cancelReportBtn.onclick = () => {
-                    reportModal.classList.add('hidden');
-                    reportModal.classList.remove('flex');
-                    reportForm.reset();
-                };
-
-                closeSuccessModalBtn.onclick = () => {
-                    reportModal.classList.add('hidden');
-                    reportModal.classList.remove('flex');
-                    reportForm.classList.remove('hidden');
-                    reportSuccess.classList.add('hidden');
-                    reportForm.reset();
-                };
-
-                // Report form submission
-                reportForm.onsubmit = async (e) => {
-                    e.preventDefault();
-
-                    const reason = document.getElementById('reportReason').value;
-                    const description = document.getElementById('reportDescription').value;
-
-                    if (!reason || !description.trim()) {
-                        alert('Please fill in all fields');
-                        return;
-                    }
-
-                    if (!peerDjangoUserId) {
-                        alert('Unable to identify the user to report. Please try again.');
-                        return;
-                    }
-
-                    try {
-                        const response = await fetch('/report-user/', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRFToken': getCsrfToken()
-                            },
-                            body: JSON.stringify({
-                                room_id: currentRoomId,
-                                reported_user_id: peerDjangoUserId,
-                                reason: reason,
-                                description: description
-                            })
-                        });
-
-                        const data = await response.json();
-
-                        if (response.ok && data.success) {
-                            // Show success message
-                            reportForm.classList.add('hidden');
-                            reportSuccess.classList.remove('hidden');
-                        } else {
-                            alert(data.error || 'Failed to submit report. Please try again.');
-                        }
-                    } catch (error) {
-                        console.error('Error submitting report:', error);
-                        alert('Failed to submit report. Please try again.');
-                    }
-                };
-
-
-
-                // Rating modal handlers
-                rateButton.onclick = () => {
-                    // Reset rating form
-                    selectedRatingValue = 0;
-                    document.getElementById('selectedRating').textContent = '-';
-                    document.getElementById('ratingValue').value = '';
-                    // Reset star colors
-                    document.querySelectorAll('.rating-star svg').forEach(star => {
-                        star.classList.add('text-gray-500');
-                        star.classList.remove('text-yellow-500');
-                    });
-                    ratingForm.classList.remove('hidden');
-                    ratingSuccess.classList.add('hidden');
-                    ratingModal.classList.remove('hidden');
-                    ratingModal.classList.add('flex');
-                };
-
-                closeRatingModalBtn.onclick = () => {
-                    ratingModal.classList.add('hidden');
-                    ratingModal.classList.remove('flex');
-                    ratingForm.reset();
-                };
-
-                cancelRatingBtn.onclick = () => {
-                    ratingModal.classList.add('hidden');
-                    ratingModal.classList.remove('flex');
-                    ratingForm.reset();
-                };
-
-                closeRatingSuccessModalBtn.onclick = () => {
-                    ratingModal.classList.add('hidden');
-                    ratingModal.classList.remove('flex');
-                    ratingForm.classList.remove('hidden');
-                    ratingSuccess.classList.add('hidden');
-                    ratingForm.reset();
-                };
-
-                // Star rating selection
-                document.querySelectorAll('.rating-star').forEach(button => {
-                    button.onclick = (e) => {
-                        e.preventDefault();
-                        selectedRatingValue = parseInt(button.getAttribute('data-rating'));
-                        document.getElementById('ratingValue').value = selectedRatingValue;
-                        document.getElementById('selectedRating').textContent = selectedRatingValue;
-
-                        // Update star colors
-                        document.querySelectorAll('.rating-star svg').forEach((star, index) => {
-                            if (index < selectedRatingValue) {
-                                star.classList.remove('text-gray-500');
-                                star.classList.add('text-yellow-500');
-                            } else {
-                                star.classList.add('text-gray-500');
-                                star.classList.remove('text-yellow-500');
-                            }
-                        });
-                    };
-                });
-
-                // Rating form submission
-                ratingForm.onsubmit = async (e) => {
-                    e.preventDefault();
-
-                    const ratingValue = document.getElementById('ratingValue').value;
-
-                    if (!ratingValue) {
-                        alert('Please select a rating');
-                        return;
-                    }
-
-                    if (!peerDjangoUserId) {
-                        alert('Unable to identify the user to rate. Please try again.');
-                        return;
-                    }
-
-                    try {
-                        const response = await fetch('/submit-rating/', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRFToken': getCsrfToken()
-                            },
-                            body: JSON.stringify({
-                                rated_user_id: peerDjangoUserId,
-                                rate_points: parseInt(ratingValue)
-                            })
-                        });
-
-                        const data = await response.json();
-
-                        if (response.ok && data.success) {
-                            // Show success message
-                            ratingForm.classList.add('hidden');
-                            ratingSuccess.classList.remove('hidden');
-                        } else {
-                            alert(data.error || 'Failed to submit rating. Please try again.');
-                        }
-                    } catch (error) {
-                        console.error('Error submitting rating:', error);
-                        alert('Failed to submit rating. Please try again.');
-                    }
-                };
-
-
-                // Connect modal handlers - only if button exists (verified users only)
-                if (connectButton) {
-                    connectButton.onclick = () => {
-                        connectForm.classList.remove('hidden');
-                        connectSuccess.classList.add('hidden');
-                        connectModal.classList.remove('hidden');
-                        connectModal.classList.add('flex');
-                    };
-                }
-
-                if (closeConnectModalBtn) {
-                    closeConnectModalBtn.onclick = () => {
-                        connectModal.classList.add('hidden');
-                        connectModal.classList.remove('flex');
-                    };
-                }
-
-                if (cancelConnectBtn) {
-                    cancelConnectBtn.onclick = () => {
-                        connectModal.classList.add('hidden');
-                        connectModal.classList.remove('flex');
-                    };
-                }
-
-                if (closeConnectSuccessModalBtn) {
-                    closeConnectSuccessModalBtn.onclick = () => {
-                        connectModal.classList.add('hidden');
-                        connectModal.classList.remove('flex');
-                        connectForm.classList.remove('hidden');
-                        connectSuccess.classList.add('hidden');
-                    };
-                }
-
-                // Connect confirmation - only if button exists (verified users only)
-                if (confirmConnectBtn) {
-                    confirmConnectBtn.onclick = async () => {
-                    if (!peerDjangoUserId) {
-                        alert('Unable to identify the user to connect with. Please try again.');
-                        return;
-                    }
-
-                    try {
-                        confirmConnectBtn.disabled = true;
-                        confirmConnectBtn.textContent = 'Connecting...';
-
-                        const response = await fetch('/submit-connection/', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRFToken': getCsrfToken()
-                            },
-                            body: JSON.stringify({
-                                connection_user_id: peerDjangoUserId
-                            })
-                        });
-
-                        const data = await response.json();
-
-                        if (response.ok && data.success) {
-                            // Show success message
-                            connectForm.classList.add('hidden');
-                            connectSuccess.classList.remove('hidden');
-                        } else {
-                            alert(data.error || 'Failed to connect. Please try again.');
-                        }
-                    } catch (error) {
-                        console.error('Error submitting connection:', error);
-                        alert('Failed to connect. Please try again.');
-                    } finally {
-                        confirmConnectBtn.disabled = false;
-                        confirmConnectBtn.textContent = 'Connect';
-                    }
-                    };
-                }
-
-
-                log('All button click handlers attached');
-                
-                await checkMediaPermissions();
-                log('Starting initialization');
-                await initialize();
-                log('Initialization complete');
-            } catch (error) {
-                console.error('Initialization error:', error);
-                if (statusEl) {
-                    statusEl.textContent = 'Failed to initialize. Please refresh the page.';
-                }
-            }
-        });
-        
-        // Clean up presence when page is closed
-        window.addEventListener('beforeunload', async () => {
-            await removePresence();
-        });
-    </script>
+    <script type="module" src="{% static 'js/video-chat.js' %}"></script>
 </body>
 </html>
