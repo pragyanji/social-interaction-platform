@@ -61,6 +61,7 @@
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   animation: slideUp 0.6s ease-out both;
   cursor: pointer;
+  overflow: visible !important;
 }
 
 .stat-card:nth-child(2) {
@@ -466,5 +467,180 @@
   .hero-section {
     margin: 40px auto;
     padding: 24px;
+  }
+}
+
+/* ===== VERIFICATION POPUP STYLES ===== */
+
+.verification-card {
+  position: relative;
+  z-index: 10;
+}
+
+.verification-popup {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(8px);
+  margin-top: 8px;
+  width: 320px;
+  background: linear-gradient(135deg, var(--card), color-mix(in oklab, var(--primary) 5%, var(--card)));
+  border: 1px solid var(--primary);
+  border-radius: 14px;
+  box-shadow: 0 12px 32px rgba(37, 99, 235, 0.25), 0 0 20px rgba(37, 99, 235, 0.15);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 100;
+  padding: 20px;
+}
+
+.verification-card:hover .verification-popup {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0);
+}
+
+.verification-popup .verified {
+  background: linear-gradient(135deg, rgba(79, 70, 229, 0.1), rgba(59, 130, 246, 0.05)) !important;
+  border-color: rgba(79, 70, 229, 0.3) !important;
+  z-index: 1000 !important;
+}
+
+.verification-card:hover .verification-popup.verified {
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+  transform: translateX(-50%) translateY(0) !important;
+}
+
+/* ===== AURA POINTS POPUP STYLES ===== */
+
+.aura-card {
+  position: relative;
+  z-index: 10;
+}
+
+.aura-popup {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(8px);
+  margin-top: 8px;
+  width: 320px;
+  background: linear-gradient(135deg, var(--card), color-mix(in oklab, #2563eb 5%, var(--card)));
+  border: 1px solid #2563eb;
+  border-radius: 14px;
+  box-shadow: 0 12px 32px rgba(37, 99, 235, 0.25), 0 0 20px rgba(37, 99, 235, 0.15);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 100;
+  padding: 20px;
+}
+
+.aura-card:hover .aura-popup {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0);
+}
+
+.popup-header {
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(79, 70, 229, 0.2);
+}
+
+.popup-header h4 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.popup-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.popup-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.popup-section h5 {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--primary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.popup-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.popup-list li {
+  font-size: 0.85rem;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.popup-btn {
+  display: inline-block;
+  padding: 10px 16px;
+  background: linear-gradient(135deg, var(--primary), color-mix(in oklab, var(--primary), #3b82f6 50%));
+  color: white;
+  border: none;
+  border-radius: 8px;
+  text-decoration: none;
+  text-align: center;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 4px;
+}
+
+.popup-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+}
+
+.popup-btn:active {
+  transform: translateY(0);
+}
+
+/* Responsive popup */
+@media (max-width: 768px) {
+  .verification-popup {
+    width: 280px;
+    padding: 16px;
+  }
+
+  .popup-header h4 {
+    font-size: 1rem;
+  }
+
+  .popup-section h5 {
+    font-size: 0.8rem;
+  }
+
+  .popup-list li {
+    font-size: 0.8rem;
   }
 }

@@ -24,19 +24,85 @@
 
     <!-- Stats Cards in Modern Layout -->
     <div class="stats-container">
-      <div class="stat-card stat-aura">
+      <div class="stat-card stat-aura aura-card">
         <div class="stat-icon">⭐</div>
         <div class="stat-content">
           <p class="stat-label">Aura Points</p>
           <p class="stat-value">{{ aura_points }}</p>
         </div>
+
+        <!-- Aura Points Info Popup -->
+        <div class="aura-popup">
+          <div class="popup-header">
+            <h4>⭐ How Aura Points Work</h4>
+          </div>
+          <div class="popup-content">
+            <div class="popup-section">
+              <h5>Points Increase 📈</h5>
+              <ul class="popup-list">
+                <li>⬆️ Receive positive ratings (2-5 stars)</li>
+                <li>⬆️ Maintain daily login streak</li>
+                <li>⬆️ Get verified identity</li>
+                <li>⬆️ Make meaningful connections</li>
+              </ul>
+            </div>
+            <div class="popup-section">
+              <h5>Points Decrease 📉</h5>
+              <ul class="popup-list">
+                <li>⬇️ Receive user reports</li>
+                <li>⬇️ Get negative ratings(1 star)</li>
+                <li>⬇️ Account violations</li>
+              </ul>
+            </div>
+            <p style="font-size: 0.8rem; color: var(--muted); margin: 12px 0 0 0; text-align: center;">Higher aura = better reputation & trust</p>
+          </div>
+        </div>
       </div>
-      <div class="stat-card stat-status">
+      <div class="stat-card stat-status verification-card">
         <div class="stat-icon">✨</div>
         <div class="stat-content">
           <p class="stat-label">Verification Status</p>
           <p class="stat-value">{{ verification_status }}</p>
         </div>
+
+        <!-- Verification Info Popup -->
+        {% if verification_status == "UNVERIFIED" %}
+        <div class="verification-popup">
+          <div class="popup-header">
+            <h4>🔐 Verify Your Identity</h4>
+          </div>
+          <div class="popup-content">
+            <div class="popup-section">
+              <h5>Why verify?</h5>
+              <ul class="popup-list">
+                <li>✅ Make connections with other users</li>
+                <li>✅ Build trust with your connections</li>
+                <li>✅ Unlock video chat connections</li>
+              </ul>
+            </div>
+            <div class="popup-section">
+              <h5>What you'll need</h5>
+              <ul class="popup-list">
+                <li>📱 Valid government ID</li>
+                <li>📸 Clear photo of your document</li>
+                <li>⏱️ Takes 2-3 minutes</li>
+              </ul>
+            </div>
+            <a href="{% url 'identity_verification' %}" class="popup-btn">Get Verified Now</a>
+          </div>
+        </div>
+        {% else %}
+        <div class="verification-popup verified">
+          <div class="popup-header">
+            <h4>✅ You're Verified!</h4>
+          </div>
+          <div class="popup-content">
+            <p style="text-align: center; color: #4f46e5; font-weight: 600; margin: 0;">
+              You can now make connections and access all features.
+            </p>
+          </div>
+        </div>
+        {% endif %}
       </div>
       <div class="stat-card stat-streak">
         <div class="stat-icon">🔥</div>
@@ -75,7 +141,8 @@
           <span class="card-badge">Live</span>
         </div>
         <h3 class="card-title">Video Chat</h3>
-        <p class="card-description">Have face-to-face conversations with strangers from around the globe.<br><br> NOTE: You need to GET VERIFIED to make connections.</p>
+        <p class="card-description">Have face-to-face conversations with strangers from around the globe.<br><br> 
+          NOTE: You need to GET VERIFIED first to make connections.</p>
         <div class="online-indicator">
           <span class="pulse-dot"></span>
           <span id="home-online-count">Loading...</span> users online
