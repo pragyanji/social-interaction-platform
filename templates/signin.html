@@ -1,6 +1,5 @@
 {% extends "base.html" %}
 {% load static %}
-{% load socialaccount %}
 
 {% block title %}Sign in · Chatsphere{% endblock %}
 
@@ -59,7 +58,7 @@
         </div>
 
         <!-- Google Sign In -->
-        <a class="google-btn" href="{% provider_login_url 'google' process='login' %}">
+        <a class="google-btn" href="{% url 'google_oauth_login' %}">
           <span>🔐</span>
           <span>Continue with Google</span>
         </a>

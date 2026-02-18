@@ -13,7 +13,8 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
 from django import forms
-
+from urllib.parse import urlencode
+import requests
 
 from . import models
 from django.db.models import Avg, Count
@@ -718,3 +719,64 @@ def get_peer_stats(request, user_id):
             'success': False,
             'error': str(e)
         }, status=500)
+
+
+# ---------- Custom Google OAuth Views (Skip Intermediate Page) ----------
+
+def get_google_oauth_url(request, oauth_action='login'):
+    """
+    Generate Google OAuth URL directly to skip allauth's intermediate page.
+    oauth_action: 'login' or 'signup'
+    """
+    # Get Google OAuth app credentials
+    from allauth.socialaccount.models import SocialApp
+
+    try:
+        google_app = SocialApp.objects.get(provider='google')
+    except SocialApp.DoesNotExist:
+        return None
+
+    # Determine redirect URI based on action
+    # Use the standard allauth callback URL (already registered in Google OAuth settings)
+    redirect_uri = request.build_absolute_uri('/accounts/google/login/callback/')
+
+    # Build Google OAuth URL
+    oauth_params = {
+        'client_id': google_app.client_id,
+        'redirect_uri': redirect_uri,
+        'response_type': 'code',
+        'scope': 'profile email',
+        'access_type': 'online',
+        'prompt': 'select_account',  # Always show account selection, skip consent
+    }
+
+    # Store action in session for later use
+    request.session['oauth_action'] = oauth_action
+    request.session.save()
+
+    google_oauth_url = f"https://accounts.google.com/o/oauth2/v2/auth?{urlencode(oauth_params)}"
+    return google_oauth_url
+
+
+def google_oauth_login(request):
+    """
+    Redirect to Google OAuth URL directly (for login/signin).
+    """
+    oauth_url = get_google_oauth_url(request, oauth_action='login')
+    if oauth_url:
+        return redirect(oauth_url)
+    else:
+        messages.error(request, "Google OAuth is not configured. Please contact support.")
+        return redirect('signin')
+
+
+def google_oauth_signup(request):
+    """
+    Redirect to Google OAuth URL directly (for signup).
+    """
+    oauth_url = get_google_oauth_url(request, oauth_action='signup')
+    if oauth_url:
+        return redirect(oauth_url)
+    else:
+        messages.error(request, "Google OAuth is not configured. Please contact support.")
+        return redirect('signup')
