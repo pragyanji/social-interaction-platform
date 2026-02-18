@@ -509,6 +509,18 @@
   z-index: 1000 !important;
 }
 
+.verification-popup .pending {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(245, 158, 11, 0.05)) !important;
+  border-color: rgba(245, 158, 11, 0.3) !important;
+  z-index: 1000 !important;
+}
+
+.verification-popup .rejected {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(239, 68, 68, 0.05)) !important;
+  border-color: rgba(239, 68, 68, 0.3) !important;
+  z-index: 1000 !important;
+}
+
 .verification-card:hover .verification-popup.verified {
   opacity: 1 !important;
   visibility: visible !important;
@@ -516,6 +528,19 @@
   transform: translateX(-50%) translateY(0) !important;
 }
 
+.verification-card:hover .verification-popup.pending {
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+  transform: translateX(-50%) translateY(0) !important;
+}
+
+.verification-card:hover .verification-popup.rejected {
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+  transform: translateX(-50%) translateY(0) !important;
+}
 /* ===== AURA POINTS POPUP STYLES ===== */
 
 .aura-card {

@@ -91,7 +91,7 @@
             <a href="{% url 'identity_verification' %}" class="popup-btn">Get Verified Now</a>
           </div>
         </div>
-        {% else %}
+        {% elif verification_status == "VERIFIED" %}
         <div class="verification-popup verified">
           <div class="popup-header">
             <h4>✅ You're Verified!</h4>
@@ -99,6 +99,28 @@
           <div class="popup-content">
             <p style="text-align: center; color: #4f46e5; font-weight: 600; margin: 0;">
               You can now make connections and access all features.
+            </p>
+          </div>
+        </div>
+        {% elif verification_status == "PENDING" %}
+        <div class="verification-popup pending">
+          <div class="popup-header">
+            <h4>⏳ Verification Pending</h4>
+          </div>
+          <div class="popup-content">
+            <p style="text-align: center; color: #f59e0b; font-weight: 600; margin: 0;">
+              Your verification is being reviewed. This typically takes 24-48 hours.
+            </p>
+          </div>
+        </div>
+        {% elif verification_status == "REJECTED" %}
+        <div class="verification-popup rejected">
+          <div class="popup-header">
+            <h4>✗ Verification Rejected</h4>
+          </div>
+          <div class="popup-content">
+            <p style="text-align: center; color: #ef4444; font-weight: 600; margin: 0;">
+              Your verification was not approved. <a href="{% url 'identity_verification' %}" style="color: #ef4444; text-decoration: underline;">Try again</a>
             </p>
           </div>
         </div>
