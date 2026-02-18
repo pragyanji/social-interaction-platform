@@ -368,9 +368,6 @@
     grid-template-columns: 1fr;
     gap: 12px;
   }
-  .auth-benefit-card:hover {
-    transform: translateY(-6px) scale(1.01);
-  }
 }
 @media (max-width: 400px) {
   .auth-container {
