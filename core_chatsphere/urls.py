@@ -22,9 +22,6 @@ urlpatterns = [
     path("submit-rating/", views.submit_rating, name="submit_rating"),
     path("submit-connection/", views.submit_connection, name="submit_connection"),
     path("get-peer-stats/<int:user_id>/", views.get_peer_stats, name="get_peer_stats"),
-    # Custom Google OAuth routes (bypass allauth intermediate page)
-    path("oauth/google/login/", views.google_oauth_login, name="google_oauth_login"),
-    path("oauth/google/signup/", views.google_oauth_signup, name="google_oauth_signup"),
 
 ]
 

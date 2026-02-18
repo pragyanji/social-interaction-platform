@@ -227,34 +227,3 @@ AUTHENTICATION_BACKENDS = [
 LOGIN_URL = "signin"
 LOGIN_REDIRECT_URL = "home"
 LOGOUT_REDIRECT_URL = "landing"
-
-# AllAuth Settings
-ACCOUNT_EMAIL_VERIFICATION = 'none'
-ACCOUNT_EMAIL_REQUIRED = False
-ACCOUNT_AUTHENTICATION_METHOD = 'username'
-ACCOUNT_USERNAME_REQUIRED = True
-ACCOUNT_SIGNUP_EMAIL_ENTER_TWICE = False
-SOCIALACCOUNT_ADAPTER = 'core_chatsphere.allauth_adapter.CustomSocialAccountAdapter'
-SOCIALACCOUNT_AUTO_SIGNUP = True
-SOCIALACCOUNT_EMAIL_REQUIRED = False
-SOCIALACCOUNT_EMAIL_VERIFICATION = 'none'
-SOCIALACCOUNT_STORE_TOKENS = True
-
-# Google OAuth Settings
-SOCIALACCOUNT_PROVIDERS = {
-    'google': {
-        'SCOPE': [
-            'profile',
-            'email',
-        ],
-        'AUTH_PARAMS': {
-            'access_type': 'online',
-        },
-        'VERIFIED_EMAIL': True,
-        'APP': {
-            'client_id': os.getenv('GOOGLE_CLIENT_ID', 'REDACTED_CLIENT_ID'),
-            'secret': os.getenv('GOOGLE_CLIENT_SECRET', 'REDACTED'),
-            'key': ''
-        }
-    }
-}

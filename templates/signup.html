@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
+{% load socialaccount %}
 
 {% block title %}Create account · Chatsphere{% endblock %}
 
@@ -89,7 +90,7 @@
         </div>
 
         <!-- Google Sign Up -->
-        <a class="google-btn" href="{% url 'google_oauth_signup' %}">
+        <a class="google-btn" href="{% provider_login_url 'google' %}">
           <span>🔐</span>
           <span>Continue with Google</span>
         </a>
