@@ -239,8 +239,8 @@ def profile_view(request, user_id=None):
     else:
         # print("No verification record found.")
         verification_status = "Unverified"
-    # Get total connections
-    total_connections = models.Connection.objects.filter(user=user).count()
+    # Get total bidirectional connections
+    total_connections = user_bidirectional_connections(request).count()
     
     # Get list of connected users
     user_connections = user_bidirectional_connections(request).values_list('id', flat=True)
