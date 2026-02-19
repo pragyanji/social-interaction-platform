@@ -9,7 +9,7 @@
 {% block content %}
 <h2 class="page-title">💬 Messages</h2>
 {% if request.user.is_authenticated %}
-    <div class="messages-container">
+    <div class="messages-container" data-current-user-id="{{ request.user.id }}">
         <!-- Connected Users List -->
         <div class="connections-card">
             <div class="connections-header">
@@ -19,7 +19,7 @@
             {% if connected_users %}
                 <div class="users-list">
                     {% for user in connected_users %}
-                        <div class="user-item {% if selected_user.id == user.id %}active{% endif %}">
+                        <div class="user-item {% if selected_user.id == user.id %}active{% endif %}" data-user-id="{{ user.id }}">
                             <div class="user-info">
                                 <a href="{% url 'startmessagechat' user.id %}" class="user-info-link">
                                     <div class="user-avatar-container">
@@ -36,6 +36,9 @@
                                     </div>
                                 </a>
                             </div>
+                            {% if user.unread_count > 0 and selected_user.id != user.id %}
+                                <span class="unread-badge">{{ user.unread_count }}</span>
+                            {% endif %}
                         </div>
                     {% endfor %}
                 </div>
@@ -58,7 +61,7 @@
         <!-- Chat Area -->
         <div class="chat-card chat-container">
             {% if selected_user %}
-                <div class="chat-header">
+                <div class="chat-header" data-selected-user-id="{{ selected_user.id }}">
                     <div class="chat-header-avatar-container">
                         {% if selected_user.profile_pic %}
                             <img src="{{ selected_user.profile_pic.url }}" alt="{{ selected_user.get_username }}" class="chat-header-avatar" />
@@ -70,20 +73,15 @@
                     <div class="chat-header-info">
                         <h3>{{ selected_user.full_name }}</h3>
                         <p class="chat-header-username">@{{ selected_user.username }}</p>
+                        <span class="connection-status disconnected">Offline</span>
                     </div>
                 </div>
                 <div class="chat-messages">
-                    <!-- Placeholder message bubbles for demonstration -->
-                    <div class="message-group">
-                        <div class="message-bubble received">
-                            💬 Chat functionality coming soon...
-                        </div>
-                        <p class="message-timestamp received">Just now</p>
-                    </div>
+                    <!-- Messages will be loaded here dynamically by messaging.js -->
                 </div>
                 <div class="message-input-area">
                     <input type="text" class="message-input" placeholder="Type your message...">
-                    <button class="message-send-btn">
+                    <button class="send-message-btn">
                         <span>Send</span>
                         <span>→</span>
                     </button>
@@ -113,4 +111,13 @@
         </div>
     </div>
 {% endif %}
+
+<!-- Include messaging script -->
+{% if selected_user %}
+<script src="{% static 'js/messaging.js' %}"></script>
+{% endif %}
+
+<!-- CSRF Token for API requests -->
+{% csrf_token %}
+
 {% endblock %}

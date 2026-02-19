@@ -11,10 +11,14 @@ from django.shortcuts import render, redirect, resolve_url
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
-from django.views.decorators.csrf import csrf_exempt
 from django import forms
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
+from django.utils import timezone
 
 from . import models
+from .serializers import ConversationMessageSerializer
 from django.db.models import Avg, Count
 
 User = get_user_model()
@@ -93,6 +97,17 @@ def start_video_chat(request):
     }
     return render(request, "start_video_chat.html", context)
 
+def user_bidirectional_connections(request):
+    """Return a list of bidirectionally connected users for the current user"""
+    outgoing_ids = set(
+        models.Connection.objects.filter(user=request.user).values_list('connection_with', flat=True)
+    )
+    incoming_ids = set(
+        models.Connection.objects.filter(connection_with=request.user).values_list('user', flat=True)
+    )
+    mutual_ids = outgoing_ids & incoming_ids
+    connected_users = User.objects.filter(id__in=mutual_ids)
+    return connected_users
 
 @login_required(login_url="signin")
 def start_message_chat(request, user_id=None): 
@@ -100,15 +115,22 @@ def start_message_chat(request, user_id=None):
     if models.BannedAcc.objects.filter(user=request.user, active=True).exists():
         messages.error(request, "You are banned from using Message feature. Please contact support for more information.")
         return redirect("home")
-    # Get all connected users
-    user_connections = models.Connection.objects.filter(user=request.user).values_list('connection_with', flat=True)
+    # Get only bidirectionally connected users
+    connected_users = user_bidirectional_connections(request)
+    user_connections = connected_users.values_list('id', flat=True)
     verified_status = models.IdentityVerification.objects.filter(user=request.user).first()
     if not verified_status:
         verification_status = "UNVERIFIED"
     else:
         verification_status = verified_status.verification_status
-        
-    connected_users = User.objects.filter(id__in=user_connections)
+
+    from django.db.models import Count, Q as DQ
+    connected_users = User.objects.filter(id__in=user_connections).annotate(
+        unread_count=Count(
+            'sent_messages',
+            filter=DQ(sent_messages__receiver=request.user, sent_messages__is_read=False)
+        )
+    )
     
     selected_user = None
     if user_id:
@@ -132,10 +154,10 @@ def start_message_chat(request, user_id=None):
 
 @login_required(login_url="signin")
 def connections(request):
-    # Get all users this user is connected with
-    user_connections = models.Connection.objects.filter(user=request.user).values_list('connection_with', flat=True)
-    connected_users = User.objects.filter(id__in=user_connections)
+    # Bidirectional: only show users where BOTH directions of the connection exist
     
+    connected_users = user_bidirectional_connections(request)
+
     context = {
         'connections': connected_users,
         'firebase_config': json.dumps(FIREBASE_CONFIG),
@@ -221,7 +243,7 @@ def profile_view(request, user_id=None):
     total_connections = models.Connection.objects.filter(user=user).count()
     
     # Get list of connected users
-    user_connections = models.Connection.objects.filter(user=user).values_list('connection_with', flat=True)
+    user_connections = user_bidirectional_connections(request).values_list('id', flat=True)
     connected_users_list = User.objects.filter(id__in=user_connections).all()[:5]  # Show only first 4 connections on profile page
     
     # Get daily streak information
@@ -721,3 +743,68 @@ def get_peer_stats(request, user_id):
             'success': False,
             'error': str(e)
         }, status=500)
+
+# ---------- REST API Views for Messaging ----------
+
+@login_required(login_url="signin")
+@api_view(['GET'])
+def get_message_history(request, user_id):
+    """
+    API endpoint to get message history between the current user and another user.
+    GET /api/messages/<user_id>/
+    """
+    try:
+        other_user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        return Response(
+            {'error': 'User not found'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+
+    # Get all messages between the two users, ordered chronologically
+    messages_qs = models.ConversationMessage.objects.filter(
+        (models.Q(sender=request.user, receiver=other_user) |
+         models.Q(sender=other_user, receiver=request.user))
+    ).order_by('created_at')
+
+    serializer = ConversationMessageSerializer(messages_qs, many=True)
+    return Response({
+        'success': True,
+        'messages': serializer.data,
+        'other_user': {
+            'id': other_user.id,
+            'username': other_user.username,
+            'full_name': other_user.full_name,
+        }
+    })
+
+
+@login_required(login_url="signin")
+@api_view(['POST'])
+def mark_messages_as_read(request, user_id):
+    """
+    API endpoint to mark all messages from a user as read.
+    POST /api/messages/<user_id>/read/
+    """
+    try:
+        other_user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        return Response(
+            {'error': 'User not found'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+
+    # Mark all unread messages from the other user as read
+    updated_count = models.ConversationMessage.objects.filter(
+        sender=other_user,
+        receiver=request.user,
+        is_read=False
+    ).update(
+        is_read=True,
+        read_at=timezone.now()
+    )
+
+    return Response({
+        'success': True,
+        'marked_as_read': updated_count
+    })

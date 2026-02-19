@@ -165,10 +165,6 @@
         <h3 class="card-title">Video Chat</h3>
         <p class="card-description">Have face-to-face conversations with strangers from around the globe.<br><br> 
           NOTE: You need to GET VERIFIED first to make connections.</p>
-        <div class="online-indicator">
-          <span class="pulse-dot"></span>
-          <span id="home-online-count">Loading...</span> users online
-        </div>
         <a class="btn btn-primary btn-action" href="{% url 'startvideochat' %}">
           <span>Start Video Chat</span>
           <span class="arrow">→</span>
@@ -176,76 +172,6 @@
       </div>
     </div>
   </section>
-
-  <style>
-    @keyframes pulse {
-      0%, 100% {
-        opacity: 1;
-      }
-      50% {
-        opacity: 0.5;
-      }
-    }
-  </style>
-
-  <script type="module">
-    // Firebase Setup for online count on home page
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getDatabase, ref, get, onValue } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
-
-    if (window.FIREBASE_CONFIG) {
-      const app = initializeApp(window.FIREBASE_CONFIG);
-      const db = getDatabase(app);
-
-      const onlineCountEl = document.getElementById('home-online-count');
-
-      async function updateOnlineCount() {
-        try {
-          const roomsRef = ref(db, 'rooms');
-          const waitingRoomsRef = ref(db, 'waiting_rooms');
-
-          const [roomsSnapshot, waitingSnapshot] = await Promise.all([
-            get(roomsRef),
-            get(waitingRoomsRef)
-          ]);
-
-          const rooms = roomsSnapshot.val();
-          const waitingRooms = waitingSnapshot.val();
-          const uniqueUsers = new Set();
-
-          if (rooms) {
-            Object.values(rooms).forEach(room => {
-              if (room.creatorId) uniqueUsers.add(room.creatorId);
-              if (room.joinerId) uniqueUsers.add(room.joinerId);
-            });
-          }
-
-          if (waitingRooms) {
-            Object.values(waitingRooms).forEach(room => {
-              if (room.creatorId) uniqueUsers.add(room.creatorId);
-            });
-          }
-
-          const count = uniqueUsers.size;
-          if (onlineCountEl) {
-            onlineCountEl.textContent = count;
-          }
-        } catch (error) {
-          console.error('Error updating online count:', error);
-          if (onlineCountEl) {
-            onlineCountEl.textContent = '0';
-          }
-        }
-      }
-
-      // Listen to changes
-      onValue(ref(db, 'rooms'), updateOnlineCount);
-      onValue(ref(db, 'waiting_rooms'), updateOnlineCount);
-
-      // Initial update
-      updateOnlineCount();
-    }
-  </script>
 
 {% else %}
   <!-- Not Authenticated Section -->

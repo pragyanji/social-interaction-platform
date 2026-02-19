@@ -62,7 +62,7 @@ body {
   display: grid;
   grid-template-columns: 1fr 2fr;
   gap: 20px;
-  min-height: calc(100vh - 200px);
+  height: calc(100vh - 200px);
   animation: fadeIn 0.6s ease-out;
 }
 
@@ -76,6 +76,8 @@ body {
 @media (max-width: 768px) {
   .messages-container {
     grid-template-columns: 1fr;
+    height: auto;
+    min-height: calc(100vh - 200px);
     gap: 16px;
   }
 }
@@ -90,6 +92,8 @@ body {
   border: 1px solid rgba(79, 70, 229, 0.2);
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   animation: slideUp 0.6s ease-out;
 }
@@ -252,20 +256,24 @@ body {
 }
 
 .user-status-indicator {
-  position: absolute;
-  width: 10px;
-  height: 10px;
-  background-color: #10b981;
-  border: 2px solid var(--msg-card);
-  border-radius: 50%;
-  bottom: 0;
-  right: 0;
-  transition: all 0.3s ease;
-  opacity: 0;
+  display: none;
 }
 
-.user-item:hover .user-status-indicator {
-  opacity: 1;
+.unread-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  background: var(--msg-primary);
+  color: white;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.4);
+  animation: scaleIn 0.2s ease-out;
 }
 
 .user-info-link {
@@ -414,11 +422,16 @@ body {
   position: absolute;
   width: 12px;
   height: 12px;
-  background-color: #10b981;
+  background-color: #6b7280;
   border: 2px solid var(--msg-card);
   border-radius: 50%;
   bottom: 0;
   right: 0;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.header-status-indicator.online {
+  background-color: #10b981;
   box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
 }
 
@@ -570,7 +583,7 @@ body {
 }
 
 /* ===== SEND BUTTON ===== */
-.message-send-btn {
+.send-message-btn {
   padding: 12px 20px;
   background: linear-gradient(135deg, var(--msg-primary), var(--msg-primary-light));
   color: white;
@@ -587,16 +600,16 @@ body {
   box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
 }
 
-.message-send-btn:hover {
+.send-message-btn:hover {
   transform: translateY(-2px) scale(1.02);
   box-shadow: 0 8px 20px rgba(79, 70, 229, 0.3);
 }
 
-.message-send-btn:active {
+.send-message-btn:active {
   transform: translateY(0);
 }
 
-.message-send-btn:disabled {
+.send-message-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
   transform: none;

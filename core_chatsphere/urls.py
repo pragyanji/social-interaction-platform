@@ -22,6 +22,9 @@ urlpatterns = [
     path("submit-rating/", views.submit_rating, name="submit_rating"),
     path("submit-connection/", views.submit_connection, name="submit_connection"),
     path("get-peer-stats/<int:user_id>/", views.get_peer_stats, name="get_peer_stats"),
+    # REST API endpoints for messaging
+    path("api/messages/<int:user_id>/", views.get_message_history, name="message_history"),
+    path("api/messages/<int:user_id>/read/", views.mark_messages_as_read, name="mark_read"),
 
 ]
 

@@ -110,11 +110,14 @@ class ConversationMessage(models.Model):
     )
     conv_message = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
+    is_read = models.BooleanField(default=False)
+    read_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         indexes = [
             models.Index(fields=["sender", "receiver", "created_at"]),
             models.Index(fields=["receiver", "created_at"]),
+            models.Index(fields=["receiver", "is_read"]),
         ]
         ordering = ["created_at"]
 
