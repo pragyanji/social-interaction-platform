@@ -1,30 +1,21 @@
 /* ===== Base, colors, typography ===== */
+/* Permanently dark — not system-preference aware */
 :root {
-  --bg: #ffffff;
-  --text: #111827;
-  --muted: #6b7280;
-  --border: #e5e7eb;
-  --primary: #2563eb;
-  --primary-600: #1d4ed8;
-  --primary-700: #1e40af;
+  --bg: #0b0f1a;
+  --text: #e5e7eb;
+  --muted: #9ca3af;
+  --border: #1f2937;
+  --primary: #7c3aed;
+  --primary-600: #6d28d9;
+  --primary-700: #5b21b6;
   --success: #16a34a;
   --warning: #ca8a04;
   --error: #dc2626;
   --info: #0ea5e9;
-  --card: #ffffff;
-  --shadow: 0 1px 2px rgba(0, 0, 0, .06), 0 1px 3px rgba(0, 0, 0, .1);
+  --card: #0f172a;
+  --shadow: none;
   --radius: 14px;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #0b0f1a;
-    --text: #e5e7eb;
-    --muted: #9ca3af;
-    --border: #1f2937;
-    --card: #0f172a;
-    --shadow: none;
-  }
+  color-scheme: dark;
 }
 
 * {
@@ -38,9 +29,15 @@ body {
 
 body {
   margin: 0;
-  font: 16px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
-  background: var(--bg);
+  font: 16px/1.55 'Inter', system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  background-color: #060813;
+  background-image:
+    radial-gradient(ellipse 80% 50% at 20% -10%, rgba(124, 58, 237, 0.18) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 10%, rgba(79, 70, 229, 0.12) 0%, transparent 55%),
+    radial-gradient(ellipse 50% 60% at 50% 90%, rgba(14, 165, 233, 0.07) 0%, transparent 60%);
+  background-attachment: fixed;
   color: var(--text);
+  min-height: 100vh;
 }
 
 /* ===== Layout ===== */
@@ -51,74 +48,161 @@ body {
 }
 
 .site-header {
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   position: sticky;
   top: 0;
-  backdrop-filter: saturate(180%) blur(10px);
-  background: linear-gradient(135deg, color-mix(in oklab, var(--bg) 92%, transparent), color-mix(in oklab, var(--bg) 88%, transparent));
+  backdrop-filter: blur(18px) saturate(180%);
+  -webkit-backdrop-filter: blur(18px) saturate(180%);
+  background: rgba(6, 8, 19, 0.82);
   z-index: 999;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.08);
+  transition: box-shadow 0.3s ease;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .site-header:hover {
-  box-shadow: 0 8px 20px rgba(79, 70, 229, 0.12);
+  box-shadow: 0 4px 24px rgba(124, 58, 237, 0.1);
 }
 
 .header-inner {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px
+  gap: 1rem;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+  height: 62px;
 }
 
+/* ===== Brand ===== */
 .brand {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 0.6rem;
   text-decoration: none;
-  color: inherit;
-  transition: all 0.3s ease;
+  flex-shrink: 0;
 }
 
-.brand:hover {
+/* Glowing logo container */
+.brand-logo-wrap {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.brand-logo-wrap::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(124, 58, 237, 0.35) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.brand:hover .brand-logo-wrap::after {
   opacity: 1;
-  filter: drop-shadow(0 0 8px rgba(79, 70, 229, 0.4));
 }
 
 .brand-logo {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   object-fit: contain;
+  border-radius: 8px;
   transition: transform 0.3s ease;
 }
 
 .brand:hover .brand-logo {
-  transform: scale(1.1) rotate(-5deg);
+  transform: scale(1.08) rotate(-4deg);
 }
 
+/* Gradient brand name: "Chat" white + "Sphere" purple */
+.brand-name {
+  font-family: 'Inter', sans-serif;
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: #f1f5f9;
+  line-height: 1;
+}
+
+.brand-name span {
+  background: linear-gradient(135deg, #a78bfa, #7c3aed);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ===== Nav ===== */
 .nav {
   display: flex;
   align-items: center;
-  gap: 14px;
-  flex-wrap: wrap;
+  gap: 0.25rem;
 }
 
-.nav a {
-  color: inherit;
+/* Icon + label nav links */
+.nav-icon-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.85rem;
+  border-radius: 10px;
+  color: #94a3b8;
   text-decoration: none;
-  opacity: 0.9;
-  transition: all 0.3s ease;
-  padding: 8px 12px;
-  border-radius: 8px;
+  font-size: 0.85rem;
   font-weight: 500;
+  transition: background 0.2s ease, color 0.2s ease;
+  border: 1px solid transparent;
 }
 
-.nav a:hover {
-  opacity: 1;
-  background: linear-gradient(135deg, rgba(79, 70, 229, 0.1), rgba(59, 130, 246, 0.05));
-  color: var(--primary);
-  transform: translateY(-2px);
+.nav-icon-link i {
+  font-size: 0.9rem;
+}
+
+.nav-icon-link:hover,
+.nav-icon-link.active {
+  background: rgba(124, 58, 237, 0.1);
+  border-color: rgba(124, 58, 237, 0.2);
+  color: #a78bfa;
+}
+
+/* Auth nav buttons */
+.nav-signin {
+  padding: 0.45rem 0.9rem;
+  border-radius: 10px;
+  color: #94a3b8;
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.nav-signin:hover {
+  color: #f1f5f9;
+}
+
+.nav-cta {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.5rem 1.1rem;
+  background: linear-gradient(135deg, #7c3aed, #4f46e5);
+  color: #fff;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-decoration: none;
+  box-shadow: 0 4px 14px rgba(124, 58, 237, 0.3);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+
+.nav-cta:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.1);
+  box-shadow: 0 6px 20px rgba(124, 58, 237, 0.45);
+  color: #fff;
 }
 
 /* ===== Profile Dropdown ===== */
@@ -400,6 +484,29 @@ body {
     grid-template-columns: 1fr
   }
 
+  /* Header: compress height and padding */
+  .header-inner {
+    padding: 0 1rem;
+    height: 54px;
+  }
+
+  /* Hide nav link text labels — icons only */
+  .nav-icon-link span {
+    display: none;
+  }
+
+  .nav-icon-link {
+    padding: 0.5rem 0.6rem;
+    border-radius: 10px;
+  }
+
+  /* Smaller profile avatar on mobile */
+  .profile-avatar {
+    width: 36px;
+    height: 36px;
+  }
+
+  /* Push dropdown to safe position */
   .profile-menu {
     right: -10px;
     min-width: 220px
@@ -574,5 +681,30 @@ textarea:focus {
     right: 12px;
     top: 70px;
     max-width: calc(100% - 24px);
+  }
+
+  /* On very small phones: hide brand name, show logo only */
+  .brand-name {
+    display: none;
+  }
+
+  .brand-logo-wrap {
+    width: 32px;
+    height: 32px;
+  }
+
+  .brand-logo {
+    width: 32px;
+    height: 32px;
+  }
+
+  /* Tighter nav gap */
+  .nav {
+    gap: 0.1rem;
+  }
+
+  .nav-cta {
+    padding: 0.45rem 0.8rem;
+    font-size: 0.8rem;
   }
 }

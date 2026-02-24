@@ -108,14 +108,12 @@
                         title="Rate this stranger">
                         Rate User
                     </button>
-                    {% if verification_status == "VERIFIED" %}
                     <button id="connectButton"
                         class="btn btn-primary hidden"
                         aria-label="Connect with stranger"
                         title="Make connection with current stranger">
                         Connect
                     </button>
-                    {% endif %}
                 </div>
             </div>
         </main>
@@ -303,11 +301,15 @@
     </div>
 
     <!-- Firebase Configuration -->
+    <div id="django-config"
+         data-firebase-config='{{ firebase_config|safe }}'
+         data-user-id="{{ request.user.id }}"
+         hidden>
+    </div>
     <script>
-        // @ts-ignore - Django template variable
-        window.FIREBASE_CONFIG = {{ firebase_config|safe }};
-        // Pass Django user ID to JavaScript
-        window.DJANGO_USER_ID = "{{ request.user.id }}";
+        const _cfg = document.getElementById('django-config').dataset;
+        window.FIREBASE_CONFIG = JSON.parse(_cfg.firebaseConfig);
+        window.DJANGO_USER_ID = _cfg.userId;
     </script>
 
     <script type="module" src="{% static 'js/video-chat.js' %}"></script>

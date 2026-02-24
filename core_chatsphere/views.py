@@ -85,15 +85,8 @@ def start_video_chat(request):
     if models.BannedAcc.objects.filter(user=request.user, active=True).exists():
         messages.error(request, "You are banned from using Video Chat feature. Please contact support for more information.")
         return redirect("home")
-    verification = models.IdentityVerification.objects.filter(user=request.user).first()
-    if verification:
-        verification_status = verification.verification_status
-    else:
-        verification_status = "Unverified"
-    
     context = {
         'firebase_config': json.dumps(FIREBASE_CONFIG),
-        'verification_status': verification_status,
     }
     return render(request, "start_video_chat.html", context)
 
@@ -118,11 +111,6 @@ def start_message_chat(request, user_id=None):
     # Get only bidirectionally connected users
     connected_users = user_bidirectional_connections(request)
     user_connections = connected_users.values_list('id', flat=True)
-    verified_status = models.IdentityVerification.objects.filter(user=request.user).first()
-    if not verified_status:
-        verification_status = "UNVERIFIED"
-    else:
-        verification_status = verified_status.verification_status
 
     from django.db.models import Count, Q as DQ
     connected_users = User.objects.filter(id__in=user_connections).annotate(
@@ -146,8 +134,6 @@ def start_message_chat(request, user_id=None):
     context = {
         'connected_users': connected_users,
         'selected_user': selected_user,
-        'verification_status': verification_status,
-        'firebase_config': json.dumps(FIREBASE_CONFIG),
     }
     return render(request, "start_message_chat.html", context)
 
@@ -183,24 +169,18 @@ def remove_connection(request, user_id):
 
 @login_required(login_url="signin")
 def home(request):
-    # Get or create aura points and verification status
+    # Get or create aura points
     aura, created = models.AuraPoints.objects.get_or_create(user=request.user)
-    verification = models.IdentityVerification.objects.filter(user=request.user).first()
-    if verification:
-        verification_status = verification.verification_status
-    else:
-        verification_status = "UNVERIFIED"
 
     # Get or create daily streak and update it
     streak, streak_created = models.DailyStreak.objects.get_or_create(user=request.user)
     streak.update_streak()
 
-    # Recalculate aura points after streak update (streak affects total aura)
+    # Recalculate aura points after streak update
     aura.recalc()
 
     return render(request, "home.html", {
         'aura_points': aura.aura_points,
-        'verification_status': verification_status,
         'streak_days': streak.current_streak,
         'longest_streak': streak.longest_streak,
         'firebase_config': json.dumps(FIREBASE_CONFIG),
@@ -231,26 +211,18 @@ def profile_view(request, user_id=None):
         avg_rating=Avg('rate_points'),
         total_ratings=Count('id')
     )
-    #
-    verification = models.IdentityVerification.objects.filter(user=user).first()
-    if verification:
-        verification_status = verification.verification_status
-        # print(verification_status)
-    else:
-        # print("No verification record found.")
-        verification_status = "Unverified"
     # Get total bidirectional connections
     total_connections = user_bidirectional_connections(request).count()
-    
+
     # Get list of connected users
     user_connections = user_bidirectional_connections(request).values_list('id', flat=True)
-    connected_users_list = User.objects.filter(id__in=user_connections).all()[:5]  # Show only first 4 connections on profile page
-    
+    connected_users_list = User.objects.filter(id__in=user_connections).all()[:5]
+
     # Get daily streak information
     streak, _ = models.DailyStreak.objects.get_or_create(user=user)
     streak_days = streak.current_streak
     longest_streak = streak.longest_streak
-    
+
     context = {
         'user': user,
         'aura_points': aura.aura_points,
@@ -260,7 +232,6 @@ def profile_view(request, user_id=None):
         'user_connections': connected_users_list,
         'streak_days': streak_days,
         'longest_streak': longest_streak,
-        'verification_status': verification_status,
     }
     
     return render(request, "profile.html", context)
@@ -328,47 +299,6 @@ def logout_view(request):
         messages.info(request, "You have been signed out.")
     return redirect("landing")
 
-
-@login_required(login_url="signin")
-def identity_verification(request):
-    """
-    View to handle identity verification process.
-    Users can submit their identity documents for verification.
-    """
-    from .forms import IdentityVerificationForm
-
-    # Check if user already has a verification record
-    existing_verification = models.IdentityVerification.objects.filter(user=request.user).first()
-
-    if request.method == "POST":
-        # If user already has verification, update it; otherwise create new
-        if existing_verification:
-            form = IdentityVerificationForm(request.POST, request.FILES, instance=existing_verification)
-        else:
-            form = IdentityVerificationForm(request.POST, request.FILES)
-
-        if form.is_valid():
-            verification = form.save(commit=False)
-            verification.user = request.user
-            # Reset status to PENDING when resubmitting
-            verification.verification_status = models.IdentityVerification.VerificationStatus.PENDING
-            verification.save()
-            messages.success(request, "Your identity verification has been submitted successfully! We'll review it shortly.")
-            return redirect("profile")
-        else:
-            messages.error(request, "Please fix the errors below and try again.")
-    else:
-        # If user has existing verification, pre-populate the form
-        if existing_verification:
-            form = IdentityVerificationForm(instance=existing_verification)
-        else:
-            form = IdentityVerificationForm()
-
-    context = {
-        'form': form,
-        'existing_verification': existing_verification,
-    }
-    return render(request, "identity_verification.html", context)
 
 
 @login_required(login_url="signin")
@@ -573,33 +503,6 @@ def submit_connection(request):
             return JsonResponse({
                 'success': False,
                 'error': 'You cannot connect with yourself'
-            }, status=400)
-
-        # Check if both users are verified
-        try:
-            current_user_verification = models.IdentityVerification.objects.get(user=request.user)
-            if current_user_verification.verification_status != models.IdentityVerification.VerificationStatus.VERIFIED:
-                return JsonResponse({
-                    'success': False,
-                    'error': 'You must be verified to connect with other users'
-                }, status=400)
-        except models.IdentityVerification.DoesNotExist:
-            return JsonResponse({
-                'success': False,
-                'error': 'You must be verified to connect with other users'
-            }, status=400)
-
-        try:
-            other_user_verification = models.IdentityVerification.objects.get(user=connection_user)
-            if other_user_verification.verification_status != models.IdentityVerification.VerificationStatus.VERIFIED:
-                return JsonResponse({
-                    'success': False,
-                    'error': 'The other user must be verified to connect'
-                }, status=400)
-        except models.IdentityVerification.DoesNotExist:
-            return JsonResponse({
-                'success': False,
-                'error': 'The other user must be verified to connect'
             }, status=400)
 
         # Check if already connected

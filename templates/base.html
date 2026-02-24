@@ -7,31 +7,47 @@
   <title>{% block title %}Chatsphere{% endblock %}</title>
   <link rel="icon" href="{% static 'img/logo_chatsphere.png' %}" type="image/png" />
 
+  <!-- Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
   <!-- main stylesheet -->
   <link rel="stylesheet" href="{% static 'css/main.css' %}" />
   {% block head_extra %}{% endblock %}
 </head>
 <body>
   <header class="site-header">
-    <div class="container header-inner">
+    <div class="header-inner">
+
+      <!-- Brand -->
       <a class="brand" href="{% if request.user.is_authenticated %}{% url 'home' %}{% else %}{% url 'landing' %}{% endif %}">
-        <img src="{% static 'img\logo_chatsphere.png' %}" alt="Chatsphere" class="brand-logo" />
-        <span>Chatsphere</span>
+        <div class="brand-logo-wrap">
+          <img src="{% static 'img/logo_chatsphere.png' %}" alt="ChatSphere" class="brand-logo" />
+        </div>
+        <span class="brand-name">Chat<span>Sphere</span></span>
       </a>
 
       <nav class="nav">
         {% if request.user.is_authenticated %}
-          {% comment %} <a href="{% url 'home' %}">Home</a> {% endcomment %}
-          
+
+          <!-- Icon nav links -->
+          <a href="{% url 'startmessagechat' 0 %}" class="nav-icon-link" title="Messages">
+            <i class="fas fa-message"></i>
+            <span>Messages</span>
+          </a>
+          <a href="{% url 'connections' %}" class="nav-icon-link" title="Connections">
+            <i class="fas fa-user-group"></i>
+            <span>Connections</span>
+          </a>
+
           <!-- Profile Dropdown -->
           <div class="profile-dropdown">
             <button class="profile-btn" id="profileBtn" aria-label="Profile menu">
               {% if request.user.profile_pic %}
                 <img src="{{ request.user.profile_pic.url }}" alt="{{ request.user.get_username }}" class="profile-avatar" />
               {% else %}
-                <div class="default-profile-container">
-                    <img src="{% static 'img/default_profile.png' %}" alt="Profile" class="profile-avatar" />
-                </div>
+                <img src="{% static 'img/default_profile.png' %}" alt="Profile" class="profile-avatar" />
               {% endif %}
             </button>
             <div class="profile-menu" id="profileMenu">
@@ -40,9 +56,7 @@
                   {% if request.user.profile_pic %}
                     <img src="{{ request.user.profile_pic.url }}" alt="{{ request.user.get_username }}" class="profile-menu-avatar" />
                   {% else %}
-                    <div class="default-profile-container">
-                      <img src="{% static 'img/default_profile.png' %}" alt="Profile" class="profile-menu-avatar" />
-                    </div>
+                    <img src="{% static 'img/default_profile.png' %}" alt="Profile" class="profile-menu-avatar" />
                   {% endif %}
                   <div>
                     <div class="profile-menu-name">{{ request.user.get_username }}</div>
@@ -54,26 +68,26 @@
               </div>
               <div class="profile-menu-divider"></div>
               <a href="{% url 'profile' %}" class="profile-menu-item">
-                <span>👤</span> Profile
+                <i class="fas fa-user"></i> Profile
               </a>
               {% if request.user.is_superuser %}
                 <a href="/admin/" class="profile-menu-item">
-                  <span>⚙️</span> Admin
+                  <i class="fas fa-gear"></i> Admin
                 </a>
               {% endif %}
               <div class="profile-menu-divider"></div>
-              <form action="{% url 'logout' %}" method="post" style="margin: 0;">
+              <form action="{% url 'logout' %}" method="post" style="margin:0;">
                 {% csrf_token %}
                 <button type="submit" class="profile-menu-item profile-menu-logout">
-                  <span>🚪</span> Logout
+                  <i class="fas fa-arrow-right-from-bracket"></i> Logout
                 </button>
               </form>
             </div>
           </div>
+
         {% else %}
-          {% comment %} <a href="{% url 'landing' %}">Landing</a> {% endcomment %}
-          <a href="{% url 'signin' %}">Sign in</a>
-          <a class="btn btn-primary" href="{% url 'signup' %}">Create account</a>
+          <a href="{% url 'signin' %}" class="nav-signin">Sign in</a>
+          <a class="nav-cta" href="{% url 'signup' %}">Get Started</a>
         {% endif %}
       </nav>
     </div>
@@ -93,13 +107,9 @@
     {% block content %}{% endblock %}
   </main>
 
-  <footer class="site-footer">
-    <div class="container">
-      <small>© <span id="y"></span> Chatsphere · <a href="#">Privacy</a></small>
-    </div>
-  </footer>
+  {% block footer %}{% endblock %}
 
-  <script>document.getElementById('y').textContent = new Date().getFullYear();</script>
+  <script>document.getElementById('y') && (document.getElementById('y').textContent = new Date().getFullYear());</script>
   <script src="{% static 'js/app.js' %}"></script>
   {% block body_extra %}{% endblock %}
 </body>

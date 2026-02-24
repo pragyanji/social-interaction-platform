@@ -24,39 +24,6 @@ class User(AbstractUser):
         return self.username
 
 
-# -----------------------------
-# Identity Verification
-# -----------------------------
-class IdentityVerification(models.Model):
-    class DocumentType(models.TextChoices):
-        NATIONAL_ID = "NATIONAL_ID", "National ID"
-        PASSPORT = "PASSPORT", "Passport"
-        DRIVERS_LICENSE = "DRIVERS_LICENSE", "Driver’s License"
-        OTHER = "OTHER", "Other"
-
-    class VerificationStatus(models.TextChoices):
-        PENDING = "PENDING", "Pending"
-        VERIFIED = "VERIFIED", "Verified"
-        REJECTED = "REJECTED", "Rejected"
-
-    user = models.OneToOneField(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="identity_verification"
-    )
-    document_type = models.CharField(max_length=32, choices=DocumentType.choices)
-    document_pic = models.ImageField(upload_to="id_docs/")
-    verification_status = models.CharField(
-        max_length=20, choices=VerificationStatus.choices, default=VerificationStatus.PENDING
-    )
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self) -> str:
-        return f"{self.user} - {self.verification_status}"
-
-    class Meta:
-        verbose_name = "Identity verification"
-        verbose_name_plural = "Identity verifications"
-        
-
 
 # -----------------------------
 # Connections (user ↔ user)
@@ -225,17 +192,8 @@ class AuraPoints(models.Model):
         report_count = Report.objects.filter(reported_to=self.user).count()
         report_penalty = report_count * 50
 
-        # Verified bonus: 50 points if user is verified
-        verified_bonus = 0
-        try:
-            verification = IdentityVerification.objects.get(user=self.user)
-            if verification.verification_status == IdentityVerification.VerificationStatus.VERIFIED:
-                verified_bonus = 50
-        except IdentityVerification.DoesNotExist:
-            verified_bonus = 0
-
         # Calculate total (minimum 0, cannot go negative)
-        total = max(0, rating_component + streak_component + verified_bonus - report_penalty)
+        total = max(0, rating_component + streak_component - report_penalty)
 
         # Update all components
         self.rating_component = rating_component

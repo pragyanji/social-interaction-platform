@@ -1,170 +1,136 @@
 {% extends "base.html" %}
 {% load static %}
-{% block title %}Profile · Chatsphere{% endblock %}
+{% block title %}{{ user.username }} · ChatSphere{% endblock %}
 
 {% block head_extra %}
 <link rel="stylesheet" href="{% static 'css/profile.css' %}" />
 {% endblock %}
 
 {% block content %}
+<div class="prof-wrap">
 
-<!-- Profile Header Section -->
-<div class="profile-hero">
-    <div class="profile-header-card">
-        <div class="profile-header-content">
-            <div class="profile-pic-container">
-                {% if user.profile_pic %}
-                <img src="{{ user.profile_pic.url }}" alt="{{ user.username }}" class="profile-pic">
-                {% else %}
-                <img src="{% static 'img/default_profile.png' %}" alt="Profile" class="profile-pic">
-                {% endif %}
-            </div>
-            <div class="profile-info">
-                <h1 class="profile-name">{{ user.full_name|default:user.username }}</h1>
-                <p class="profile-username">@{{ user.username }}</p>
-                {% if user.email %}
-                <p class="profile-email">{{ user.email }}</p>
-                {% endif %}
-            </div>
-        </div>
-        <div class="profile-actions">
-            <a href="{% url 'edit_profile' %}" class="btn-edit-profile">✏️ Edit Profile</a>
-        </div>
-    </div>
-</div>
-
-<!-- Stats Grid -->
-<div class="stats-container profile-stats">
-    <!-- Aura Points -->
-    <div class="stat-card stat-aura">
-        <div class="stat-icon">💫</div>
-        <div class="stat-content">
-            <p class="stat-label">Aura Points</p>
-            <p class="stat-value">{{ aura_points }}</p>
-        </div>
-    </div>
-
-    <!-- Average Rating -->
-    <div class="stat-card stat-rating">
-        <div class="stat-icon">⭐</div>
-        <div class="stat-content">
-            <p class="stat-label">Avg Rating</p>
-            <p class="stat-value">{{ avg_rating|floatformat:1 }}</p>
-            <p class="stat-subtext">({{ total_ratings }} ratings)</p>
-        </div>
-    </div>
-
-    <!-- Connections -->
-    <div class="stat-card stat-connections">
-        <div class="stat-icon">👥</div>
-        <div class="stat-content">
-            <p class="stat-label">Connections</p>
-            <p class="stat-value">{{ total_connections }}</p>
-        </div>
-    </div>
-
-    <!-- Streak -->
-    <div class="stat-card stat-streak">
-        <div class="stat-icon">🔥</div>
-        <div class="stat-content">
-            <p class="stat-label">Daily Streak</p>
-            <p class="stat-value">{{ streak_days }}</p>
-            {% if longest_streak and longest_streak != streak_days %}
-                <p class="stat-subtext">Best: {{ longest_streak }} days</p>
-            {% endif %}
-        </div>
-    </div>
-</div>
-
-<!-- Connections Section -->
-{% if user_connections %}
-<div class="connections-section">
-    <div class="section-header">
-        <h2 class="section-title">Your Connections</h2>
-        <p class="section-subtitle">People you've connected with</p>
-    </div>
-    <div class="connections-grid">
-        {% for connection in user_connections %}
-            <div class="connection-card">
-                <div class="connection-avatar">
-                    {% if connection.profile_pic %}
-                    <img src="{{ connection.profile_pic.url }}" alt="{{ connection.username }}" />
-                    {% else %}
-                    <img src="{% static 'img/default_profile.png' %}" alt="Avatar" />
-                    {% endif %}
-                </div>
-                <div class="connection-info">
-                    <h4 class="connection-name">{{ connection.full_name }}</h4>
-                    <p class="connection-username">@{{ connection.username }}</p>
-                </div>
-                <a href="{% url 'startmessagechat' connection.id %}" class="btn-message">💬</a>
-            </div>
-        {% endfor %}
-    </div>
-    <div class="connections-footer">
-        <a href="{% url 'connections' %}" class="btn-view-all">View All Connections →</a>
-    </div>
-</div>
-{% endif %}
-
-<!-- Account Details -->
-<div class="account-details-section">
-    <div class="section-header">
-        <h2 class="section-title">Account Details</h2>
-        <p class="section-subtitle">Your profile information</p>
-    </div>
-    <div class="details-card">
-        <div class="detail-row">
-            <span class="detail-label">Username</span>
-            <span class="detail-value">{{ user.username }}</span>
-        </div>
-        <div class="detail-row">
-            <span class="detail-label">Full Name</span>
-            <span class="detail-value">{{ user.full_name|default:"Not set" }}</span>
-        </div>
-        <div class="detail-row">
-            <span class="detail-label">Email</span>
-            <span class="detail-value">{{ user.email|default:"Not set" }}</span>
-        </div>
-        <div class="detail-row">
-            <span class="detail-label">Member Since</span>
-            <span class="detail-value">{{ user.date_joined|date:"F d, Y" }}</span>
-        </div>
-        <div class="detail-row">
-            <span class="detail-label">Verification Status</span>
-            <div class="verification-badge">
-                {% if verification_status == "VERIFIED" %}
-                    <span class="badge badge-verified">✓ Verified</span>
-                {% elif verification_status == "PENDING" %}
-                    <span class="badge badge-pending">⏳ Pending</span>
-                {% elif verification_status == "REJECTED" %}
-                    <span class="badge badge-rejected">✗ Rejected</span>
-                {% else %}
-                    <span class="badge badge-unverified">○ Unverified</span>
-                {% endif %}
-            </div>
-        </div>
-
-        {% if verification_status != "VERIFIED" and verification_status != "PENDING" %}
-        <div class="verification-action">
-            <a href="{% url 'identity_verification' %}" class="btn-verify">
-                🔐 {% if verification_status == "REJECTED" %}Resubmit Verification{% else %}Get Verified{% endif %}
-            </a>
-        </div>
-        {% elif verification_status == "PENDING" %}
-        <div class="verification-action">
-            <a href="{% url 'identity_verification' %}" class="btn-check-status">
-                View verification status →
-            </a>
-        </div>
+  <!-- ── Cover + Identity card ── -->
+  <div class="prof-cover">
+    <div class="cover-bg"></div>
+    <div class="prof-identity">
+      <div class="prof-avatar-ring">
+        {% if user.profile_pic %}
+          <img src="{{ user.profile_pic.url }}" alt="{{ user.username }}" class="prof-avatar" />
+        {% else %}
+          <img src="{% static 'img/default_profile.png' %}" alt="Avatar" class="prof-avatar" />
         {% endif %}
+      </div>
+      <div class="prof-meta">
+        <h1 class="prof-fullname">{{ user.full_name|default:user.username }}</h1>
+        <p class="prof-handle">@{{ user.username }}</p>
+        {% if user.email %}<p class="prof-email"><i class="fas fa-envelope"></i> {{ user.email }}</p>{% endif %}
+        <p class="prof-since"><i class="fas fa-calendar-alt"></i> Member since {{ user.date_joined|date:"F Y" }}</p>
+      </div>
+      <a href="{% url 'edit_profile' %}" class="prof-edit-btn">
+        <i class="fas fa-pen"></i> Edit Profile
+      </a>
     </div>
-</div>
+  </div>
 
-<!-- Quick Actions -->
-<div class="quick-actions">
-    <a href="{% url 'home' %}" class="btn-action-primary">← Back to Home</a>
-    <a href="{% url 'startvideochat' %}" class="btn-action-secondary">Start Video Chat</a>
-</div>
+  <!-- ── Stat Ribbon ── -->
+  <div class="stat-ribbon">
+    <div class="ribbon-stat">
+      <span class="rs-icon" style="color:#a78bfa;"><i class="fas fa-star-half-stroke"></i></span>
+      <span class="rs-val">{{ aura_points }}</span>
+      <span class="rs-lbl">Aura</span>
+    </div>
+    <div class="ribbon-divider"></div>
+    <div class="ribbon-stat">
+      <span class="rs-icon" style="color:#fbbf24;"><i class="fas fa-star"></i></span>
+      <span class="rs-val">{{ avg_rating|floatformat:1 }}</span>
+      <span class="rs-lbl">Avg Rating<span class="rs-sub">({{ total_ratings }})</span></span>
+    </div>
+    <div class="ribbon-divider"></div>
+    <div class="ribbon-stat">
+      <span class="rs-icon" style="color:#34d399;"><i class="fas fa-user-group"></i></span>
+      <span class="rs-val">{{ total_connections }}</span>
+      <span class="rs-lbl">Connections</span>
+    </div>
+    <div class="ribbon-divider"></div>
+    <div class="ribbon-stat">
+      <span class="rs-icon" style="color:#fb923c;"><i class="fas fa-fire"></i></span>
+      <span class="rs-val">{{ streak_days }}</span>
+      <span class="rs-lbl">Streak<span class="rs-sub">best {{ longest_streak }}</span></span>
+    </div>
+  </div>
 
+  <!-- ── Connections roster ── -->
+  {% if user_connections %}
+  <section class="prof-section">
+    <div class="prof-section-head">
+      <h2><i class="fas fa-user-group"></i> Connections</h2>
+      <a href="{% url 'connections' %}" class="view-all-link">View all <i class="fas fa-arrow-right"></i></a>
+    </div>
+    <div class="roster-grid">
+      {% for conn in user_connections %}
+      <div class="roster-card">
+        <div class="roster-avatar">
+          {% if conn.profile_pic %}
+            <img src="{{ conn.profile_pic.url }}" alt="{{ conn.username }}" />
+          {% else %}
+            <img src="{% static 'img/default_profile.png' %}" alt="Avatar" />
+          {% endif %}
+        </div>
+        <p class="roster-name">{{ conn.full_name|default:conn.username }}</p>
+        <p class="roster-handle">@{{ conn.username }}</p>
+        <a href="{% url 'startmessagechat' conn.id %}" class="roster-msg-btn" title="Message">
+          <i class="fas fa-message"></i>
+        </a>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  <!-- ── Account Settings panel ── -->
+  <section class="prof-section">
+    <div class="prof-section-head">
+      <h2><i class="fas fa-id-card"></i> Account Info</h2>
+      <a href="{% url 'edit_profile' %}" class="view-all-link"><i class="fas fa-pen"></i> Edit</a>
+    </div>
+    <div class="settings-panel">
+      <div class="settings-row">
+        <span class="setting-icon"><i class="fas fa-at"></i></span>
+        <div class="setting-body">
+          <span class="setting-lbl">Username</span>
+          <span class="setting-val">{{ user.username }}</span>
+        </div>
+      </div>
+      <div class="settings-row">
+        <span class="setting-icon"><i class="fas fa-user"></i></span>
+        <div class="setting-body">
+          <span class="setting-lbl">Full Name</span>
+          <span class="setting-val">{{ user.full_name|default:"Not set" }}</span>
+        </div>
+      </div>
+      <div class="settings-row">
+        <span class="setting-icon"><i class="fas fa-envelope"></i></span>
+        <div class="setting-body">
+          <span class="setting-lbl">Email</span>
+          <span class="setting-val">{{ user.email|default:"Not set" }}</span>
+        </div>
+      </div>
+      <div class="settings-row">
+        <span class="setting-icon"><i class="fas fa-calendar"></i></span>
+        <div class="setting-body">
+          <span class="setting-lbl">Joined</span>
+          <span class="setting-val">{{ user.date_joined|date:"F d, Y" }}</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Footer actions ── -->
+  <div class="prof-footer-actions">
+    <a href="{% url 'home' %}" class="pfa-ghost"><i class="fas fa-house"></i> Dashboard</a>
+    <a href="{% url 'change_password' %}" class="pfa-ghost"><i class="fas fa-lock"></i> Change Password</a>
+    <a href="{% url 'startvideochat' %}" class="pfa-primary"><i class="fas fa-video"></i> Start Video Chat</a>
+  </div>
+
+</div>
 {% endblock %}

@@ -54,12 +54,8 @@
         <div class="empty-icon-wrap"><i class="fas fa-user-group"></i></div>
         <p class="empty-title">No connections</p>
         <p class="empty-sub">
-          {% if verification_status == "UNVERIFIED" %}
-            <a href="{% url 'identity_verification' %}">Get verified</a> to start messaging.
-          {% else %}
-            <a href="{% url 'startvideochat' %}">Join video chat</a> to make connections.
-          {% endif %}
-        </p>
+          <a href="{% url 'startvideochat' %}">Join video chat</a> to make connections.
+      </p>
       </div>
     {% endif %}
   </aside>

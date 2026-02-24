@@ -7,12 +7,12 @@ urlpatterns = [
     path("", views.landing_page, name="landing"),
     path("home/", views.home, name="home"),
     path("profile/", views.profile_view, name="profile"),
+    path("profile/<int:user_id>/", views.profile_view, name="profile_user"),
     path("profile/edit/", views.edit_profile, name="edit_profile"),
     path("profile/change-password/", views.change_password, name="change_password"),
     path("signup/", views.signup_view, name="signup"),
     path("signin/", views.signin_view, name="signin"),
     path("logout/", views.logout_view, name="logout"),
-    path("identity-verification/", views.identity_verification, name="identity_verification"),
     path("start_video_chat/", views.start_video_chat, name="startvideochat"),
     path("start_message_chat/", views.start_message_chat, name="startmessagechat"),
     path("start_message_chat/<int:user_id>/", views.start_message_chat, name="startmessagechat"),
@@ -25,7 +25,6 @@ urlpatterns = [
     # REST API endpoints for messaging
     path("api/messages/<int:user_id>/", views.get_message_history, name="message_history"),
     path("api/messages/<int:user_id>/read/", views.mark_messages_as_read, name="mark_read"),
-
 ]
 
 if settings.DEBUG:

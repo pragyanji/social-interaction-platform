@@ -24,10 +24,7 @@ body:has(.messages-page) {
   flex-direction: column;
 }
 
-/* ---- Hide footer on messages page — chat should fill full height ---- */
-body:has(.messages-page) footer {
-  display: none;
-}
+
 
 /* ---- Page-level background ---- */
 body {
