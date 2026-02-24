@@ -470,69 +470,109 @@ textarea:focus {
   display: block;
 }
 
-/* ===== Messages (Django messages framework) ===== */
+/* ===== Messages (Django messages framework) — fixed toast ===== */
 .messages {
+  position: fixed;
+  top: 80px;
+  /* below the sticky header */
+  right: 20px;
+  z-index: 9999;
   list-style: none;
-  margin: 14px 0;
+  margin: 0;
   padding: 0;
-  display: grid;
-  gap: 10px
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 360px;
+  width: calc(100% - 40px);
+  pointer-events: none;
+  /* let clicks pass through the gap between toasts */
 }
 
 .msg {
-  padding: 10px 36px 10px 12px;
-  border-radius: 12px;
+  padding: 13px 40px 13px 16px;
+  border-radius: 14px;
   border: 1px solid var(--border);
   position: relative;
   cursor: pointer;
-  transition: opacity 0.3s ease, transform 0.3s ease
+  pointer-events: all;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  font-size: 0.9rem;
+  font-weight: 500;
+  line-height: 1.4;
+  animation: toastSlideIn 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+@keyframes toastSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(40px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 .msg::after {
   content: "×";
   position: absolute;
-  right: 12px;
+  right: 14px;
   top: 50%;
   transform: translateY(-50%);
   cursor: pointer;
-  opacity: .6;
-  font-size: 1.25rem;
-  line-height: 1
+  opacity: .5;
+  font-size: 1.2rem;
+  line-height: 1;
+  transition: opacity 0.2s;
 }
 
 .msg:hover::after {
-  opacity: 1
+  opacity: 1;
 }
 
 .msg:hover {
-  opacity: 0.9
+  filter: brightness(1.05);
 }
 
 .msg.success {
   border-color: color-mix(in oklab, var(--success) 40%, var(--border));
-  background: color-mix(in oklab, var(--success) 12%, var(--bg));
-  color: var(--success)
+  background: color-mix(in oklab, var(--success) 15%, rgba(11, 15, 26, 0.85));
+  color: #4ade80;
 }
 
 .msg.error {
   border-color: color-mix(in oklab, var(--error) 40%, var(--border));
-  background: color-mix(in oklab, var(--error) 12%, var(--bg));
-  color: var(--error)
+  background: color-mix(in oklab, var(--error) 15%, rgba(11, 15, 26, 0.85));
+  color: #f87171;
 }
 
 .msg.warning {
   border-color: color-mix(in oklab, var(--warning) 40%, var(--border));
-  background: color-mix(in oklab, var(--warning) 12%, var(--bg));
-  color: var(--warning)
+  background: color-mix(in oklab, var(--warning) 15%, rgba(11, 15, 26, 0.85));
+  color: #fbbf24;
 }
 
 .msg.info {
   border-color: color-mix(in oklab, var(--info) 40%, var(--border));
-  background: color-mix(in oklab, var(--info) 12%, var(--bg));
-  color: var(--info)
+  background: color-mix(in oklab, var(--info) 15%, rgba(11, 15, 26, 0.85));
+  color: #38bdf8;
 }
 
-.msg.fade-out {
-  opacity: 0;
-  transform: translateX(20px)
+/* fallback for messages without a tag class */
+.msg:not(.success):not(.error):not(.warning):not(.info) {
+  background: rgba(30, 30, 50, 0.88);
+  color: #e2e8f0;
+}
+
+@media (max-width: 480px) {
+  .messages {
+    right: 12px;
+    top: 70px;
+    max-width: calc(100% - 24px);
+  }
 }

@@ -1,0 +1,359 @@
+/* =============================================================
+   ChatSphere – Auth Pages (Sign In / Sign Up)
+   Shared dark glassmorphism style matching landing page
+============================================================= */
+
+/* ---- Escape base.html container ---- */
+main.container:has(.auth-container) {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+/* ---- Page-level dark background (same as landing) ---- */
+body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background:
+        radial-gradient(ellipse 80% 50% at 50% 0%, rgba(124, 58, 237, 0.22) 0%, transparent 65%),
+        radial-gradient(ellipse 60% 40% at 10% 60%, rgba(79, 70, 229, 0.12) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 40% at 90% 40%, rgba(124, 58, 237, 0.10) 0%, transparent 60%),
+        radial-gradient(ellipse 70% 50% at 50% 100%, rgba(79, 70, 229, 0.15) 0%, transparent 65%),
+        #060813;
+    background-attachment: fixed;
+    color: #f1f5f9;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+}
+
+/* Grid overlay */
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+        linear-gradient(rgba(255, 255, 255, 0.022) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.022) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* ---- Particle canvas ---- */
+#auth-canvas {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* =============================================================
+   LAYOUT
+============================================================= */
+.auth-container {
+    position: relative;
+    z-index: 1;
+    min-height: calc(100vh - 70px);
+    /* account for sticky header */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 1.5rem;
+}
+
+.auth-grid {
+    width: 100%;
+    max-width: 460px;
+    animation: authFadeUp 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* =============================================================
+   GLASS CARD
+============================================================= */
+.auth-form-wrapper {
+    background: rgba(17, 22, 39, 0.6);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 24px;
+    padding: 2.5rem;
+    box-shadow:
+        0 0 0 1px rgba(124, 58, 237, 0.12),
+        0 32px 80px rgba(0, 0, 0, 0.5);
+    position: relative;
+    overflow: hidden;
+}
+
+/* top glow accent line */
+.auth-form-wrapper::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 10%;
+    right: 10%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(167, 139, 250, 0.6), transparent);
+}
+
+/* =============================================================
+   FORM HEADER
+============================================================= */
+.auth-form>div:first-child {
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.auth-form h2 {
+    font-size: 1.9rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    color: #f1f5f9;
+    margin: 0 0 0.4rem;
+    background: linear-gradient(135deg, #f1f5f9 0%, #a78bfa 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.auth-form-subtitle {
+    font-size: 0.9rem;
+    color: #94a3b8;
+    margin: 0;
+}
+
+/* =============================================================
+   FIELDS
+============================================================= */
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+}
+
+.auth-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+}
+
+.auth-field label {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #cbd5e1;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+}
+
+.auth-required {
+    color: #f472b6;
+    margin-left: 2px;
+}
+
+.auth-field input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    color: #f1f5f9;
+    font-size: 0.95rem;
+    font-family: inherit;
+    transition: border-color 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
+    outline: none;
+}
+
+.auth-field input::placeholder {
+    color: #475569;
+}
+
+.auth-field input:focus {
+    border-color: rgba(124, 58, 237, 0.6);
+    background: rgba(124, 58, 237, 0.07);
+    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15);
+}
+
+.auth-field input:hover:not(:focus) {
+    border-color: rgba(255, 255, 255, 0.18);
+}
+
+.field-hint {
+    font-size: 0.75rem;
+    color: #64748b;
+    line-height: 1.6;
+    margin: 0.1rem 0 0;
+}
+
+.error-text {
+    font-size: 0.78rem;
+    color: #f87171;
+    display: block;
+}
+
+/* =============================================================
+   SUBMIT BUTTON
+============================================================= */
+.auth-submit-btn {
+    width: 100%;
+    padding: 0.85rem 1.5rem;
+    margin-top: 0.4rem;
+    background: linear-gradient(135deg, #7c3aed, #4f46e5);
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 700;
+    font-family: inherit;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 0 0 1px rgba(124, 58, 237, 0.5), 0 8px 32px rgba(124, 58, 237, 0.35);
+    transition: transform 0.25s ease, box-shadow 0.25s ease, filter 0.25s ease;
+}
+
+.auth-submit-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.15), transparent);
+    opacity: 0;
+    transition: opacity 0.25s;
+}
+
+.auth-submit-btn:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.1);
+    box-shadow: 0 0 0 1px rgba(124, 58, 237, 0.7), 0 16px 48px rgba(124, 58, 237, 0.45);
+}
+
+.auth-submit-btn:hover::before {
+    opacity: 1;
+}
+
+.auth-submit-btn:active {
+    transform: translateY(0);
+}
+
+/* =============================================================
+   DIVIDER
+============================================================= */
+.auth-divider {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 0.4rem 0;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.auth-divider-text {
+    font-size: 0.78rem;
+    color: #475569;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    flex-shrink: 0;
+}
+
+/* =============================================================
+   GOOGLE BUTTON
+============================================================= */
+.google-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    width: 100%;
+    padding: 0.8rem 1.5rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    color: #e2e8f0;
+    font-size: 0.95rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background 0.25s ease, border-color 0.25s ease, transform 0.25s ease;
+}
+
+.google-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+    color: #f1f5f9;
+}
+
+/* =============================================================
+   BOTTOM LINK
+============================================================= */
+.auth-signup-link,
+.auth-signin-link {
+    text-align: center;
+    font-size: 0.85rem;
+    color: #64748b;
+    margin: 0.25rem 0 0;
+}
+
+.auth-signup-link a,
+.auth-signin-link a {
+    color: #a78bfa;
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.2s ease;
+}
+
+.auth-signup-link a:hover,
+.auth-signin-link a:hover {
+    color: #c4b5fd;
+}
+
+/* =============================================================
+   FORM ERRORS (non-field)
+============================================================= */
+.form-errors {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    color: #fca5a5;
+    font-size: 0.85rem;
+}
+
+.form-errors p {
+    margin: 0;
+}
+
+/* =============================================================
+   ANIMATION
+============================================================= */
+@keyframes authFadeUp {
+    from {
+        opacity: 0;
+        transform: translateY(28px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* =============================================================
+   RESPONSIVE
+============================================================= */
+@media (max-width: 500px) {
+    .auth-form-wrapper {
+        padding: 2rem 1.5rem;
+    }
+
+    .auth-form h2 {
+        font-size: 1.6rem;
+    }
+}

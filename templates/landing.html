@@ -1,127 +1,350 @@
 {% extends "base.html" %}
 {% load static %}
-{% block title %}Welcome to Chatsphere{% endblock %}
+{% block title %}ChatSphere — Connect with the World{% endblock %}
 
 {% block head_extra %}
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 <link rel="stylesheet" href="{% static 'css/landing.css' %}" />
 {% endblock %}
 
 {% block content %}
-<!-- Hero Section -->
-<section class="hero">
-  <div class="hero-content">
-    <h1>Connect with People Around the World</h1>
-    <p>Experience meaningful conversations with strangers in a safe, moderated environment. Join our growing community today!</p>
-    <div class="cta-buttons">
-      <a href="{% url 'signup' %}" class="btn-primary">Get Started - It's Free</a>
-      <a href="{% url 'signin' %}" class="btn-secondary">Sign In</a>
+
+<!-- ===== PARTICLE CANVAS ===== -->
+<canvas id="particles-canvas"></canvas>
+
+<!-- ===== HERO SECTION ===== -->
+<section class="hero" id="hero">
+  <div class="hero-inner">
+    <div class="hero-badge">
+      <span class="badge-dot"></span>
+      <span>Live connections happening now</span>
+    </div>
+    <h1 class="hero-title">
+      Meet People.<br>
+      <span class="gradient-text">Build Connections.</span>
+    </h1>
+    <p class="hero-subtitle">
+      ChatSphere brings real people together through face-to-face video, seamless messaging,
+      and a reputation system that rewards genuine interactions.
+    </p>
+    <div class="hero-cta">
+      <a href="{% url 'signup' %}" class="btn-primary" id="hero-signup-btn">
+        <span>Get Started Free</span>
+        <i class="fas fa-arrow-right"></i>
+      </a>
+      <a href="{% url 'signin' %}" class="btn-ghost" id="hero-signin-btn">
+        <i class="fas fa-sign-in-alt"></i>
+        <span>Sign In</span>
+      </a>
+    </div>
+    <div class="hero-avatars">
+      <div class="avatar-stack">
+        <div class="avatar av1">PP</div>
+        <div class="avatar av2">KP</div>
+        <div class="avatar av3">SS</div>
+        <div class="avatar av4">RK</div>
+        <div class="avatar av5">MG</div>
+      </div>
+      <span class="avatar-caption"><strong>2,400+</strong> users connected today</span>
+    </div>
+  </div>
+
+  <!-- Floating UI mockup elements -->
+  <div class="hero-float float-left" aria-hidden="true">
+    <div class="float-card">
+      <div class="float-icon"><i class="fas fa-video"></i></div>
+      <div class="float-text">
+        <span class="float-label">Video Chat</span>
+        <span class="float-value">HD Quality</span>
+      </div>
+    </div>
+  </div>
+  <div class="hero-float float-right" aria-hidden="true">
+    <div class="float-card">
+      <div class="float-icon aura"><i class="fas fa-star"></i></div>
+      <div class="float-text">
+        <span class="float-label">Aura Points</span>
+        <span class="float-value">+150 earned</span>
+      </div>
     </div>
   </div>
 </section>
 
-<!-- Features Section -->
-<section class="features">
-  <h2 class="section-title">Why Choose ChatSphere?</h2>
+<!-- ===== STATS BAR ===== -->
+<section class="stats-bar">
+  <div class="stats-inner">
+    <div class="stat-item">
+      <span class="stat-number" data-target="12000">0</span><span class="stat-suffix">+</span>
+      <span class="stat-label">Active Users</span>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat-item">
+      <span class="stat-number" data-target="98">0</span><span class="stat-suffix">%</span>
+      <span class="stat-label">Satisfaction Rate</span>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat-item">
+      <span class="stat-number" data-target="180">0</span><span class="stat-suffix">+</span>
+      <span class="stat-label">Countries Reached</span>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat-item">
+      <span class="stat-number" data-target="500">0</span><span class="stat-suffix">K</span>
+      <span class="stat-label">Chats Started</span>
+    </div>
+  </div>
+</section>
+
+<!-- ===== FEATURES SECTION ===== -->
+<section class="features" id="features">
+  <div class="section-header reveal">
+    <span class="section-eyebrow">Why ChatSphere?</span>
+    <h2 class="section-title">Everything you need to<br><span class="gradient-text">connect meaningfully</span></h2>
+    <p class="section-subtitle">Built for real conversations, not passive scrolling.</p>
+  </div>
+
   <div class="features-grid">
-    <div class="feature-card">
-      <div class="feature-icon">
+    <div class="feature-card reveal" style="--delay:0.05s">
+      <div class="feature-icon-wrap icon-purple">
         <i class="fas fa-video"></i>
       </div>
       <h3>Live Video Chat</h3>
-      <p>Connect face-to-face with people from around the world in real-time. Our high-quality video platform makes conversations feel natural and engaging.</p>
+      <p>Crystal-clear, low-latency video powered by WebRTC. Meet face-to-face with people across the globe as if they're right beside you.</p>
+      <div class="feature-tag">WebRTC Powered</div>
     </div>
 
-    <div class="feature-card">
-      <div class="feature-icon">
-        <i class="fas fa-shield-alt"></i>
+    <div class="feature-card reveal" style="--delay:0.1s">
+      <div class="feature-icon-wrap icon-blue">
+        <i class="fas fa-shield-halved"></i>
       </div>
-      <h3>Safe & Secure</h3>
-      <p>Your safety is our priority. Our advanced moderation system and reporting tools ensure a respectful and secure environment for everyone.</p>
+      <h3>Safe & Verified</h3>
+      <p>Identity verification and AI-powered moderation create a trusted space. Real people only — no bots, no fakes.</p>
+      <div class="feature-tag">ID Verified</div>
     </div>
 
-    <div class="feature-card">
-      <div class="feature-icon">
-        <i class="fas fa-award"></i>
+    <div class="feature-card reveal" style="--delay:0.15s">
+      <div class="feature-icon-wrap icon-amber">
+        <i class="fas fa-star"></i>
       </div>
-      <h3>Earn Aura Points</h3>
-      <p>Get rewarded for positive interactions. Build your reputation and unlock exclusive features as you connect with others.</p>
+      <h3>Aura Points</h3>
+      <p>Build your reputation through positive interactions. Earn points, unlock badges, and rise through the community ranks.</p>
+      <div class="feature-tag">Gamified</div>
     </div>
 
-    <div class="feature-card">
-      <div class="feature-icon">
-        <i class="fas fa-globe"></i>
+    <div class="feature-card reveal" style="--delay:0.2s">
+      <div class="feature-icon-wrap icon-green">
+        <i class="fas fa-earth-asia"></i>
       </div>
       <h3>Global Community</h3>
-      <p>Meet people from different cultures and backgrounds. Expand your horizons with every conversation.</p>
+      <p>180+ countries represented. Discover perspectives, cultures, and friendships you'd never have access to otherwise.</p>
+      <div class="feature-tag">180+ Countries</div>
     </div>
 
-    <div class="feature-card">
-      <div class="feature-icon">
+    <div class="feature-card reveal" style="--delay:0.25s">
+      <div class="feature-icon-wrap icon-pink">
         <i class="fas fa-bolt"></i>
       </div>
-      <h3>Lightning Fast</h3>
-      <p>Our optimized platform ensures smooth, low-latency video calls, no matter where you are in the world.</p>
+      <h3>Instant Matching</h3>
+      <p>Our smart matching system connects you with compatible people in seconds — no swiping, no waiting, no friction.</p>
+      <div class="feature-tag">Smart Match</div>
     </div>
 
-    <div class="feature-card">
-      <div class="feature-icon">
-        <i class="fas fa-mobile-alt"></i>
+    <div class="feature-card reveal" style="--delay:0.3s">
+      <div class="feature-icon-wrap icon-teal">
+        <i class="fas fa-mobile-screen"></i>
       </div>
-      <h3>Mobile Friendly</h3>
-      <p>Chat on the go with our responsive design. Works perfectly on all your devices, anywhere, anytime.</p>
+      <h3>Any Device</h3>
+      <p>Fully responsive across mobile, tablet, and desktop. Your connections follow you wherever you go.</p>
+      <div class="feature-tag">Responsive</div>
     </div>
   </div>
 </section>
 
-<!-- Testimonials Section -->
-<section class="testimonials">
-  <h2 class="section-title">What Our Users Say</h2>
+<!-- ===== HOW IT WORKS ===== -->
+<section class="how-it-works">
+  <div class="section-header reveal">
+    <span class="section-eyebrow">Simple Process</span>
+    <h2 class="section-title">Up and running in <span class="gradient-text">3 steps</span></h2>
+  </div>
+  <div class="steps-grid">
+    <div class="step reveal" style="--delay:0.05s">
+      <div class="step-number">01</div>
+      <div class="step-content">
+        <h3>Create Your Account</h3>
+        <p>Sign up in seconds. No credit card required. Just bring your curiosity.</p>
+      </div>
+    </div>
+    <div class="step-connector" aria-hidden="true"></div>
+    <div class="step reveal" style="--delay:0.15s">
+      <div class="step-number">02</div>
+      <div class="step-content">
+        <h3>Set Up Your Profile</h3>
+        <p>Add a photo and a quick bio so people know who they're connecting with.</p>
+      </div>
+    </div>
+    <div class="step-connector" aria-hidden="true"></div>
+    <div class="step reveal" style="--delay:0.25s">
+      <div class="step-number">03</div>
+      <div class="step-content">
+        <h3>Start Chatting</h3>
+        <p>Jump straight into video chat or messaging — no waiting, no gates, just people.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== TESTIMONIALS ===== -->
+<section class="testimonials" id="testimonials">
+  <div class="section-header reveal">
+    <span class="section-eyebrow">Real Stories</span>
+    <h2 class="section-title">People <span class="gradient-text">love</span> ChatSphere</h2>
+  </div>
   <div class="testimonial-grid">
-    <div class="testimonial-card">
-      <p class="testimonial-text">"I've met amazing people from all over the world on ChatSphere. The video quality is excellent and the community is so welcoming!"</p>
+    <div class="testimonial-card reveal" style="--delay:0.05s">
+      <div class="stars">
+        <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+      </div>
+      <p class="testimonial-text">"I've met amazing people from all over the world on ChatSphere. The video quality is excellent and the community is so welcoming. Couldn't recommend it more!"</p>
       <div class="testimonial-author">
-        <div class="testimonial-avatar">PP</div>
+        <div class="testimonial-avatar av-purple">PP</div>
         <div class="testimonial-info">
           <h4>Pragyan P.</h4>
-          <p>Active Member</p>
+          <p>Active Member · 🇳🇵 Nepal</p>
         </div>
       </div>
     </div>
 
-    <div class="testimonial-card">
-      <p class="testimonial-text">"The aura point system is genius! It really encourages positive interactions. I've made real connections here."</p>
+    <div class="testimonial-card featured reveal" style="--delay:0.1s">
+      <div class="stars">
+        <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+      </div>
+      <p class="testimonial-text">"The Aura Points system is genius! It genuinely encourages positive interactions. I've made real, lasting friendships here that I'd never have found anywhere else."</p>
       <div class="testimonial-author">
-        <div class="testimonial-avatar">KP</div>
+        <div class="testimonial-avatar av-blue">KP</div>
         <div class="testimonial-info">
           <h4>Kritishma P.</h4>
-          <p>Community Member</p>
+          <p>Community Member · 🇮🇳 India</p>
         </div>
       </div>
+      <div class="featured-badge"><i class="fas fa-crown"></i> Top Review</div>
     </div>
 
-    <div class="testimonial-card">
-      <p class="testimonial-text">"As someone who's shy, I love how easy it is to meet new people here. The moderation team does a great job keeping things safe."</p>
+    <div class="testimonial-card reveal" style="--delay:0.15s">
+      <div class="stars">
+        <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+      </div>
+      <p class="testimonial-text">"As someone who's shy, I love how easy it is to meet new people here. The moderation team does a fantastic job keeping things safe and respectful."</p>
       <div class="testimonial-author">
-        <div class="testimonial-avatar">SS</div>
+        <div class="testimonial-avatar av-pink">SS</div>
         <div class="testimonial-info">
           <h4>Shristi S.</h4>
-          <p>New Member</p>
+          <p>New Member · 🇳🇵 Nepal</p>
         </div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- CTA Section -->
-<section class="cta-section">
-  <div class="cta-content">
-    <h2>Ready to Start Connecting?</h2>
-    <p>Join thousands of users already making meaningful connections on ChatSphere.</p>
+<!-- ===== CTA SECTION ===== -->
+<section class="cta-section" id="cta">
+  <div class="cta-glow" aria-hidden="true"></div>
+  <div class="cta-content reveal">
+    <span class="section-eyebrow" style="color:rgba(255,255,255,0.7)">Join the Community</span>
+    <h2>Ready to meet your<br><span class="gradient-text-light">next great friend?</span></h2>
+    <p>Join thousands of users already making meaningful connections every single day on ChatSphere.</p>
     <div class="cta-buttons">
-      <a href="{% url 'signup' %}" class="btn-primary">Create Free Account</a>
-      <a href="{% url 'signin' %}" class="btn-secondary">Sign In</a>
+      <a href="{% url 'signup' %}" class="btn-primary btn-large" id="cta-signup-btn">
+        <span>Create Free Account</span>
+        <i class="fas fa-arrow-right"></i>
+      </a>
+      <a href="{% url 'signin' %}" class="btn-ghost btn-large" id="cta-signin-btn">
+        <i class="fas fa-sign-in-alt"></i>
+        <span>Sign In</span>
+      </a>
     </div>
+    <p class="cta-note"><i class="fas fa-lock"></i> Free forever • No credit card required • Cancel anytime</p>
   </div>
 </section>
+
+<!-- ===== PARTICLES + ANIMATIONS JS ===== -->
+<script>
+(function () {
+  /* ---- Particle Canvas (fixed / full-viewport) ---- */
+  const canvas = document.getElementById('particles-canvas');
+  const ctx = canvas.getContext('2d');
+  let particles = [];
+
+  function resize() {
+    canvas.width  = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  class Particle {
+    constructor() { this.reset(); }
+    reset() {
+      this.x     = Math.random() * canvas.width;
+      this.y     = Math.random() * canvas.height;
+      this.r     = Math.random() * 1.6 + 0.3;
+      this.alpha = Math.random() * 0.45 + 0.08;
+      this.dx    = (Math.random() - 0.5) * 0.28;
+      this.dy    = (Math.random() - 0.5) * 0.28;
+    }
+    update() {
+      this.x += this.dx; this.y += this.dy;
+      if (this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height) this.reset();
+    }
+    draw() {
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(167,139,250,${this.alpha})`;
+      ctx.fill();
+    }
+  }
+
+  for (let i = 0; i < 180; i++) particles.push(new Particle());
+
+  function loop() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    particles.forEach(p => { p.update(); p.draw(); });
+    requestAnimationFrame(loop);
+  }
+  loop();
+
+  /* ---- Scroll Reveal ---- */
+  const revealEls = document.querySelectorAll('.reveal');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
+  }, { threshold: 0.12 });
+  revealEls.forEach(el => observer.observe(el));
+
+  /* ---- Counter Animation ---- */
+  function animateCounter(el) {
+    const target = +el.dataset.target;
+    const duration = 1800;
+    const start = performance.now();
+    function step(now) {
+      const progress = Math.min((now - start) / duration, 1);
+      const ease = 1 - Math.pow(1 - progress, 3);
+      el.textContent = Math.floor(ease * target).toLocaleString();
+      if (progress < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+
+  const statsSection = document.querySelector('.stats-bar');
+  const counterObserver = new IntersectionObserver((entries) => {
+    if (entries[0].isIntersecting) {
+      document.querySelectorAll('.stat-number').forEach(animateCounter);
+      counterObserver.disconnect();
+    }
+  }, { threshold: 0.4 });
+  if (statsSection) counterObserver.observe(statsSection);
+})();
+</script>
+
 {% endblock %}

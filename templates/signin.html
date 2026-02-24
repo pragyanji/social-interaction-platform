@@ -2,74 +2,110 @@
 {% load static %}
 {% load socialaccount %}
 
-{% block title %}Sign in · Chatsphere{% endblock %}
+{% block title %}Sign In · ChatSphere{% endblock %}
 
 {% block head_extra %}
-<link rel="stylesheet" href="{% static 'css/signin.css' %}" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'css/auth.css' %}" />
 {% endblock %}
 
 {% block content %}
+
+<!-- Particle canvas -->
+<canvas id="auth-canvas"></canvas>
+
 <div class="auth-container">
   <div class="auth-grid">
-    <!-- Sign In Form -->
     <div class="auth-form-wrapper">
       <form method="post" action="{% url 'signin' %}" class="auth-form">
+
         <div>
-          <h2>Sign In</h2>
-          <p class="auth-form-subtitle">Enter your credentials to continue</p>
+          <h2>Welcome back</h2>
+          <p class="auth-form-subtitle">Sign in to your ChatSphere account</p>
         </div>
 
         {% csrf_token %}
 
-        {# Non-field errors #}
         {% if form and form.non_field_errors %}
           <div class="form-errors">
             {% for e in form.non_field_errors %}<p>{{ e }}</p>{% endfor %}
           </div>
         {% endif %}
 
-        <!-- Username Field -->
+        <!-- Username -->
         <div class="auth-field">
           <label for="id_username">Username</label>
           <input id="id_username" name="username" type="text"
              value="{{ form.username.value|default_if_none:'' }}"
              placeholder="Enter your username"
+             autocomplete="username"
              required />
           {% if form and form.username.errors %}
             <small class="error-text">{% for e in form.username.errors %}{{ e }}{% if not forloop.last %}<br>{% endif %}{% endfor %}</small>
           {% endif %}
         </div>
 
-        <!-- Password Field -->
+        <!-- Password -->
         <div class="auth-field">
           <label for="id_password">Password</label>
           <input id="id_password" name="password" type="password"
              placeholder="Enter your password"
+             autocomplete="current-password"
              required />
           {% if form and form.password.errors %}
             <small class="error-text">{% for e in form.password.errors %}{{ e }}{% if not forloop.last %}<br>{% endif %}{% endfor %}</small>
           {% endif %}
         </div>
 
-        <button type="submit" class="auth-submit-btn">Sign In</button>
+        <button type="submit" class="auth-submit-btn" id="signin-submit-btn">Sign In</button>
 
-        <!-- Divider -->
-        <div class="auth-divider">
-          <div class="auth-divider-text">or</div>
-        </div>
+        <div class="auth-divider"><div class="auth-divider-text">or</div></div>
 
-        <!-- Google Sign In -->
-        <a class="google-btn" href="{% provider_login_url 'google' %}">
+        <a class="google-btn" href="{% provider_login_url 'google' %}" id="google-signin-btn">
           <span>🔐</span>
           <span>Continue with Google</span>
         </a>
 
-        <!-- Sign Up Link -->
         <p class="auth-signup-link">
           Don't have an account? <a href="{% url 'signup' %}">Create one free →</a>
         </p>
+
       </form>
     </div>
   </div>
 </div>
+
+<script>
+(function () {
+  const canvas = document.getElementById('auth-canvas');
+  const ctx = canvas.getContext('2d');
+  let particles = [];
+
+  function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+  resize(); window.addEventListener('resize', resize);
+
+  class Particle {
+    constructor() { this.reset(); }
+    reset() {
+      this.x = Math.random() * canvas.width; this.y = Math.random() * canvas.height;
+      this.r = Math.random() * 1.6 + 0.3; this.alpha = Math.random() * 0.4 + 0.08;
+      this.dx = (Math.random() - 0.5) * 0.28; this.dy = (Math.random() - 0.5) * 0.28;
+    }
+    update() {
+      this.x += this.dx; this.y += this.dy;
+      if (this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height) this.reset();
+    }
+    draw() {
+      ctx.beginPath(); ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(167,139,250,${this.alpha})`; ctx.fill();
+    }
+  }
+
+  for (let i = 0; i < 150; i++) particles.push(new Particle());
+  function loop() { ctx.clearRect(0, 0, canvas.width, canvas.height); particles.forEach(p => { p.update(); p.draw(); }); requestAnimationFrame(loop); }
+  loop();
+})();
+</script>
 {% endblock %}
