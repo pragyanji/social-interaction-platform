@@ -295,7 +295,7 @@ class MessagingClient {
                 const data = await response.json();
                 console.log(`Marked ${data.marked_as_read} messages as read`);
                 // Clear the unread badge for this user in the sidebar
-                const userItem = document.querySelector(`.user-item[data-user-id="${this.userId}"]`);
+                const userItem = document.querySelector(`.sidebar-item[data-user-id="${this.userId}"]`);
                 if (userItem) {
                     const badge = userItem.querySelector('.unread-badge');
                     if (badge) badge.remove();
@@ -323,10 +323,10 @@ class MessagingClient {
      */
     updateConnectionStatus(isConnected) {
         const statusEl = document.querySelector('.connection-status');
-        const dotEl = document.querySelector('.header-status-indicator');
+        const dotEl = document.querySelector('.header-status-dot');
 
         if (statusEl) {
-            statusEl.classList.toggle('connected', isConnected);
+            statusEl.classList.toggle('online', isConnected);
             statusEl.classList.toggle('disconnected', !isConnected);
             statusEl.textContent = isConnected ? 'Online' : 'Offline';
         }
@@ -359,7 +359,7 @@ class MessagingClient {
 /**
  * Initialize messaging when DOM is ready
  */
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     const selectedUserElement = document.querySelector('[data-selected-user-id]');
     const currentUserElement = document.querySelector('[data-current-user-id]');
 
@@ -379,8 +379,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Get CSRF token from DOM
     const getCsrfToken = () => {
         return document.querySelector('[name="csrfmiddlewaretoken"]')?.value ||
-               document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ||
-               '';
+            document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ||
+            '';
     };
 
     // Initialize messaging client
@@ -389,7 +389,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Handle message input
     const messageInput = document.querySelector('.message-input');
-    const sendButton = document.querySelector('.send-message-btn');
+    const sendButton = document.querySelector('.send-btn');
 
     if (messageInput && sendButton) {
         const sendMessage = () => {

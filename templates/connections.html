@@ -1,115 +1,140 @@
 {% extends "base.html" %}
 {% load static %}
-{% block title %}Connections · Chatsphere{% endblock %}
+{% block title %}Connections · ChatSphere{% endblock %}
 
 {% block head_extra %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 <link rel="stylesheet" href="{% static 'css/connections.css' %}" />
 {% endblock %}
 
 {% block content %}
-<h2 class="page-title">👥 Connections</h2>
 {% if request.user.is_authenticated %}
-  <div class="connections-card">
-    <div class="connections-header">
-      <h3>Your Connections</h3>
-      <span class="connections-count">{{ connections.count }}</span>
+
+<div class="connections-page">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="page-header-left">
+      <h1><i class="fas fa-user-group"></i> Connections</h1>
+      <span class="connections-count-badge">{{ connections.count }}</span>
     </div>
+    <p class="page-header-sub">People you've connected with</p>
+  </div>
+
+  <div class="connections-card">
     {% if connections %}
       <div class="users-list">
         {% for user in connections %}
           <div class="user-item">
-            <div class="user-info">
-              <div class="user-info-content">
-                <div class="user-avatar-container">
-                  {% if user.profile_pic %}
-                    <img src="{{ user.profile_pic.url }}" alt="{{ user.get_username }}" class="user-avatar" />
-                  {% else %}
-                    <img src="{% static 'img/default_profile.png' %}" alt="Profile" class="user-avatar" />
-                  {% endif %}
-                </div>
-                <div class="user-details">
-                  <p class="user-name">{{ user.full_name }}</p>
-                  <p class="user-username">@{{ user.username }}</p>
-                </div>
+            <!-- Avatar + Info -->
+            <div class="user-info-content">
+              <div class="user-avatar-container">
+                {% if user.profile_pic %}
+                  <img src="{{ user.profile_pic.url }}" alt="{{ user.get_username }}" class="user-avatar" />
+                {% else %}
+                  <img src="{% static 'img/default_profile.png' %}" alt="Profile" class="user-avatar" />
+                {% endif %}
+              </div>
+              <div class="user-details">
+                <p class="user-name">{{ user.full_name }}</p>
+                <p class="user-username">@{{ user.username }}</p>
               </div>
             </div>
+
+            <!-- Actions -->
             <div class="connection-actions">
-              <a href="{% url 'startmessagechat' user.id %}" class="user-chat-btn">💬 Message</a>
-              <button type="button" class="connection-remove-btn" data-user-id="{{ user.id }}" data-user-name="{{ user.full_name }}">🗑 Remove</button>
+              <a href="{% url 'startmessagechat' user.id %}" class="user-chat-btn" title="Send message">
+                <i class="fas fa-message"></i>
+                <span>Message</span>
+              </a>
+              <button
+                type="button"
+                class="connection-remove-btn"
+                data-user-id="{{ user.id }}"
+                data-user-name="{{ user.full_name }}"
+                title="Remove connection"
+                aria-label="Remove {{ user.full_name }}">
+                <i class="fas fa-trash-can"></i>
+              </button>
             </div>
           </div>
         {% endfor %}
       </div>
+
     {% else %}
       <div class="connections-empty">
-        <div class="empty-icon">👥</div>
-        <p class="empty-title">No Connections Yet</p>
+        <div class="empty-icon-wrap">
+          <i class="fas fa-user-group"></i>
+        </div>
+        <p class="empty-title">No connections yet</p>
         <p class="empty-text">
-          You don't have any connections yet.<br>
-          <a href="{% url 'startvideochat' %}" class="empty-action">Start Video Chat</a> to make connections!
+          Start a video chat to meet people and build your connections.
         </p>
+        <a href="{% url 'startvideochat' %}" class="btn-start-chat">
+          <i class="fas fa-video"></i> Start Video Chat
+        </a>
       </div>
     {% endif %}
   </div>
+</div>
 
-  <!-- Confirmation Modal -->
-  <div id="confirmationModal" class="modal-overlay hidden">
-    <div class="modal-box">
-      <p class="modal-text">Are you sure you want to remove <span id="modalUserName"></span>? This action cannot be undone.</p>
-      <div class="modal-actions">
-        <button type="button" class="modal-btn modal-cancel" onclick="closeModal()">Cancel</button>
-        <button type="button" class="modal-btn modal-confirm" onclick="confirmRemove()">Yes, Remove</button>
-      </div>
+<!-- Confirmation Modal -->
+<div id="confirmationModal" class="modal-overlay hidden" role="dialog" aria-modal="true">
+  <div class="modal-box">
+    <div class="modal-icon"><i class="fas fa-trash-can"></i></div>
+    <h3 class="modal-title">Remove Connection?</h3>
+    <p class="modal-text">Remove <strong id="modalUserName"></strong> from your connections? This can't be undone.</p>
+    <div class="modal-actions">
+      <button type="button" class="modal-btn modal-cancel" onclick="closeModal()">Cancel</button>
+      <button type="button" class="modal-btn modal-confirm" onclick="confirmRemove()">
+        <i class="fas fa-trash-can"></i> Remove
+      </button>
     </div>
   </div>
+</div>
 
-  <form id="removeForm" method="POST" style="display: none;">
-    {% csrf_token %}
-  </form>
-  
-  
-  
-  <script>
-    let pendingUserId = null;
+<form id="removeForm" method="POST" style="display:none;">{% csrf_token %}</form>
 
-    document.querySelectorAll('.connection-remove-btn').forEach(btn => {
-      btn.addEventListener('click', function(e) {
-        e.preventDefault();
-        pendingUserId = this.getAttribute('data-user-id');
-        const userName = this.getAttribute('data-user-name');
-        document.getElementById('modalUserName').textContent = userName;
-        document.getElementById('confirmationModal').classList.remove('hidden');
-      });
+<script>
+  let pendingUserId = null;
+
+  document.querySelectorAll('.connection-remove-btn').forEach(btn => {
+    btn.addEventListener('click', function () {
+      pendingUserId = this.dataset.userId;
+      document.getElementById('modalUserName').textContent = this.dataset.userName;
+      document.getElementById('confirmationModal').classList.remove('hidden');
     });
+  });
 
-    function closeModal() {
-      document.getElementById('confirmationModal').classList.add('hidden');
-      pendingUserId = null;
+  function closeModal() {
+    document.getElementById('confirmationModal').classList.add('hidden');
+    pendingUserId = null;
+  }
+
+  function confirmRemove() {
+    if (pendingUserId) {
+      const form = document.getElementById('removeForm');
+      form.action = `/connections/remove/${pendingUserId}/`;
+      form.submit();
     }
+  }
 
-    function confirmRemove() {
-      if (pendingUserId) {
-        const form = document.getElementById('removeForm');
-        form.action = `/connections/remove/${pendingUserId}/`;
-        form.submit();
-      }
-    }
+  document.getElementById('confirmationModal').addEventListener('click', function (e) {
+    if (e.target === this) closeModal();
+  });
 
-    // Close modal when clicking outside
-    document.getElementById('confirmationModal').addEventListener('click', function(e) {
-      if (e.target === this) {
-        closeModal();
-      }
-    });
-  </script>
-  
-  {% else %}
-    <div class="card">
-      <p>You’re not signed in.</p>
-      <div class="actions">
-        <a class="btn btn-primary" href="{% url 'signin' %}">Sign in</a>
-        <a class="btn" href="{% url 'signup' %}">Create account</a>
-      </div>
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+</script>
+
+{% else %}
+  <div class="card">
+    <p>You're not signed in.</p>
+    <div class="actions">
+      <a class="btn btn-primary" href="{% url 'signin' %}">Sign in</a>
+      <a class="btn" href="{% url 'signup' %}">Create account</a>
     </div>
-  {% endif %}
-  {% endblock %}
+  </div>
+{% endif %}
+{% endblock %}

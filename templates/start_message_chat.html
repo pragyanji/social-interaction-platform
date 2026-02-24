@@ -1,123 +1,145 @@
 {% extends "base.html" %}
 {% load static %}
-{% block title %}Message Chat · Chatsphere{% endblock %}
+{% block title %}Messages · ChatSphere{% endblock %}
 
 {% block head_extra %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 <link rel="stylesheet" href="{% static 'css/messages.css' %}" />
 {% endblock %}
 
 {% block content %}
-<h2 class="page-title">💬 Messages</h2>
 {% if request.user.is_authenticated %}
-    <div class="messages-container" data-current-user-id="{{ request.user.id }}">
-        <!-- Connected Users List -->
-        <div class="connections-card">
-            <div class="connections-header">
-                <h3>Your Connections</h3>
-                <span class="connections-count">{{ connected_users|length }}</span>
+
+<div class="messages-page {% if selected_user %}chat-open{% endif %}" data-current-user-id="{{ request.user.id }}">
+
+  <!-- ===== SIDEBAR ===== -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <h2><i class="fas fa-message"></i> Messages</h2>
+      <span class="sidebar-count">{{ connected_users|length }}</span>
+    </div>
+
+    {% if connected_users %}
+      <div class="sidebar-list">
+        {% for user in connected_users %}
+          <a href="{% url 'startmessagechat' user.id %}"
+             class="sidebar-item {% if selected_user.id == user.id %}active{% endif %}"
+             data-user-id="{{ user.id }}">
+
+            <div class="sidebar-avatar-wrap">
+              {% if user.profile_pic %}
+                <img src="{{ user.profile_pic.url }}" alt="{{ user.get_username }}" class="sidebar-avatar" />
+              {% else %}
+                <img src="{% static 'img/default_profile.png' %}" alt="Profile" class="sidebar-avatar" />
+              {% endif %}
             </div>
-            {% if connected_users %}
-                <div class="users-list">
-                    {% for user in connected_users %}
-                        <div class="user-item {% if selected_user.id == user.id %}active{% endif %}" data-user-id="{{ user.id }}">
-                            <div class="user-info">
-                                <a href="{% url 'startmessagechat' user.id %}" class="user-info-link">
-                                    <div class="user-avatar-container">
-                                        {% if user.profile_pic %}
-                                            <img src="{{ user.profile_pic.url }}" alt="{{ user.get_username }}" class="user-avatar" />
-                                        {% else %}
-                                            <img src="{% static 'img/default_profile.png' %}" alt="Profile" class="user-avatar" />
-                                        {% endif %}
-                                        <div class="user-status-indicator"></div>
-                                    </div>
-                                    <div class="user-details">
-                                        <p class="user-name">{{ user.full_name }}</p>
-                                        <p class="user-username">@{{ user.username }}</p>
-                                    </div>
-                                </a>
-                            </div>
-                            {% if user.unread_count > 0 and selected_user.id != user.id %}
-                                <span class="unread-badge">{{ user.unread_count }}</span>
-                            {% endif %}
-                        </div>
-                    {% endfor %}
-                </div>
-            {% else %}
-                <div class="connections-empty">
-                    <div class="empty-icon">👥</div>
-                    <p class="empty-title">No Connections Yet</p>
-                    <p class="empty-text">
-                        You don't have any connections yet.<br>
-                        {% if verification_status == "UNVERIFIED" %}
-                        <a href="{% url 'identity_verification' %}" class="empty-action">Get verified</a> to start messaging.
-                        {% else %}
-                        <a href="{% url 'startvideochat' %}" class="empty-action">Join video chat</a> to make connections.
-                        {% endif %}
-                    </p>
-                </div>
-            {% endif %}
-        </div>
 
-        <!-- Chat Area -->
-        <div class="chat-card chat-container">
-            {% if selected_user %}
-                <div class="chat-header" data-selected-user-id="{{ selected_user.id }}">
-                    <div class="chat-header-avatar-container">
-                        {% if selected_user.profile_pic %}
-                            <img src="{{ selected_user.profile_pic.url }}" alt="{{ selected_user.get_username }}" class="chat-header-avatar" />
-                        {% else %}
-                            <div class="chat-header-avatar-placeholder">{{ selected_user.username|first|upper }}</div>
-                        {% endif %}
-                        <div class="header-status-indicator"></div>
-                    </div>
-                    <div class="chat-header-info">
-                        <h3>{{ selected_user.full_name }}</h3>
-                        <p class="chat-header-username">@{{ selected_user.username }}</p>
-                        <span class="connection-status disconnected">Offline</span>
-                    </div>
-                </div>
-                <div class="chat-messages">
-                    <!-- Messages will be loaded here dynamically by messaging.js -->
-                </div>
-                <div class="message-input-area">
-                    <input type="text" class="message-input" placeholder="Type your message...">
-                    <button class="send-message-btn">
-                        <span>Send</span>
-                        <span>→</span>
-                    </button>
-                </div>
-            {% else %}
-                <div class="no-conversation">
-                    <div class="empty-illustration">👋</div>
-                    <h3>Welcome to Messages!</h3>
-                    <p>Select a connection from the list to start chatting.</p>
-                    {% if connected_users %}
-                        <p class="empty-hint">Click on a user from the left panel to begin messaging.</p>
-                    {% else %}
-                        <p class="empty-hint">
-                            You need connections to message. <a href="{% url 'startvideochat' %}">Join video chat</a> first.
-                        </p>
-                    {% endif %}
-                </div>
-            {% endif %}
-        </div>
-    </div>
-{% else %}
-    <div class="card">
-        <p>You're not signed in.</p>
-        <div class="actions">
-            <a class="btn btn-primary" href="{% url 'signin' %}">Sign in</a>
-            <a class="btn" href="{% url 'signup' %}">Create account</a>
-        </div>
-    </div>
-{% endif %}
+            <div class="sidebar-user-info">
+              <span class="sidebar-name">{{ user.full_name }}</span>
+              <span class="sidebar-username">@{{ user.username }}</span>
+            </div>
 
-<!-- Include messaging script -->
+            {% if user.unread_count > 0 and selected_user.id != user.id %}
+              <span class="unread-badge">{{ user.unread_count }}</span>
+            {% endif %}
+          </a>
+        {% endfor %}
+      </div>
+
+    {% else %}
+      <div class="sidebar-empty">
+        <div class="empty-icon-wrap"><i class="fas fa-user-group"></i></div>
+        <p class="empty-title">No connections</p>
+        <p class="empty-sub">
+          {% if verification_status == "UNVERIFIED" %}
+            <a href="{% url 'identity_verification' %}">Get verified</a> to start messaging.
+          {% else %}
+            <a href="{% url 'startvideochat' %}">Join video chat</a> to make connections.
+          {% endif %}
+        </p>
+      </div>
+    {% endif %}
+  </aside>
+
+  <!-- ===== CHAT AREA ===== -->
+  <main class="chat-area">
+    {% if selected_user %}
+
+      <!-- Chat Header -->
+      <div class="chat-header" data-selected-user-id="{{ selected_user.id }}">
+        <!-- Mobile back button -->
+        <a href="{% url 'startmessagechat' 0 %}" class="chat-back-btn" aria-label="Back to conversations">
+          <i class="fas fa-arrow-left"></i>
+        </a>
+        <div class="chat-header-avatar-wrap">
+          {% if selected_user.profile_pic %}
+            <img src="{{ selected_user.profile_pic.url }}" alt="{{ selected_user.get_username }}" class="chat-header-avatar" />
+          {% else %}
+            <div class="chat-header-avatar-placeholder">{{ selected_user.username|first|upper }}</div>
+          {% endif %}
+          <div class="header-status-dot"></div>
+        </div>
+        <div class="chat-header-info">
+          <h3>{{ selected_user.full_name }}</h3>
+          <span class="connection-status disconnected" id="chat-status">Offline</span>
+        </div>
+      </div>
+
+      <!-- Messages -->
+      <div class="chat-messages" id="chatMessages"></div>
+
+      <!-- Input Area -->
+      <div class="message-input-area">
+        <input
+          type="text"
+          class="message-input"
+          id="messageInput"
+          placeholder="Type a message…"
+          autocomplete="off"
+          spellcheck="true"
+          aria-label="Message input"
+        />
+        <button class="send-btn" id="sendBtn" title="Send message" aria-label="Send">
+          <i class="fas fa-paper-plane"></i>
+        </button>
+      </div>
+
+    {% else %}
+
+      <!-- No conversation selected -->
+      <div class="no-chat-selected">
+        <div class="no-chat-icon"><i class="fas fa-comments"></i></div>
+        <h3>Your messages</h3>
+        <p>
+          {% if connected_users %}
+            Pick a conversation from the sidebar to start chatting.
+          {% else %}
+            You need connections to message people.
+            <a href="{% url 'startvideochat' %}">Join video chat</a> to get started.
+          {% endif %}
+        </p>
+      </div>
+
+    {% endif %}
+  </main>
+
+</div>
+
 {% if selected_user %}
 <script src="{% static 'js/messaging.js' %}"></script>
 {% endif %}
-
-<!-- CSRF Token for API requests -->
 {% csrf_token %}
 
+{% else %}
+  <div class="card">
+    <p>You're not signed in.</p>
+    <div class="actions">
+      <a class="btn btn-primary" href="{% url 'signin' %}">Sign in</a>
+      <a class="btn" href="{% url 'signup' %}">Create account</a>
+    </div>
+  </div>
+{% endif %}
 {% endblock %}
