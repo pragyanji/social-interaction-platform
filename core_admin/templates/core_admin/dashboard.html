@@ -1,0 +1,128 @@
+{% extends "core_admin/base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<!-- Stat Cards -->
+<div class="stat-grid">
+  <div class="stat-card">
+    <div class="stat-icon" style="background: linear-gradient(135deg, #7c3aed, #6366f1);">
+      <i class="fas fa-users"></i>
+    </div>
+    <div class="stat-info">
+      <span class="stat-value">{{ total_users }}</span>
+      <span class="stat-label">Total Users</span>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon" style="background: linear-gradient(135deg, #ef4444, #dc2626);">
+      <i class="fas fa-flag"></i>
+    </div>
+    <div class="stat-info">
+      <span class="stat-value">{{ open_reports }}</span>
+      <span class="stat-label">Open Reports</span>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+      <i class="fas fa-ban"></i>
+    </div>
+    <div class="stat-info">
+      <span class="stat-value">{{ active_bans }}</span>
+      <span class="stat-label">Active Bans</span>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon" style="background: linear-gradient(135deg, #22c55e, #16a34a);">
+      <i class="fas fa-bolt"></i>
+    </div>
+    <div class="stat-info">
+      <span class="stat-value">{{ avg_aura }}</span>
+      <span class="stat-label">Avg Aura</span>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon" style="background: linear-gradient(135deg, #0ea5e9, #0284c7);">
+      <i class="fas fa-link"></i>
+    </div>
+    <div class="stat-info">
+      <span class="stat-value">{{ total_connections }}</span>
+      <span class="stat-label">Connections</span>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon" style="background: linear-gradient(135deg, #a855f7, #9333ea);">
+      <i class="fas fa-message"></i>
+    </div>
+    <div class="stat-info">
+      <span class="stat-value">{{ total_messages }}</span>
+      <span class="stat-label">Messages</span>
+    </div>
+  </div>
+</div>
+
+<!-- Two-column layout for recent activity -->
+<div class="dash-grid">
+  <!-- Recent Reports -->
+  <div class="card">
+    <div class="card-header">
+      <h2><i class="fas fa-flag"></i> Recent Reports</h2>
+      <a href="{% url 'core_admin:report_list' %}" class="card-link">View All →</a>
+    </div>
+    <div class="card-body">
+      {% if recent_reports %}
+        <table class="table table-compact">
+          <tbody>
+          {% for r in recent_reports %}
+            <tr>
+              <td>
+                <a href="{% url 'core_admin:report_detail' r.id %}" class="text-link">#{{ r.id }}</a>
+              </td>
+              <td>{{ r.user.username }} → {{ r.reported_to.username }}</td>
+              <td>
+                <span class="badge badge-{{ r.report_status|lower }}">{{ r.get_report_status_display }}</span>
+              </td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p class="empty-text">No reports yet.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Recent Users -->
+  <div class="card">
+    <div class="card-header">
+      <h2><i class="fas fa-user-plus"></i> New Users</h2>
+      <a href="{% url 'core_admin:user_list' %}" class="card-link">View All →</a>
+    </div>
+    <div class="card-body">
+      {% if recent_users %}
+        <table class="table table-compact">
+          <tbody>
+          {% for u in recent_users %}
+            <tr>
+              <td>
+                <a href="{% url 'core_admin:user_detail' u.id %}" class="text-link">{{ u.username }}</a>
+              </td>
+              <td class="text-muted">{{ u.full_name|default:"-" }}</td>
+              <td class="text-muted text-right">{{ u.date_joined|timesince }} ago</td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p class="empty-text">No users yet.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

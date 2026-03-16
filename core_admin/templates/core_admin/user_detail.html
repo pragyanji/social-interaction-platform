@@ -1,0 +1,119 @@
+{% extends "core_admin/base.html" %}
+
+{% block title %}{{ profile_user.username }}{% endblock %}
+{% block page_title %}User: {{ profile_user.username }}{% endblock %}
+
+{% block content %}
+<div class="detail-grid">
+  <!-- Left: Profile Card -->
+  <div class="card profile-card">
+    <div class="card-body center-content">
+      {% if profile_user.profile_pic %}
+        <img src="{{ profile_user.profile_pic.url }}" class="avatar-lg" alt="" />
+      {% else %}
+        <div class="avatar-lg avatar-placeholder">{{ profile_user.username|first|upper }}</div>
+      {% endif %}
+      <h2 class="profile-name">{{ profile_user.username }}</h2>
+      <p class="text-muted">{{ profile_user.full_name|default:"No name set" }}</p>
+      <p class="text-muted text-sm">{{ profile_user.email|default:"No email" }}</p>
+
+      <div class="profile-meta">
+        <div class="meta-item">
+          <span class="meta-value">{{ aura.aura_points }}</span>
+          <span class="meta-label">Aura</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-value">{{ avg_rating }}<small>/5</small></span>
+          <span class="meta-label">Rating ({{ total_ratings }})</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-value">{{ mutual_connections }}</span>
+          <span class="meta-label">Connections</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-value">{{ streak.current_streak }}<small>d</small></span>
+          <span class="meta-label">Streak</span>
+        </div>
+      </div>
+
+      <p class="text-muted text-sm" style="margin-top:12px;">
+        Joined {{ profile_user.date_joined|date:"F d, Y" }}
+      </p>
+    </div>
+  </div>
+
+  <!-- Right: Details -->
+  <div class="detail-right">
+    <!-- Aura Breakdown -->
+    <div class="card">
+      <div class="card-header"><h2><i class="fas fa-bolt"></i> Aura Breakdown</h2></div>
+      <div class="card-body">
+        <div class="aura-breakdown">
+          <div class="aura-row"><span>Rating Component</span><span class="text-green">+{{ aura.rating_component }}</span></div>
+          <div class="aura-row"><span>Streak Bonus</span><span class="text-green">+{{ aura.streak_component }}</span></div>
+          <div class="aura-row"><span>Report Penalty</span><span class="text-red">-{{ aura.report_penalty }}</span></div>
+          <div class="aura-row aura-total"><span>Total</span><span>{{ aura.aura_points }}</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ban Control -->
+    <div class="card">
+      <div class="card-header"><h2><i class="fas fa-ban"></i> Ban Status</h2></div>
+      <div class="card-body">
+        {% if ban and ban.active %}
+          <div class="ban-active">
+            <span class="badge badge-banned">🔒 Currently Banned</span>
+            <p class="text-muted text-sm" style="margin-top:8px;">
+              Reason: {{ ban.banned_reason }}<br/>
+              By: {{ ban.banned_by|default:"System" }} on {{ ban.created_at|date:"M d, Y" }}
+            </p>
+            <form method="post" action="{% url 'core_admin:ban_toggle' profile_user.id %}">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="unban" />
+              <button type="submit" class="btn btn-success" style="margin-top:10px;">
+                <i class="fas fa-unlock"></i> Unban User
+              </button>
+            </form>
+          </div>
+        {% else %}
+          <p class="text-muted">This user is not currently banned.</p>
+          <form method="post" action="{% url 'core_admin:ban_toggle' profile_user.id %}" style="margin-top:10px;">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="ban" />
+            <div class="form-group">
+              <input type="text" name="reason" placeholder="Reason for ban…" class="form-input" required />
+            </div>
+            <button type="submit" class="btn btn-danger" style="margin-top:8px;">
+              <i class="fas fa-ban"></i> Ban User
+            </button>
+          </form>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Reports Received -->
+    <div class="card">
+      <div class="card-header"><h2><i class="fas fa-flag"></i> Reports Received ({{ reports_received|length }})</h2></div>
+      <div class="card-body">
+        {% if reports_received %}
+          <table class="table table-compact">
+            <tbody>
+            {% for r in reports_received %}
+              <tr>
+                <td><a href="{% url 'core_admin:report_detail' r.id %}" class="text-link">#{{ r.id }}</a></td>
+                <td class="text-muted">by {{ r.user.username }}</td>
+                <td><span class="badge badge-{{ r.report_status|lower }}">{{ r.get_report_status_display }}</span></td>
+                <td class="text-muted text-sm">{{ r.created_at|date:"M d" }}</td>
+              </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <p class="empty-text">No reports received.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,56 @@
+{% extends "core_admin/base.html" %}
+
+{% block title %}Reports{% endblock %}
+{% block page_title %}Reports <span class="title-count">({{ total }})</span>{% endblock %}
+
+{% block content %}
+<div class="toolbar">
+  <form method="get" class="search-form">
+    <div class="search-box">
+      <i class="fas fa-search"></i>
+      <input type="text" name="q" value="{{ q }}" placeholder="Search reports…" />
+    </div>
+    <div class="filter-chips">
+      <a href="?q={{ q }}" class="chip {% if status_filter == 'all' %}active{% endif %}">All</a>
+      {% for value, label in status_choices %}
+        <a href="?q={{ q }}&status={{ value }}" class="chip {% if status_filter == value %}active{% endif %}">
+          {{ label }}
+        </a>
+      {% endfor %}
+    </div>
+  </form>
+</div>
+
+<div class="card">
+  <div class="card-body no-pad">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Reporter</th>
+          <th>Reported User</th>
+          <th>Status</th>
+          <th>Description</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in reports %}
+        <tr onclick="window.location='{% url 'core_admin:report_detail' r.id %}'" class="clickable-row">
+          <td class="text-link">#{{ r.id }}</td>
+          <td>{{ r.user.username }}</td>
+          <td>{{ r.reported_to.username }}</td>
+          <td><span class="badge badge-{{ r.report_status|lower }}">{{ r.get_report_status_display }}</span></td>
+          <td class="text-muted text-sm">{{ r.report_desc|truncatechars:60 }}</td>
+          <td class="text-muted text-sm">{{ r.created_at|date:"M d, Y" }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="empty-text">No reports found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% include "core_admin/includes/pagination.html" with page=reports %}
+{% endblock %}

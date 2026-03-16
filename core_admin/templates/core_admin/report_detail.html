@@ -1,0 +1,58 @@
+{% extends "core_admin/base.html" %}
+
+{% block title %}Report #{{ report.id }}{% endblock %}
+{% block page_title %}Report #{{ report.id }}{% endblock %}
+
+{% block content %}
+<div class="detail-grid">
+  <!-- Report Info -->
+  <div class="card" style="grid-column: 1 / -1;">
+    <div class="card-header">
+      <h2><i class="fas fa-flag"></i> Report Details</h2>
+      <span class="badge badge-{{ report.report_status|lower }}">{{ report.get_report_status_display }}</span>
+    </div>
+    <div class="card-body">
+      <div class="detail-rows">
+        <div class="detail-row">
+          <span class="detail-label">Reporter</span>
+          <span><a href="{% url 'core_admin:user_detail' report.user.id %}" class="text-link">{{ report.user.username }}</a></span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Reported User</span>
+          <span><a href="{% url 'core_admin:user_detail' report.reported_to.id %}" class="text-link">{{ report.reported_to.username }}</a></span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Date</span>
+          <span class="text-muted">{{ report.created_at|date:"F d, Y — h:i A" }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Description</span>
+          <span class="report-desc">{{ report.report_desc }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Change Status -->
+  <div class="card" style="grid-column: 1 / -1;">
+    <div class="card-header"><h2><i class="fas fa-pen"></i> Change Status</h2></div>
+    <div class="card-body">
+      <form method="post" action="{% url 'core_admin:report_action' report.id %}" class="status-form">
+        {% csrf_token %}
+        <div class="status-buttons">
+          {% for value, label in status_choices %}
+            <button type="submit" name="status" value="{{ value }}"
+                    class="btn btn-sm {% if report.report_status == value %}btn-primary{% else %}btn-ghost{% endif %}">
+              {{ label }}
+            </button>
+          {% endfor %}
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<a href="{% url 'core_admin:report_list' %}" class="back-link">
+  <i class="fas fa-arrow-left"></i> Back to Reports
+</a>
+{% endblock %}

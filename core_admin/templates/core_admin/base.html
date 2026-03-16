@@ -1,0 +1,98 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{% block title %}Dashboard{% endblock %} — ChatSphere Admin</title>
+  <link rel="icon" href="{% static 'img/logo_chatsphere.png' %}" type="image/png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="stylesheet" href="{% static 'core_admin/css/admin.css' %}" />
+  {% block head_extra %}{% endblock %}
+</head>
+<body>
+
+  <!-- ===== SIDEBAR ===== -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <img src="{% static 'img/logo_chatsphere.png' %}" alt="Logo" class="sidebar-logo" />
+      <div class="sidebar-brand-text">
+        <span class="brand-main">Chat<span class="brand-accent">Sphere</span></span>
+        <span class="brand-sub">Admin</span>
+      </div>
+      <button class="sidebar-toggle" id="sidebarToggle" title="Toggle sidebar">
+        <i class="fas fa-angles-left"></i>
+      </button>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a href="{% url 'core_admin:dashboard' %}" class="nav-item {% if active_page == 'dashboard' %}active{% endif %}">
+        <i class="fas fa-chart-pie"></i> <span>Dashboard</span>
+      </a>
+      <a href="{% url 'core_admin:user_list' %}" class="nav-item {% if active_page == 'users' %}active{% endif %}">
+        <i class="fas fa-users"></i> <span>Users</span>
+      </a>
+      <a href="{% url 'core_admin:report_list' %}" class="nav-item {% if active_page == 'reports' %}active{% endif %}">
+        <i class="fas fa-flag"></i> <span>Reports</span>
+        {% if open_reports_count %}<span class="nav-badge">{{ open_reports_count }}</span>{% endif %}
+      </a>
+      <a href="{% url 'core_admin:connections_list' %}" class="nav-item {% if active_page == 'connections' %}active{% endif %}">
+        <i class="fas fa-link"></i> <span>Connections</span>
+      </a>
+      <a href="{% url 'core_admin:aura_list' %}" class="nav-item {% if active_page == 'aura' %}active{% endif %}">
+        <i class="fas fa-star"></i> <span>Aura Board</span>
+      </a>
+
+      <div class="nav-divider"></div>
+
+      <a href="/" class="nav-item">
+        <i class="fas fa-arrow-left"></i> <span>Back to Site</span>
+      </a>
+      <form action="{% url 'logout' %}" method="post" class="nav-logout-form">
+        {% csrf_token %}
+        <button type="submit" class="nav-item nav-logout">
+          <i class="fas fa-right-from-bracket"></i> <span>Logout</span>
+        </button>
+      </form>
+    </nav>
+  </aside>
+
+  <!-- ===== MAIN CONTENT ===== -->
+  <div class="main-wrap" id="mainWrap">
+    <!-- Top bar -->
+    <header class="topbar">
+      <button class="topbar-hamburger" id="hamburgerBtn" title="Menu">
+        <i class="fas fa-bars"></i>
+      </button>
+      <h1 class="topbar-title">{% block page_title %}Dashboard{% endblock %}</h1>
+      <div class="topbar-right">
+        <span class="topbar-greeting">
+          <i class="fas fa-circle-user"></i> {{ request.user.username }}
+        </span>
+      </div>
+    </header>
+
+    <!-- Page content -->
+    <main class="content">
+      {% if messages %}
+        <div class="alert-container">
+          {% for msg in messages %}
+            <div class="alert alert-{{ msg.tags|default:'info' }}">
+              {{ msg }}
+              <button class="alert-close" onclick="this.parentElement.remove()">×</button>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+
+  <script src="{% static 'core_admin/js/admin.js' %}"></script>
+  {% block body_extra %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,23 @@
+{% if page.has_other_pages %}
+<div class="pagination">
+  {% if page.has_previous %}
+    <a href="?page={{ page.previous_page_number }}&q={{ q|default:'' }}&filter={{ filter_type|default:'' }}&status={{ status_filter|default:'' }}" class="page-btn">
+      <i class="fas fa-angle-left"></i>
+    </a>
+  {% endif %}
+
+  {% for num in page.paginator.page_range %}
+    {% if page.number == num %}
+      <span class="page-btn active">{{ num }}</span>
+    {% elif num > page.number|add:'-3' and num < page.number|add:'3' %}
+      <a href="?page={{ num }}&q={{ q|default:'' }}&filter={{ filter_type|default:'' }}&status={{ status_filter|default:'' }}" class="page-btn">{{ num }}</a>
+    {% endif %}
+  {% endfor %}
+
+  {% if page.has_next %}
+    <a href="?page={{ page.next_page_number }}&q={{ q|default:'' }}&filter={{ filter_type|default:'' }}&status={{ status_filter|default:'' }}" class="page-btn">
+      <i class="fas fa-angle-right"></i>
+    </a>
+  {% endif %}
+</div>
+{% endif %}

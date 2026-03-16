@@ -1,0 +1,42 @@
+{% extends "core_admin/base.html" %}
+
+{% block title %}Connections{% endblock %}
+{% block page_title %}Connections <span class="title-count">({{ total }})</span>{% endblock %}
+
+{% block content %}
+<div class="toolbar">
+  <form method="get" class="search-form">
+    <div class="search-box">
+      <i class="fas fa-search"></i>
+      <input type="text" name="q" value="{{ q }}" placeholder="Search connections…" />
+    </div>
+  </form>
+</div>
+
+<div class="card">
+  <div class="card-body no-pad">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>User</th>
+          <th>Connected With</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in connections %}
+        <tr>
+          <td><a href="{% url 'core_admin:user_detail' c.user.id %}" class="text-link">{{ c.user.username }}</a></td>
+          <td><a href="{% url 'core_admin:user_detail' c.connection_with.id %}" class="text-link">{{ c.connection_with.username }}</a></td>
+          <td class="text-muted text-sm">{{ c.created_at|date:"M d, Y" }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="3" class="empty-text">No connections found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% include "core_admin/includes/pagination.html" with page=connections %}
+{% endblock %}

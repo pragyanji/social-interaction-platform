@@ -1,0 +1,93 @@
+{% extends "core_admin/base.html" %}
+
+{% block title %}Users{% endblock %}
+{% block page_title %}Users <span class="title-count">({{ total }})</span>{% endblock %}
+
+{% block content %}
+<!-- Search & Filters -->
+<div class="toolbar">
+  <form method="get" class="search-form">
+    <div class="search-box">
+      <i class="fas fa-search"></i>
+      <input type="text" name="q" value="{{ q }}" placeholder="Search by username, name, or email…" />
+    </div>
+    <div class="filter-chips">
+      <a href="?q={{ q }}" class="chip {% if filter_type == 'all' %}active{% endif %}">All</a>
+      <a href="?q={{ q }}&filter=active" class="chip {% if filter_type == 'active' %}active{% endif %}">Active</a>
+      <a href="?q={{ q }}&filter=staff" class="chip {% if filter_type == 'staff' %}active{% endif %}">Staff</a>
+      <a href="?q={{ q }}&filter=banned" class="chip {% if filter_type == 'banned' %}active{% endif %}">Banned</a>
+    </div>
+  </form>
+</div>
+
+<!-- Users Table -->
+<div class="card">
+  <div class="card-body no-pad">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>User</th>
+          <th>Email</th>
+          <th>Aura</th>
+          <th>Ratings</th>
+          <th>Status</th>
+          <th>Joined</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in users %}
+        <tr data-href='{% url "core_admin:user_detail" u.id %}' class="clickable-row">
+          <td>
+            <div class="user-cell">
+              {% if u.profile_pic %}
+                <img src="{{ u.profile_pic.url }}" class="avatar-sm" alt="" />
+              {% else %}
+                <div class="avatar-sm avatar-placeholder">{{ u.username|first|upper }}</div>
+              {% endif %}
+              <div>
+                <div class="user-name">{{ u.username }}</div>
+                <div class="user-sub">{{ u.full_name|default:"-" }}</div>
+              </div>
+            </div>
+          </td>
+          <td class="text-muted">{{ u.email|default:"-" }}</td>
+          <td>
+            <span class="aura-badge">{{ u.aura_total|default:"0" }}</span>
+          </td>
+          <td class="text-muted">
+            {% if u.avg_rating %}
+              <span class="stars">★ {{ u.avg_rating|floatformat:1 }}</span>
+              <span class="text-xs">({{ u.rating_count }})</span>
+            {% else %}
+              -
+            {% endif %}
+          </td>
+          <td>
+            {% if u.is_staff %}
+              <span class="badge badge-staff">Staff</span>
+            {% elif u.is_active %}
+              <span class="badge badge-active">Active</span>
+            {% else %}
+              <span class="badge badge-inactive">Inactive</span>
+            {% endif %}
+          </td>
+          <td class="text-muted text-sm">{{ u.date_joined|date:"M d, Y" }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="empty-text">No users found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% include "core_admin/includes/pagination.html" with page=users %}
+
+<script>
+document.querySelectorAll('.clickable-row[data-href]').forEach(function(row) {
+  row.addEventListener('click', function() {
+    window.location = this.dataset.href;
+  });
+});
+</script>
+{% endblock %}

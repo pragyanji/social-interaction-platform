@@ -1,0 +1,49 @@
+{% extends "core_admin/base.html" %}
+
+{% block title %}Aura Leaderboard{% endblock %}
+{% block page_title %}Aura Leaderboard <span class="title-count">({{ total }})</span>{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-body no-pad">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>User</th>
+          <th>Aura Points</th>
+          <th>Ratings</th>
+          <th>Streak</th>
+          <th>Penalty</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for entry in aura_entries %}
+        <tr onclick="window.location='{% url 'core_admin:user_detail' entry.user.id %}'" class="clickable-row">
+          <td>
+            {% with rank=forloop.counter %}
+              {% if rank == 1 %}<span class="rank-medal">🥇</span>
+              {% elif rank == 2 %}<span class="rank-medal">🥈</span>
+              {% elif rank == 3 %}<span class="rank-medal">🥉</span>
+              {% else %}{{ rank }}
+              {% endif %}
+            {% endwith %}
+          </td>
+          <td>
+            <a href="{% url 'core_admin:user_detail' entry.user.id %}" class="text-link">{{ entry.user.username }}</a>
+          </td>
+          <td><span class="aura-badge aura-lg">{{ entry.aura_points }}</span></td>
+          <td class="text-green">+{{ entry.rating_component }}</td>
+          <td class="text-green">+{{ entry.streak_component }}</td>
+          <td class="text-red">-{{ entry.report_penalty }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="empty-text">No aura data yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% include "core_admin/includes/pagination.html" with page=aura_entries %}
+{% endblock %}
