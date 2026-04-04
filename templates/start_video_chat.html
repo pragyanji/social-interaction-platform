@@ -9,139 +9,201 @@
     <link rel="stylesheet" href="{% static 'css/start_video_chat.css' %}">
 </head>
 <body class="video-chat-body">
-    <div class="video-chat-wrapper">
-        <!-- Profile Button - Top Right -->
-        <a href="/profile/" class="profile-button" title="View Profile">
-            <svg class="profile-icon" fill="currentColor" viewBox="0 0 20 20">
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Back / Profile nav (always visible) -->
+    <nav class="top-nav">
+        <a href="/home/" class="nav-btn" title="Back to Home" id="backToHome">
+            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+            </svg>
+        </a>
+        <a href="/profile/" class="nav-btn" title="View Profile" id="profileLink">
+            <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20">
                 <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/>
             </svg>
-            <span>Profile</span>
         </a>
+    </nav>
 
-        <header id="chat-header" class="chat-header">
-            <h1 class="header-title">🎥 Video Chat</h1>
-            <p class="header-subtitle">Connect with strangers from around the world.</p>
-            <div class="online-indicator">
-                <div class="status-dot"></div>
-                <span class="online-text">
-                    <span id="online-count" class="online-count">0</span> users online
-                </span>
+    <!-- ─── PRE-CHAT HERO ─── -->
+    <section id="pre-chat" class="pre-chat">
+        <div class="hero-card">
+            <h1 class="hero-title">🎥 Video Chat</h1>
+            <p class="hero-subtitle">Connect with strangers from around the world</p>
+
+            <div class="online-badge">
+                <span class="pulse-dot"></span>
+                <span><span id="online-count" class="online-count-num">0</span> online</span>
             </div>
-        </header>
 
-        <main id="main-content" class="main-content">
-            <!-- Video feeds -->
-            <div id="video-container" class="video-container hidden">
-                <div class="video-local-wrapper">
-                    <video id="localVideo" autoplay muted playsinline class="video-element"></video>
-                    <div class="video-label local-label">You</div>
-                    <div class="video-controls">
-                        <button id="toggleAudio" aria-label="Toggle microphone" class="media-button" title="Toggle microphone">
-                            <svg class="button-icon" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M10 12a2 2 0 0 0 2-2V5a2 2 0 1 0-4 0v5a2 2 0 0 0 2 2z"/>
-                                <path d="M16 9v1a6 6 0 0 1-12 0V9h2v1a4 4 0 0 0 8 0V9h2z"/>
-                            </svg>
-                        </button>
-                        <button id="toggleVideo" aria-label="Toggle camera" class="media-button" title="Toggle camera">
-                            <svg class="button-icon" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M2 6a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2h2a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6z"/>
-                            </svg>
-                        </button>
+            <p id="waiting-users" class="waiting-text"></p>
+
+            <button id="startButton" class="start-btn" disabled>
+                <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                </svg>
+                <span>Start Chat</span>
+            </button>
+
+            <p id="status" class="status-text">Initializing…</p>
+        </div>
+    </section>
+
+    <!-- ─── IN-CHAT VIEW ─── -->
+    <section id="in-chat" class="in-chat hidden">
+
+        <!-- Video area -->
+        <div class="video-stage">
+            <!-- Local video (You – left side) -->
+            <div class="video-local-pip">
+                <video id="localVideo" autoplay muted playsinline class="vid"></video>
+                <div class="vid-label local-tag">You</div>
+            </div>
+
+            <!-- Remote video (Stranger – right side) -->
+            <div id="remoteVideoContainer" class="video-remote-wrap">
+                <video id="remoteVideo" autoplay playsinline class="vid"></video>
+                <div class="vid-label remote-tag">Stranger</div>
+
+                <!-- Peer stats badge (persistent) -->
+                <div id="peerStatsBadge" class="peer-badge hidden">
+                    <div id="badgeContent">
+                        <span class="badge-loading">Loading…</span>
                     </div>
                 </div>
-                <div id="remoteVideoContainer" class="video-remote-wrapper">
-                    <video id="remoteVideo" autoplay playsinline class="video-element"></video>
-                    <div class="video-label remote-label">Stranger</div>
-                    <!-- Peer Stats Tooltip - shows on hover -->
-                    <div id="peerStatsTooltip" class="peer-stats-tooltip">
-                        <div id="tooltipContent">
-                            <p class="tooltip-text">Hover to load...</p>
-                        </div>
+
+                <!-- Loading spinner -->
+                <div id="loading-spinner" class="spinner-overlay hidden">
+                    <svg class="spin-svg" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="spin-bg" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="spin-fg" fill="currentColor"
+                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status overlay -->
+        <div id="chat-status" class="chat-status-overlay">
+            <span id="chat-status-text">Looking for a stranger…</span>
+        </div>
+
+        <!-- ─── FLOATING TOOLBAR ─── -->
+        <div id="toolbar" class="toolbar">
+            <div class="toolbar-inner">
+
+                <!-- Mic toggle -->
+                <button id="toggleAudio" class="tb-btn" title="Toggle microphone" aria-label="Toggle microphone">
+                    <svg id="micOnIcon" class="tb-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M19 11a7 7 0 01-14 0m7 7v4m-4 0h8m-4-12a3 3 0 00-3 3v4a3 3 0 006 0v-4a3 3 0 00-3-3z"/>
+                    </svg>
+                    <svg id="micOffIcon" class="tb-icon hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"/>
+                    </svg>
+                </button>
+
+                <!-- Camera toggle -->
+                <button id="toggleVideo" class="tb-btn" title="Toggle camera" aria-label="Toggle camera">
+                    <svg id="camOnIcon" class="tb-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                    </svg>
+                    <svg id="camOffIcon" class="tb-icon hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728A9 9 0 015.636 5.636"/>
+                    </svg>
+                </button>
+
+                <div class="tb-divider"></div>
+
+                <!-- Next stranger -->
+                <button id="nextButton" class="tb-btn tb-accent" title="Next stranger" aria-label="Next stranger">
+                    <svg class="tb-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M13 5l7 7-7 7M5 5l7 7-7 7"/>
+                    </svg>
+                </button>
+
+                <!-- Connect (1-click) -->
+                <button id="connectButton" class="tb-btn tb-connect" title="Connect with stranger" aria-label="Connect with stranger">
+                    <svg class="tb-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+                    </svg>
+                </button>
+
+                <!-- Rate (inline popover) -->
+                <div class="rate-wrapper" id="rateWrapper">
+                    <div class="rate-popover" id="ratePopover">
+                        <button type="button" class="pop-star" data-rating="1" aria-label="1 star">
+                            <svg viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                        </button>
+                        <button type="button" class="pop-star" data-rating="2" aria-label="2 stars">
+                            <svg viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                        </button>
+                        <button type="button" class="pop-star" data-rating="3" aria-label="3 stars">
+                            <svg viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                        </button>
+                        <button type="button" class="pop-star" data-rating="4" aria-label="4 stars">
+                            <svg viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                        </button>
+                        <button type="button" class="pop-star" data-rating="5" aria-label="5 stars">
+                            <svg viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                        </button>
                     </div>
-                    <div id="loading-spinner" class="loading-spinner hidden">
-                        <svg class="spinner-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle class="spinner-bg" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="spinner-fg" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    <button id="rateButton" class="tb-btn tb-rate" title="" aria-label="Rate this stranger">
+                        <svg class="tb-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
                         </svg>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Status and controls -->
-            <div class="controls-section">
-                <p id="status" class="status-text">Ready to connect.</p>
-                <p id="waiting-users" class="waiting-users"></p>
-                <div class="button-group">
-                    <button id="startButton"
-                        class="btn btn-primary"
-                        aria-label="Start video chat"
-                        title="Start video chat with a random person">
-                        Start Chat
-                    </button>
-                    <button id="homeButton"
-                        class="btn btn-secondary"
-                        aria-label="Back to home"
-                        title="Return to home page">
-                        Back to Home
-                    </button>
-                    <button id="stopButton"
-                        class="btn btn-danger hidden"
-                        aria-label="Stop video chat"
-                        title="End current chat">
-                        Stop Chat
-                    </button>
-                    <button id="nextButton"
-                        class="btn btn-success hidden"
-                        aria-label="Find next chat partner"
-                        title="End current chat and find a new partner">
-                        Next Stranger
-                    </button>
-                    <button id="reportButton"
-                        class="btn btn-warning hidden"
-                        aria-label="Report user"
-                        title="Report this stranger for inappropriate behavior">
-                        Report User
-                    </button>
-                    <button id="rateButton"
-                        class="btn btn-info hidden"
-                        aria-label="Rate user"
-                        title="Rate this stranger">
-                        Rate User
-                    </button>
-                    <button id="connectButton"
-                        class="btn btn-primary hidden"
-                        aria-label="Connect with stranger"
-                        title="Make connection with current stranger">
-                        Connect
                     </button>
                 </div>
+
+                <!-- Report -->
+                <button id="reportButton" class="tb-btn tb-warn" title="Report stranger" aria-label="Report stranger">
+                    <svg class="tb-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+                    </svg>
+                </button>
+
+                <div class="tb-divider"></div>
+
+                <!-- End chat -->
+                <button id="stopButton" class="tb-btn tb-end" title="End chat" aria-label="End chat">
+                    <svg class="tb-icon" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M3.68 16.07l3.92-3.11c.24-.19.56-.19.8 0l2.24 1.77c.71.56 1.71.56 2.42 0L16.4 12l3.92 3.07c1.67-2.37 1.67-5.77 0-8.14l-3.92 3.11c-.24.19-.56.19-.8 0l-2.24-1.77c-.71-.56-1.71-.56-2.42 0L7.6 11.2 3.68 8.13c-1.67 2.37-1.67 5.57 0 7.94z"/>
+                    </svg>
+                </button>
+
             </div>
-        </main>
+        </div>
+    </section>
 
-        <footer class="footer">
-            <p>&copy; 2024 ChatSphere. All rights reserved.</p>
-        </footer>
-    </div>
-
-    <!-- Report Modal -->
+    <!-- ─── REPORT MODAL (kept – needs form input) ─── -->
     <div id="reportModal" class="modal hidden">
         <div class="modal-box">
             <div class="modal-header">
                 <h2 class="modal-title">Report User</h2>
                 <button id="closeModal" class="modal-close" aria-label="Close dialog">
                     <svg class="close-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                     </svg>
                 </button>
             </div>
 
             <form id="reportForm">
                 <div class="form-group">
-                    <label class="form-label" for="reportReason">
-                        Reason for Report
-                    </label>
+                    <label class="form-label" for="reportReason">Reason for Report</label>
                     <select id="reportReason" name="reason" required class="form-select">
-                        <option value="">Select a reason...</option>
+                        <option value="">Select a reason…</option>
                         <option value="inappropriate_behavior">Inappropriate Behavior</option>
                         <option value="harassment">Harassment</option>
                         <option value="vulgar_content">Vulgar/Explicit Content</option>
@@ -151,79 +213,68 @@
                         <option value="other">Other</option>
                     </select>
                 </div>
-
                 <div class="form-group">
-                    <label class="form-label" for="reportDescription">
-                        Additional Details
-                    </label>
+                    <label class="form-label" for="reportDescription">Additional Details</label>
                     <textarea id="reportDescription" name="description" rows="4" required class="form-textarea"
-                        placeholder="Please provide details about why you're reporting this user..."></textarea>
+                              placeholder="Please describe what happened…"></textarea>
                 </div>
-
                 <div class="modal-actions">
-                    <button type="submit" id="submitReport" class="btn btn-warning">
-                        Submit Report
-                    </button>
-                    <button type="button" id="cancelReport" class="btn btn-secondary">
-                        Cancel
-                    </button>
+                    <button type="submit" id="submitReport" class="btn btn-warning">Submit Report</button>
+                    <button type="button" id="cancelReport" class="btn btn-secondary">Cancel</button>
                 </div>
             </form>
 
             <div id="reportSuccess" class="hidden">
                 <div class="success-content">
                     <svg class="success-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                     </svg>
                     <h3 class="success-title">Report Submitted</h3>
-                    <p class="success-text">Thank you for helping keep ChatSphere safe. We will review your report shortly.</p>
-                    <button id="closeSuccessModal" class="btn btn-primary">
-                        Close
-                    </button>
+                    <p class="success-text">Thank you for helping keep ChatSphere safe.</p>
+                    <button id="closeSuccessModal" class="btn btn-primary">Close</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Rating Modal -->
+    <!-- ─── RATING MODAL (kept – needs star input) ─── -->
     <div id="ratingModal" class="modal hidden">
         <div class="modal-box">
             <div class="modal-header">
-                <h2 class="modal-title">Rate User</h2>
+                <h2 class="modal-title">Rate Stranger</h2>
                 <button id="closeRatingModal" class="modal-close" aria-label="Close dialog">
                     <svg class="close-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                     </svg>
                 </button>
             </div>
 
             <form id="ratingForm">
                 <div class="form-group">
-                    <label class="form-label">
-                        Rate this user (Click a star)
-                    </label>
+                    <label class="form-label">Tap a star</label>
                     <div class="star-rating">
                         <button type="button" class="rating-star" data-rating="1" title="Poor">
                             <svg class="star-icon" fill="currentColor" viewBox="0 0 20 20">
                                 <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
                             </svg>
                         </button>
-                        <button type="button" class="rating-star" data-rating="2" title="Average">
+                        <button type="button" class="rating-star" data-rating="2" title="Below Average">
                             <svg class="star-icon" fill="currentColor" viewBox="0 0 20 20">
                                 <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
                             </svg>
                         </button>
-                        <button type="button" class="rating-star" data-rating="3" title="Good">
+                        <button type="button" class="rating-star" data-rating="3" title="Average">
                             <svg class="star-icon" fill="currentColor" viewBox="0 0 20 20">
                                 <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
                             </svg>
                         </button>
-                        <button type="button" class="rating-star" data-rating="4" title="Excellent">
+                        <button type="button" class="rating-star" data-rating="4" title="Good">
                             <svg class="star-icon" fill="currentColor" viewBox="0 0 20 20">
                                 <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
                             </svg>
                         </button>
-                        <button type="button" class="rating-star" data-rating="5" title="Outstanding">
+                        <button type="button" class="rating-star" data-rating="5" title="Excellent">
                             <svg class="star-icon" fill="currentColor" viewBox="0 0 20 20">
                                 <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
                             </svg>
@@ -232,69 +283,21 @@
                     <p class="rating-display">Selected: <span id="selectedRating">-</span></p>
                     <input type="hidden" id="ratingValue" name="rating" value="">
                 </div>
-
                 <div class="modal-actions">
-                    <button type="submit" id="submitRating" class="btn btn-info">
-                        Submit Rating
-                    </button>
-                    <button type="button" id="cancelRating" class="btn btn-secondary">
-                        Cancel
-                    </button>
+                    <button type="submit" id="submitRating" class="btn btn-info">Submit Rating</button>
+                    <button type="button" id="cancelRating" class="btn btn-secondary">Cancel</button>
                 </div>
             </form>
 
             <div id="ratingSuccess" class="hidden">
                 <div class="success-content">
                     <svg class="success-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                     </svg>
                     <h3 class="success-title">Rating Submitted</h3>
                     <p class="success-text">Thank you for rating this user!</p>
-                    <button id="closeRatingSuccessModal" class="btn btn-info">
-                        Close
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Connect Modal -->
-    <div id="connectModal" class="modal hidden">
-        <div class="modal-box">
-            <div class="modal-header">
-                <h2 class="modal-title">Connect?</h2>
-                <button id="closeConnectModal" class="modal-close" aria-label="Close dialog">
-                    <svg class="close-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                </button>
-            </div>
-
-            <div id="connectForm">
-                <p class="modal-text">
-                    Would you like to connect with this user? You'll be able to message them later!
-                </p>
-
-                <div class="modal-actions">
-                    <button id="confirmConnect" class="btn btn-primary">
-                        Connect
-                    </button>
-                    <button id="cancelConnect" class="btn btn-secondary">
-                        Cancel
-                    </button>
-                </div>
-            </div>
-
-            <div id="connectSuccess" class="hidden">
-                <div class="success-content">
-                    <svg class="success-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                    <h3 class="success-title">Connected!</h3>
-                    <p class="success-text">You can now message this user in your connections.</p>
-                    <button id="closeConnectSuccessModal" class="btn btn-primary">
-                        Close
-                    </button>
+                    <button id="closeRatingSuccessModal" class="btn btn-info">Close</button>
                 </div>
             </div>
         </div>

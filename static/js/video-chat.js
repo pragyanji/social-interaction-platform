@@ -3,86 +3,85 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebas
 import { getDatabase, ref, set, get, onValue, push, remove, update, serverTimestamp, onDisconnect } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
 import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
-// Debug flag - set to true to see detailed logs
+// Debug flag
 const DEBUG = true;
+function log(...args) { if (DEBUG) console.log('[ChatSphere]', ...args); }
 
-// Debug function
-function log(...args) {
-    if (DEBUG) {
-        console.log('[ChatSphere]', ...args);
-    }
+/* ──────────────────────────────────────────────
+   DOM REFERENCES
+   ────────────────────────────────────────────── */
+let startButton, stopButton, nextButton, connectButton, reportButton, rateButton;
+let localVideo, remoteVideo, videoContainer, loadingSpinner;
+let statusEl, chatStatusText, onlineCountEl, waitingUsersEl;
+let preChatSection, inChatSection, toolbar;
+let reportModal, reportForm, reportSuccess, closeModalBtn, cancelReportBtn, closeSuccessModalBtn;
+let ratingModal, ratingForm, ratingSuccess, closeRatingModalBtn, cancelRatingBtn, closeRatingSuccessModalBtn;
+let selectedRatingValue;
+
+/* ──────────────────────────────────────────────
+   TOAST NOTIFICATION SYSTEM
+   ────────────────────────────────────────────── */
+function showToast(message, type = 'info', duration = 3000) {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+
+    const icons = { success: '✓', error: '✗', info: 'ℹ', warning: '⚠' };
+
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.innerHTML = `<span class="toast-icon">${icons[type] || icons.info}</span><span>${message}</span>`;
+    container.appendChild(toast);
+
+    setTimeout(() => {
+        toast.classList.add('removing');
+        toast.addEventListener('animationend', () => toast.remove());
+    }, duration);
 }
 
-// DOM Elements
-let startButton, stopButton, nextButton, homeButton, connectButton, reportButton, rateButton, localVideo, remoteVideo, statusEl, videoContainer, loadingSpinner, onlineCountEl, waitingUsersEl;
-let reportModal, reportForm, reportSuccess, closeModalBtn, cancelReportBtn, closeSuccessModalBtn;
-let ratingModal, ratingForm, ratingSuccess, closeRatingModalBtn, cancelRatingBtn, closeRatingSuccessModalBtn, selectedRatingValue;
-let connectModal, connectForm, connectSuccess, closeConnectModalBtn, confirmConnectBtn, cancelConnectBtn, closeConnectSuccessModalBtn;
-
-// Helper function to get CSRF token with better error handling
+/* ──────────────────────────────────────────────
+   CSRF HELPER
+   ────────────────────────────────────────────── */
 function getCsrfToken() {
     try {
         const cookieValue = document.cookie
             .split('; ')
             .find(row => row.startsWith('csrftoken='))
             ?.split('=')[1];
-
-        if (!cookieValue) {
-            console.error('CSRF token not found in cookies. Available cookies:', document.cookie);
-            throw new Error('Authentication error. Please refresh the page and try again.');
-        }
+        if (!cookieValue) throw new Error('CSRF token not found');
         return cookieValue;
     } catch (error) {
         console.error('Error getting CSRF token:', error);
-        throw new Error('Authentication error. Please refresh the page and try again.');
+        throw new Error('Authentication error. Please refresh the page.');
     }
 }
 
-// Helper function to get CSRF token
-function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-            }
-        }
-    }
-    return cookieValue;
-}
-
-// Initialize Firebase globally
+/* ──────────────────────────────────────────────
+   FIREBASE INIT
+   ────────────────────────────────────────────── */
 let app, db, auth;
 try {
-    log('Loading Firebase config from global variable');
     const firebaseConfig = window.FIREBASE_CONFIG;
-    log('Firebase config loaded:', firebaseConfig);
-
     app = initializeApp(firebaseConfig);
     db = getDatabase(app);
     auth = getAuth(app);
-
-    log('Firebase initialized successfully');
+    log('Firebase initialized');
 } catch (error) {
-    console.error('Error initializing Firebase:', error);
-    log('Firebase initialization failed:', error.message);
+    console.error('Firebase init failed:', error);
     throw error;
 }
 
-// WebRTC Configuration
+/* ──────────────────────────────────────────────
+   WEBRTC CONFIG
+   ────────────────────────────────────────────── */
 async function checkMediaPermissions() {
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-        console.log('Media permissions granted:', stream.getTracks());
         stream.getTracks().forEach(track => track.stop());
-        document.getElementById('status').textContent = 'Camera and microphone access granted';
+        updateStatus('Camera and microphone access granted');
         return true;
     } catch (error) {
         console.error('Media permission error:', error);
-        document.getElementById('status').textContent = 'Error: ' + error.message;
+        updateStatus('Error: ' + error.message);
         return false;
     }
 }
@@ -95,156 +94,165 @@ const servers = {
 };
 let pc = new RTCPeerConnection(servers);
 
-// App State
+/* ──────────────────────────────────────────────
+   APP STATE
+   ────────────────────────────────────────────── */
 let localStream = null;
 let remoteStream = null;
 let currentRoomId = null;
 let userId = null;
-let djangoUserId = window.DJANGO_USER_ID || ""; // Get from window variable
-let peerDjangoUserId = null; // Store peer's Django user ID
+let djangoUserId = window.DJANGO_USER_ID || "";
+let peerDjangoUserId = null;
 let isAudioEnabled = true;
 let isVideoEnabled = true;
-let roomListener = null; // To track room status changes
-let isReconnecting = false; // Flag to prevent infinite reconnection loops
+let roomListener = null;
+let isReconnecting = false;
 
-// Debug: Check if Django user ID is set
 log('Django User ID:', djangoUserId);
 
-function updateStatus(message, isError = false) {
-    console.log(message);
-    statusEl.textContent = message;
-    if (isError) {
-        statusEl.classList.add('text-red-500');
-    } else {
-        statusEl.classList.remove('text-red-500');
-    }
+/* ──────────────────────────────────────────────
+   TOOLBAR AUTO-HIDE
+   ────────────────────────────────────────────── */
+let hideTimer = null;
+const HIDE_DELAY = 3000;
+
+function showToolbar() {
+    if (!toolbar) return;
+    toolbar.classList.remove('auto-hidden');
+    clearTimeout(hideTimer);
+    hideTimer = setTimeout(() => {
+        toolbar.classList.add('auto-hidden');
+    }, HIDE_DELAY);
 }
 
-// Function to start the chat
+function setupToolbarAutoHide() {
+    if (!inChatSection) return;
+
+    inChatSection.addEventListener('mousemove', showToolbar);
+    inChatSection.addEventListener('touchstart', showToolbar, { passive: true });
+
+    // Keep toolbar visible when hovering over it
+    if (toolbar) {
+        toolbar.addEventListener('mouseenter', () => {
+            clearTimeout(hideTimer);
+            toolbar.classList.remove('auto-hidden');
+        });
+        toolbar.addEventListener('mouseleave', () => {
+            hideTimer = setTimeout(() => {
+                toolbar.classList.add('auto-hidden');
+            }, HIDE_DELAY);
+        });
+    }
+
+    // Initial show then auto-hide
+    showToolbar();
+}
+
+/* ──────────────────────────────────────────────
+   STATUS UPDATE
+   ────────────────────────────────────────────── */
+function updateStatus(message, isError = false) {
+    log(message);
+    // Update pre-chat status
+    if (statusEl) statusEl.textContent = message;
+    // Update in-chat status
+    if (chatStatusText) chatStatusText.textContent = message;
+}
+
+/* ──────────────────────────────────────────────
+   UI STATE TRANSITIONS
+   ────────────────────────────────────────────── */
+function showInChat() {
+    if (preChatSection) preChatSection.classList.add('hidden');
+    if (inChatSection) inChatSection.classList.remove('hidden');
+    setupToolbarAutoHide();
+}
+
+function showPreChat() {
+    if (inChatSection) inChatSection.classList.add('hidden');
+    if (preChatSection) preChatSection.classList.remove('hidden');
+    clearTimeout(hideTimer);
+}
+
+/* ──────────────────────────────────────────────
+   START CHAT
+   ────────────────────────────────────────────── */
 async function startChat() {
     log('Start button clicked');
     try {
-        // Validate user is authenticated
-        if (!userId) {
-            throw new Error('Not authenticated. Please wait for authentication or refresh the page.');
-        }
-
-        log('Disabling start button');
+        if (!userId) throw new Error('Not authenticated. Please refresh.');
         startButton.disabled = true;
-        updateStatus('Starting video chat...');
-
-        log('Setting up media streams');
+        updateStatus('Starting video chat…');
         await setupStreams();
-
-        log('Finding or creating room');
         await findOrCreateRoom();
     } catch (error) {
         console.error('Error starting chat:', error);
-        console.error('Error stack:', error.stack);
         startButton.disabled = false;
-
-        // Show the header again if it was hidden
-        const chatHeader = document.getElementById('chat-header');
-        if (chatHeader) {
-            chatHeader.classList.remove('hidden');
-        }
-
-        updateStatus('Failed to start chat: ' + error.message, true);
+        showPreChat();
+        updateStatus('Failed to start: ' + error.message, true);
     }
 }
 
-// Add connection state listener
-pc.onconnectionstatechange = (event) => {
-    console.log("Connection state changed:", pc.connectionState);
-    updateStatus("WebRTC Connection State: " + pc.connectionState);
+/* ──────────────────────────────────────────────
+   CONNECTION STATE LISTENERS
+   ────────────────────────────────────────────── */
+pc.onconnectionstatechange = () => {
+    log("Connection state:", pc.connectionState);
+    updateStatus("Connection: " + pc.connectionState);
 };
 
-// Add ICE connection state listener
-pc.oniceconnectionstatechange = (event) => {
-    console.log("ICE Connection state:", pc.iceConnectionState);
-    updateStatus("ICE Connection State: " + pc.iceConnectionState);
+pc.oniceconnectionstatechange = () => {
+    log("ICE state:", pc.iceConnectionState);
 };
 
-// Add signaling state listener
-pc.onsignalingstatechange = (event) => {
-    console.log("Signaling state:", pc.signalingState);
-    updateStatus("Signaling State: " + pc.signalingState);
+pc.onsignalingstatechange = () => {
+    log("Signaling state:", pc.signalingState);
 };
 
-// Presence System Functions
+/* ──────────────────────────────────────────────
+   PRESENCE SYSTEM
+   ────────────────────────────────────────────── */
 async function setupPresence() {
-    log('setupPresence called, userId:', userId);
-    if (!userId) {
-        log('setupPresence skipped: userId not set');
-        return;
-    }
-
+    if (!userId) return;
     try {
         const presenceRef = ref(db, `presence/${userId}`);
 
-        // Function to update presence
         async function updatePresence() {
-            const userStatusData = {
-                online: true,
-                lastSeen: Date.now()
-            };
-            await set(presenceRef, userStatusData);
-            log('Presence updated for user:', userId);
+            await set(presenceRef, { online: true, lastSeen: Date.now() });
         }
 
-        // Set initial presence
         await updatePresence();
-
-        // Update presence every 30 seconds to show user is still active
-        const presenceInterval = setInterval(updatePresence, 30000);
-
-        // Store interval ID so we can clear it on cleanup
-        window.presenceInterval = presenceInterval;
-
-        // Remove user from presence when they disconnect
+        window.presenceInterval = setInterval(updatePresence, 30000);
         onDisconnect(presenceRef).remove();
 
-        // Also handle page visibility changes
         document.addEventListener('visibilitychange', async () => {
             if (document.hidden) {
-                // User switched tabs or minimized window
                 await update(presenceRef, { online: false, lastSeen: Date.now() });
             } else {
-                // User came back
                 await updatePresence();
             }
         });
 
-        // Clean up on page unload
         window.addEventListener('beforeunload', () => {
-            // Try to set offline (may not always work due to browser restrictions)
             navigator.sendBeacon && set(presenceRef, { online: false, lastSeen: Date.now() });
         });
 
-        log('Presence tracking setup complete for user:', userId);
+        log('Presence tracking setup');
     } catch (error) {
-        console.error('Error setting up presence:', error);
+        console.error('Presence error:', error);
     }
 }
 
 function trackOnlineUsers() {
-    log('Setting up online user tracking');
     const roomsRef = ref(db, 'rooms');
     const waitingRoomsRef = ref(db, 'waiting_rooms');
 
-    // Function to count online users from rooms and waiting rooms
     async function updateOnlineCount() {
         try {
-            const [roomsSnapshot, waitingSnapshot] = await Promise.all([
-                get(roomsRef),
-                get(waitingRoomsRef)
-            ]);
-
-            const rooms = roomsSnapshot.val();
-            const waitingRooms = waitingSnapshot.val();
+            const [roomsSnapshot, waitingSnapshot] = await Promise.all([get(roomsRef), get(waitingRoomsRef)]);
             const uniqueUsers = new Set();
 
-            // Count users in active rooms (users currently in video chat)
+            const rooms = roomsSnapshot.val();
             if (rooms) {
                 Object.values(rooms).forEach(room => {
                     if (room.creatorId) uniqueUsers.add(room.creatorId);
@@ -252,496 +260,253 @@ function trackOnlineUsers() {
                 });
             }
 
-            // Count users waiting for a match
+            const waitingRooms = waitingSnapshot.val();
             if (waitingRooms) {
                 Object.values(waitingRooms).forEach(room => {
                     if (room.creatorId) uniqueUsers.add(room.creatorId);
                 });
             }
 
-            const count = uniqueUsers.size;
-            if (onlineCountEl) {
-                onlineCountEl.textContent = count;
-            }
-            log('Online users count:', count, 'Unique UIDs:', Array.from(uniqueUsers));
+            if (onlineCountEl) onlineCountEl.textContent = uniqueUsers.size;
         } catch (error) {
             console.error('Error updating online count:', error);
-            if (onlineCountEl) {
-                onlineCountEl.textContent = '0';
-            }
+            if (onlineCountEl) onlineCountEl.textContent = '0';
         }
     }
 
-    // Listen to changes in both rooms and waiting_rooms
-    onValue(roomsRef, () => {
-        log('Rooms changed, updating online count');
-        updateOnlineCount();
-    }, (error) => {
-        console.error('Error listening to rooms:', error);
-    });
-
-    onValue(waitingRoomsRef, () => {
-        log('Waiting rooms changed, updating online count');
-        updateOnlineCount();
-    }, (error) => {
-        console.error('Error listening to waiting_rooms:', error);
-    });
-
-    // Initial count
+    onValue(roomsRef, () => updateOnlineCount(), err => console.error(err));
+    onValue(waitingRoomsRef, () => updateOnlineCount(), err => console.error(err));
     updateOnlineCount();
 }
 
 function trackWaitingUsers() {
-    const waitingRoomsRef = ref(db, 'waiting_rooms');
-
-    onValue(waitingRoomsRef, (snapshot) => {
-        const waitingRooms = snapshot.val();
-        const count = waitingRooms ? Object.keys(waitingRooms).length : 0;
-
-        if (count > 0) {
-            waitingUsersEl.textContent = `${count} ${count === 1 ? 'person' : 'people'} waiting to chat`;
-        } else {
-            waitingUsersEl.textContent = '';
+    onValue(ref(db, 'waiting_rooms'), (snapshot) => {
+        const rooms = snapshot.val();
+        const count = rooms ? Object.keys(rooms).length : 0;
+        if (waitingUsersEl) {
+            waitingUsersEl.textContent = count > 0
+                ? `${count} ${count === 1 ? 'person' : 'people'} waiting to chat`
+                : '';
         }
-        log('Waiting users:', count);
     });
 }
 
 async function removePresence() {
     if (!userId) return;
-
-    try {
-        await remove(ref(db, `presence/${userId}`));
-        log('User presence removed');
-    } catch (error) {
-        console.warn('Error removing presence:', error);
-    }
+    try { await remove(ref(db, `presence/${userId}`)); } catch (e) { /* ignore */ }
 }
 
-// Monitor room for peer disconnection
+/* ──────────────────────────────────────────────
+   ROOM MONITORING
+   ────────────────────────────────────────────── */
 function monitorRoomStatus() {
     if (!currentRoomId) return;
 
-    const roomRef = ref(db, `rooms/${currentRoomId}`);
+    if (roomListener) roomListener();
 
-    // Remove previous listener if exists
-    if (roomListener) {
-        roomListener();
-    }
-
-    roomListener = onValue(roomRef, async (snapshot) => {
+    roomListener = onValue(ref(db, `rooms/${currentRoomId}`), async (snapshot) => {
         const roomData = snapshot.val();
 
-        // If room is deleted (peer clicked Next/Stop)
         if (!roomData && !isReconnecting) {
-            log('Room deleted - peer has left');
+            log('Room deleted — peer left');
             isReconnecting = true;
-            updateStatus('Stranger has left. Finding a new partner...');
+            updateStatus('Stranger left. Finding new partner…');
 
-            // Stop listening
-            if (roomListener) {
-                roomListener();
-                roomListener = null;
-            }
+            if (roomListener) { roomListener(); roomListener = null; }
 
-            // Automatically find new partner
-            const oldRoomId = currentRoomId;
-            currentRoomId = null; // Clear room ID to prevent cleanup from deleting again
+            currentRoomId = null;
 
-            // Clean up local resources only
-            if (localStream) {
-                localStream.getTracks().forEach(track => track.stop());
-            }
-            if (remoteStream) {
-                remoteStream.getTracks().forEach(track => track.stop());
-            }
-            if (pc) {
-                pc.close();
-                pc = new RTCPeerConnection(servers);
-            }
+            // Keep local camera alive, only stop remote
+            if (remoteStream) remoteStream.getTracks().forEach(t => t.stop());
+            if (pc) { pc.close(); pc = new RTCPeerConnection(servers); }
 
             try {
                 await setupStreams();
                 await findOrCreateRoom();
-            } catch (error) {
-                console.error('Error finding new chat after peer left:', error);
-                updateStatus('Error finding new chat. Please try again.');
+            } catch (err) {
+                console.error('Reconnect error:', err);
+                updateStatus('Error finding new chat.');
             } finally {
                 isReconnecting = false;
             }
         }
     });
-
-    log('Room monitoring started');
 }
 
-// Clean up all stale rooms and waiting rooms globally
+/* ──────────────────────────────────────────────
+   STALE ROOM CLEANUP
+   ────────────────────────────────────────────── */
 async function cleanupAllStaleRooms() {
-    log('Cleaning up all stale rooms...');
     try {
-        const roomsRef = ref(db, 'rooms');
-        const waitingRoomsRef = ref(db, 'waiting_rooms');
-        const STALE_TIMEOUT = 120000; // 2 minutes (reduced from 5 minutes)
+        const STALE_TIMEOUT = 120000;
         const now = Date.now();
 
-        // Clean up stale rooms
-        const roomsSnapshot = await get(roomsRef);
-        if (roomsSnapshot.exists()) {
-            const rooms = roomsSnapshot.val();
-            let cleanedCount = 0;
-
-            for (const [roomId, room] of Object.entries(rooms)) {
-                // Check if room has a createdAt timestamp
-                if (room.createdAt && typeof room.createdAt === 'number') {
-                    const roomAge = now - room.createdAt;
-                    if (roomAge > STALE_TIMEOUT) {
-                        log(`Removing stale room: ${roomId}, age: ${Math.round(roomAge / 1000)}s`);
-                        await remove(ref(db, `rooms/${roomId}`));
-                        cleanedCount++;
-                    }
-                } else if (!room.createdAt) {
-                    // Remove rooms without timestamp (legacy data)
-                    log(`Removing room without timestamp: ${roomId}`);
-                    await remove(ref(db, `rooms/${roomId}`));
-                    cleanedCount++;
+        for (const path of ['rooms', 'waiting_rooms']) {
+            const snapshot = await get(ref(db, path));
+            if (!snapshot.exists()) continue;
+            for (const [id, room] of Object.entries(snapshot.val())) {
+                if ((room.createdAt && now - room.createdAt > STALE_TIMEOUT) || !room.createdAt) {
+                    await remove(ref(db, `${path}/${id}`));
                 }
             }
-
-            if (cleanedCount > 0) {
-                log(`Cleaned up ${cleanedCount} stale rooms`);
-            }
         }
-
-        // Clean up stale waiting rooms
-        const waitingSnapshot = await get(waitingRoomsRef);
-        if (waitingSnapshot.exists()) {
-            const waitingRooms = waitingSnapshot.val();
-            let cleanedCount = 0;
-
-            for (const [roomId, room] of Object.entries(waitingRooms)) {
-                if (room.createdAt && typeof room.createdAt === 'number') {
-                    const roomAge = now - room.createdAt;
-                    if (roomAge > STALE_TIMEOUT) {
-                        log(`Removing stale waiting room: ${roomId}, age: ${Math.round(roomAge / 1000)}s`);
-                        await remove(ref(db, `waiting_rooms/${roomId}`));
-                        cleanedCount++;
-                    }
-                } else if (!room.createdAt) {
-                    // Remove waiting rooms without timestamp (legacy data)
-                    log(`Removing waiting room without timestamp: ${roomId}`);
-                    await remove(ref(db, `waiting_rooms/${roomId}`));
-                    cleanedCount++;
-                }
-            }
-
-            if (cleanedCount > 0) {
-                log(`Cleaned up ${cleanedCount} stale waiting rooms`);
-            }
-        }
-
-        log('Stale room cleanup complete');
-    } catch (error) {
-        console.error('Error cleaning up stale rooms:', error);
+    } catch (err) {
+        console.error('Stale cleanup error:', err);
     }
 }
 
+/* ──────────────────────────────────────────────
+   INITIALIZE
+   ────────────────────────────────────────────── */
 async function initialize() {
-    log('Initializing application');
+    log('Initializing');
     try {
-        // Validate Firebase configuration
-        if (!window.FIREBASE_CONFIG) {
-            throw new Error('Firebase configuration not found');
-        }
+        if (!window.FIREBASE_CONFIG) throw new Error('Firebase config not found');
 
-        log('Initializing Firebase');
-        updateStatus("Initializing Firebase connection...");
-
-        log('Signing in anonymously...');
-        const userCredential = await signInAnonymously(auth);
-        log('Anonymous auth successful. User UID:', userCredential.user.uid);
-        updateStatus("Firebase initialized, authenticating...");
+        updateStatus('Connecting…');
+        await signInAnonymously(auth);
     } catch (error) {
-        console.error("Authentication failed:", error);
-        updateStatus("Error: Could not authenticate with Firebase. " + error.message, true);
+        console.error('Auth failed:', error);
+        updateStatus('Authentication error: ' + error.message, true);
         return;
     }
 
     onAuthStateChanged(auth, async (user) => {
         if (user) {
-            log('User authenticated. Firebase UID:', user.uid, '| Django User ID:', djangoUserId);
+            log('Authenticated. UID:', user.uid);
             userId = user.uid;
 
-            // Debug: Check if multiple users have same UID (shouldn't happen)
-            if (window.allUserIds === undefined) {
-                window.allUserIds = new Set();
-            }
-            window.allUserIds.add(userId);
-            log('Total unique Firebase UIDs in this session:', window.allUserIds.size);
-
-            // Clean up stale rooms before starting tracking
             await cleanupAllStaleRooms();
-
-            // Start tracking online users after cleanup
-            log('Starting online user tracking...');
             trackOnlineUsers();
             trackWaitingUsers();
 
             startButton.disabled = false;
-            startButton.classList.remove('opacity-50');
-            updateStatus("Authentication successful. Click 'Start Chat' to begin.");
+            updateStatus('Ready — click Start Chat to begin!');
 
-            // Setup presence tracking
-            try {
-                await setupPresence();
-                log('Presence setup complete, user should now be visible in online count');
-            } catch (error) {
-                console.error('Error setting up presence:', error);
-                // Don't fail the whole initialization if presence fails
-            }
+            try { await setupPresence(); } catch (e) { /* non-fatal */ }
         } else {
-            log('User not authenticated');
             userId = null;
             startButton.disabled = true;
-            startButton.classList.add('opacity-50');
-            updateStatus("Authentication required to start.", true);
+            updateStatus('Authentication required.', true);
         }
     });
-
-    // Add manual check for Firebase config
-    log('Firebase config loaded:', !!window.FIREBASE_CONFIG);
-    log('Start button status:', !startButton.disabled);
 }
 
+/* ──────────────────────────────────────────────
+   SETUP STREAMS
+   ────────────────────────────────────────────── */
 const setupStreams = async () => {
     try {
-        if (!statusEl) {
-            throw new Error('Status element not found');
-        }
-        statusEl.textContent = "Setting up video chat...";
-        // Hide the header when starting chat
-        const chatHeader = document.getElementById('chat-header');
-        if (chatHeader) {
-            chatHeader.classList.add('hidden');
+        // Reuse existing local stream if still active (avoids re-prompting camera)
+        if (!localStream || localStream.getTracks().every(t => t.readyState === 'ended')) {
+            updateStatus('Requesting camera & mic…');
+            localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
         }
 
-        statusEl.textContent = "Requesting camera and microphone access...";
-        localStream = await navigator.mediaDevices.getUserMedia({
-            video: true,
-            audio: true
-        });
-        statusEl.textContent = "Camera and microphone access granted";
         remoteStream = new MediaStream();
 
-        // Log device information
-        const devices = await navigator.mediaDevices.enumerateDevices();
-        console.log("Available devices:", devices);
-
-        localStream.getTracks().forEach((track) => {
-            pc.addTrack(track, localStream);
-        });
+        localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
 
         pc.ontrack = (event) => {
-            event.streams[0].getTracks().forEach((track) => {
-                remoteStream.addTrack(track);
-            });
+            event.streams[0].getTracks().forEach(track => remoteStream.addTrack(track));
         };
 
         localVideo.srcObject = localStream;
         remoteVideo.srcObject = remoteStream;
 
-        videoContainer.classList.remove('hidden');
-        startButton.classList.add('hidden');
-        homeButton.classList.add('hidden');
-        nextButton.classList.remove('hidden');
-        nextButton.disabled = false;
-        stopButton.classList.remove('hidden');
-        stopButton.disabled = false;
-        reportButton.classList.remove('hidden');
-        reportButton.disabled = false;
-        rateButton.classList.remove('hidden');
-        rateButton.disabled = false;
-
-        // Only show connect button if it exists (for verified users)
-        if (connectButton) {
-            connectButton.classList.remove('hidden');
-            connectButton.disabled = false;
-        }
-
-        // Enable/disable buttons
-        startButton.disabled = true;
-        nextButton.disabled = false;
-        stopButton.disabled = false;
-        reportButton.disabled = false;
+        // Switch to in-chat view
+        showInChat();
     } catch (error) {
         console.error("Media Error:", error);
-        switch(error.name) {
-            case 'NotAllowedError':
-                statusEl.textContent = "Camera/Microphone access denied. Please check your permissions.";
-                break;
-            case 'NotFoundError':
-                statusEl.textContent = "No camera or microphone found. Please connect a device.";
-                break;
-            case 'NotReadableError':
-                statusEl.textContent = "Camera/Microphone is already in use by another application.";
-                break;
-            default:
-                statusEl.textContent = "Could not access camera/microphone. Please try again.";
-        }
+        const msgs = {
+            NotAllowedError: "Camera/Mic access denied. Check permissions.",
+            NotFoundError: "No camera or microphone found.",
+            NotReadableError: "Camera/Mic in use by another app."
+        };
+        updateStatus(msgs[error.name] || "Could not access camera/microphone.", true);
         throw error;
     }
 };
 
-// Helper function to clean up rooms
+/* ──────────────────────────────────────────────
+   CLEANUP ROOMS FOR USER
+   ────────────────────────────────────────────── */
 async function cleanupRooms() {
-    console.log("Cleaning up existing rooms for user:", userId);
-    const roomsRef = ref(db, 'rooms');
-    const waitingRoomsRef = ref(db, 'waiting_rooms');
-
-    // Clean rooms
-    const existingRooms = await get(roomsRef);
-    if (existingRooms.exists()) {
-        const rooms = existingRooms.val();
-        for (const [key, room] of Object.entries(rooms)) {
+    for (const path of ['rooms', 'waiting_rooms']) {
+        const snapshot = await get(ref(db, path));
+        if (!snapshot.exists()) continue;
+        for (const [key, room] of Object.entries(snapshot.val())) {
             if (room.creatorId === userId || room.joinerId === userId) {
-                console.log("Removing existing room:", key);
-                await remove(ref(db, `rooms/${key}`));
-            }
-        }
-    }
-
-    // Clean waiting rooms
-    const existingWaitingRooms = await get(waitingRoomsRef);
-    if (existingWaitingRooms.exists()) {
-        const rooms = existingWaitingRooms.val();
-        for (const [key, room] of Object.entries(rooms)) {
-            if (room.creatorId === userId) {
-                console.log("Removing existing waiting room:", key);
-                await remove(ref(db, `waiting_rooms/${key}`));
+                await remove(ref(db, `${path}/${key}`));
             }
         }
     }
 }
 
+/* ──────────────────────────────────────────────
+   FIND OR CREATE ROOM
+   ────────────────────────────────────────────── */
 async function findOrCreateRoom() {
     try {
-        statusEl.textContent = 'Looking for a stranger...';
+        updateStatus('Looking for a stranger…');
         loadingSpinner.classList.remove('hidden');
         nextButton.disabled = true;
 
-        // Validate Django user ID
         if (!djangoUserId || djangoUserId === 'None' || djangoUserId === '') {
-            throw new Error('Django user ID not set. Please refresh and try again.');
+            throw new Error('User ID not set. Please refresh.');
         }
 
-        log('Creating/joining room with Django user ID:', djangoUserId);
-
-        const roomsRef = ref(db, 'rooms');
-        const waitingRoomsRef = ref(db, 'waiting_rooms');
-
-        // Try to find an existing room BEFORE cleaning up
-        log('🔍 Fetching waiting rooms...');
-        statusEl.textContent = 'Checking for available strangers...';
-        const waitingRooms = await get(waitingRoomsRef);
+        const waitingRooms = await get(ref(db, 'waiting_rooms'));
 
         if (waitingRooms.exists()) {
             const rooms = waitingRooms.val();
-            log("📋 Searching for available room. My userId:", userId);
-            log("📋 Available waiting rooms:", JSON.stringify(rooms, null, 2));
-
-            const availableRoom = Object.entries(rooms).find(([_, room]) => {
-                const isAvailable = room.creatorId !== userId;
-                log(`🔍 Room check: creatorId=${room.creatorId}, myId=${userId}, available=${isAvailable}`);
-                return isAvailable;
-            });
+            const availableRoom = Object.entries(rooms).find(([_, room]) => room.creatorId !== userId);
 
             if (availableRoom) {
                 const [roomId, roomData] = availableRoom;
-                log("✅ Found available room:", roomId, "Created by:", roomData.creatorId);
-                statusEl.textContent = 'Found a stranger! Connecting...';
+                updateStatus('Found a stranger! Connecting…');
                 currentRoomId = roomId;
 
-                // Get the full room data from the main rooms collection
-                log(`📡 Fetching main room data for ${roomId}...`);
                 const existingRoomSnapshot = await get(ref(db, `rooms/${roomId}`));
                 const existingRoomData = existingRoomSnapshot.val();
-                log("📋 Main room data:", JSON.stringify(existingRoomData, null, 2));
 
-                if (!existingRoomData) {
-                    log("❌ Room data not found in main rooms collection");
-                    throw new Error('Room data not found in main rooms collection. Room may have been closed.');
-                }
+                if (!existingRoomData) throw new Error('Room data not found.');
+                if (!existingRoomData.offer) throw new Error('No offer found in room.');
 
-                if (!existingRoomData.offer) {
-                    log("❌ No offer found in room data");
-                    throw new Error('No offer found in room. Peer may not be ready.');
-                }
-
-                // Store peer's Django user ID
                 peerDjangoUserId = existingRoomData.creatorDjangoId;
-                log("👤 Peer Django user ID:", peerDjangoUserId);
+                if (peerDjangoUserId) loadPeerStats(peerDjangoUserId);
 
-                if (!peerDjangoUserId) {
-                    log("⚠️ Warning: Peer Django user ID not found in room data");
-                } else {
-                    // Load peer stats for tooltip display
-                    loadPeerStats(peerDjangoUserId);
-                }
-
-                // Remove from waiting rooms and update status
-                log(`🔄 Removing room ${roomId} from waiting_rooms...`);
                 await remove(ref(db, `waiting_rooms/${roomId}`));
-
-                log(`🔄 Updating room ${roomId} status to 'full'...`);
                 await update(ref(db, `rooms/${roomId}`), {
                     status: 'full',
                     joinerId: userId,
                     joinerDjangoId: djangoUserId
                 });
 
-                log('✅ Successfully joined room. Starting as callee...');
-                statusEl.textContent = 'Connecting to stranger...';
+                updateStatus('Connecting to stranger…');
                 await startCallAsCallee();
                 return;
-            } else {
-                log("❌ No available rooms found (all rooms have same creator as me)");
             }
-        } else {
-            log("📭 No waiting rooms exist in database");
         }
 
-        // No available rooms - cleanup old rooms and create a new one
-        log('No available rooms found. Cleaning up old rooms for this user...');
+        // No available rooms — create one
         await cleanupRooms();
 
-        log('Creating new room');
-        const newRoomRef = push(roomsRef);
+        const newRoomRef = push(ref(db, 'rooms'));
         currentRoomId = newRoomRef.key;
-
         const timestamp = Date.now();
 
-        // First, create the WebRTC offer BEFORE adding to waiting rooms
-        log('Creating WebRTC offer first...');
         const offerDescription = await pc.createOffer();
         await pc.setLocalDescription(offerDescription);
-        log('Offer created:', offerDescription.type);
 
-        const offer = {
-            sdp: offerDescription.sdp,
-            type: offerDescription.type,
-        };
-
-        // Now create the room WITH the offer already included
         await set(newRoomRef, {
             creatorId: userId,
             creatorDjangoId: djangoUserId,
             status: 'waiting',
             createdAt: timestamp,
-            offer: offer  // Include offer from the start!
+            offer: { sdp: offerDescription.sdp, type: offerDescription.type }
         });
 
-        log('Room created with offer');
-
-        // Add to waiting rooms
         await set(ref(db, `waiting_rooms/${currentRoomId}`), {
             creatorId: userId,
             creatorDjangoId: djangoUserId,
@@ -749,76 +514,46 @@ async function findOrCreateRoom() {
             createdAt: timestamp
         });
 
-        log('Room added to waiting_rooms with ID:', currentRoomId, 'timestamp:', timestamp);
-
-        log('Setting up caller listeners');
         await startCallAsCaller();
     } catch (error) {
-        console.error("Error in findOrCreateRoom:", error);
-        console.error("Error details:", error.message, error.stack);
-
-        if (error.message === 'Timeout waiting for offer') {
-            statusEl.textContent = "Connection timeout. The other user may have left. Try again.";
-        } else {
-            statusEl.textContent = `Error: ${error.message}. Please try again.`;
-        }
-
+        console.error("findOrCreateRoom error:", error);
+        updateStatus(`Error: ${error.message}`);
         loadingSpinner.classList.add('hidden');
         nextButton.disabled = false;
-
-        // Clean up the room if it was created
-        if (currentRoomId) {
-            await cleanup();
-        }
-
+        if (currentRoomId) await cleanup();
         throw error;
     }
 }
 
+/* ──────────────────────────────────────────────
+   CALLER / CALLEE
+   ────────────────────────────────────────────── */
 const startCallAsCaller = async () => {
     const roomRef = ref(db, `rooms/${currentRoomId}`);
 
-    log('Setting up ICE candidate handler');
     pc.onicecandidate = async (event) => {
         if (event.candidate) {
-            log('Sending ICE candidate to Firebase');
             await push(ref(db, `rooms/${currentRoomId}/callerCandidates`), event.candidate.toJSON());
         }
     };
 
-    log('Offer already created and saved, waiting for answer...');
-
-    // Listen for answer
     onValue(roomRef, async (snapshot) => {
         const data = snapshot.val();
         if (!pc.currentRemoteDescription && data?.answer) {
-            const answerDescription = new RTCSessionDescription(data.answer);
-            await pc.setRemoteDescription(answerDescription);
+            await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
 
-            // Store peer's Django user ID
             peerDjangoUserId = data.joinerDjangoId;
-            log("Peer Django user ID:", peerDjangoUserId);
+            if (peerDjangoUserId) loadPeerStats(peerDjangoUserId);
 
-            if (peerDjangoUserId) {
-                // Load peer stats for tooltip display
-                loadPeerStats(peerDjangoUserId);
-            }
-
-            statusEl.textContent = 'Stranger connected!';
+            updateStatus('Stranger connected!');
             loadingSpinner.classList.add('hidden');
             nextButton.disabled = false;
-
-            // Start monitoring room for peer disconnection
             monitorRoomStatus();
         }
     });
 
-    // Listen for remote ICE candidates
     onValue(ref(db, `rooms/${currentRoomId}/calleeCandidates`), (snapshot) => {
-        snapshot.forEach((childSnapshot) => {
-            const candidate = new RTCIceCandidate(childSnapshot.val());
-            pc.addIceCandidate(candidate);
-        });
+        snapshot.forEach(child => pc.addIceCandidate(new RTCIceCandidate(child.val())));
     });
 };
 
@@ -827,114 +562,64 @@ const startCallAsCallee = async () => {
 
     pc.onicecandidate = async (event) => {
         if (event.candidate) {
-            log('📤 Sending ICE candidate to Firebase (callee)');
             await push(ref(db, `rooms/${currentRoomId}/calleeCandidates`), event.candidate.toJSON());
         }
     };
 
-    log('🎯 Starting as callee for room:', currentRoomId);
-    statusEl.textContent = 'Connecting to stranger...';
-
     try {
-        // First, get the current room data to check if offer exists
-        log('📡 Fetching current room data...');
         const roomSnapshot = await get(roomRef);
         const roomData = roomSnapshot.val();
 
-        log('📋 Current room data:', JSON.stringify(roomData, null, 2));
-
-        if (!roomData) {
-            throw new Error('Room data not found');
+        if (!roomData || !roomData.offer?.type || !roomData.offer?.sdp) {
+            throw new Error('No valid offer in room');
         }
 
-        if (!roomData.offer || !roomData.offer.type || !roomData.offer.sdp) {
-            throw new Error('No valid offer found in room');
-        }
-
-        log('✅ Offer found in room! Type:', roomData.offer.type);
-        const offerDescription = roomData.offer;
-
-        log('🔄 Setting remote description (offer)...');
-        await pc.setRemoteDescription(new RTCSessionDescription(offerDescription));
-
-        log('🔄 Creating answer...');
+        await pc.setRemoteDescription(new RTCSessionDescription(roomData.offer));
         const answerDescription = await pc.createAnswer();
-
-        log('🔄 Setting local description (answer)...');
         await pc.setLocalDescription(answerDescription);
 
-        const answer = {
-            type: answerDescription.type,
-            sdp: answerDescription.sdp,
-        };
+        await update(roomRef, {
+            answer: { type: answerDescription.type, sdp: answerDescription.sdp }
+        });
 
-        log('📤 Saving answer to Firebase...');
-        await update(roomRef, { answer });
-        log('✅ Answer saved to Firebase successfully');
-
-        // Listen for ICE candidates from caller
-        log('👂 Listening for caller ICE candidates...');
         onValue(ref(db, `rooms/${currentRoomId}/callerCandidates`), (snapshot) => {
-            snapshot.forEach((childSnapshot) => {
-                const candidate = new RTCIceCandidate(childSnapshot.val());
-                log('📥 Received ICE candidate from caller');
-                pc.addIceCandidate(candidate).catch(e => log('Error adding ICE candidate:', e));
+            snapshot.forEach(child => {
+                pc.addIceCandidate(new RTCIceCandidate(child.val())).catch(e => log('ICE error:', e));
             });
         });
 
-        statusEl.textContent = 'Connected to stranger!';
+        updateStatus('Connected to stranger!');
         loadingSpinner.classList.add('hidden');
         nextButton.disabled = false;
-
-        log('✅ Callee setup complete!');
-
-        // Start monitoring room for peer disconnection
         monitorRoomStatus();
-
-        return Promise.resolve();
     } catch (error) {
-        console.error('❌ Error in startCallAsCallee:', error);
-        statusEl.textContent = `Connection failed: ${error.message}`;
+        console.error('Callee error:', error);
+        updateStatus(`Connection failed: ${error.message}`);
         throw error;
     }
 };
 
-const cleanup = async () => {
-    // Stop room monitoring
-    if (roomListener) {
-        roomListener();
-        roomListener = null;
-        log('Room monitoring stopped');
-    }
+/* ──────────────────────────────────────────────
+   CLEANUP
+   ────────────────────────────────────────────── */
+const cleanup = async (keepLocalStream = false) => {
+    if (roomListener) { roomListener(); roomListener = null; }
 
     if (currentRoomId) {
         try {
-            // Remove room and waiting room entries
             await remove(ref(db, `rooms/${currentRoomId}`));
             await remove(ref(db, `waiting_rooms/${currentRoomId}`));
-        } catch (error) {
-            console.warn('Error cleaning up room:', error);
-        }
+        } catch (e) { /* ignore */ }
     }
 
-    // Stop all tracks
-    if (localStream) {
-        localStream.getTracks().forEach(track => {
-            track.stop();
-            localStream.removeTrack(track);
-        });
-        localStream = null;
+    // Only stop local camera when fully ending the chat
+    if (!keepLocalStream) {
+        if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
+        if (localVideo?.srcObject) localVideo.srcObject = null;
     }
 
-    if (remoteStream) {
-        remoteStream.getTracks().forEach(track => {
-            track.stop();
-            remoteStream.removeTrack(track);
-        });
-        remoteStream = null;
-    }
+    if (remoteStream) { remoteStream.getTracks().forEach(t => t.stop()); remoteStream = null; }
 
-    // Clean up WebRTC connection
     if (pc) {
         pc.ontrack = null;
         pc.onicecandidate = null;
@@ -942,179 +627,176 @@ const cleanup = async () => {
         pc = new RTCPeerConnection(servers);
     }
 
-    // Clear video elements
-    if (remoteVideo.srcObject) {
-        remoteVideo.srcObject = null;
-    }
-    if (localVideo.srcObject) {
-        localVideo.srcObject = null;
-    }
+    if (remoteVideo?.srcObject) remoteVideo.srcObject = null;
 
     currentRoomId = null;
     peerDjangoUserId = null;
     clearPeerStats();
-    resetMediaButtonStates();
+    resetMediaButtons();
     isAudioEnabled = true;
     isVideoEnabled = true;
-
-    // Show the header when chat ends
-    const chatHeader = document.getElementById('chat-header');
-    if (chatHeader) {
-        chatHeader.classList.remove('hidden');
-    }
 };
 
-// Handle stop chat
+/* ──────────────────────────────────────────────
+   STOP / NEXT
+   ────────────────────────────────────────────── */
 const stopChat = async () => {
     stopButton.disabled = true;
-    statusEl.textContent = 'Ending chat...';
-
+    updateStatus('Ending chat…');
     await cleanup();
-
-    // Reset UI
-    videoContainer.classList.add('hidden');
-    startButton.classList.remove('hidden');
+    showPreChat();
     startButton.disabled = false;
-    homeButton.classList.remove('hidden');
-    nextButton.classList.add('hidden');
-    stopButton.classList.add('hidden');
-    reportButton.classList.add('hidden');
-    rateButton.classList.add('hidden');
-    if (connectButton) {
-        connectButton.classList.add('hidden');
-    }
     stopButton.disabled = false;
-    statusEl.textContent = 'Chat ended. Click Start Chat to begin a new chat.';
+    updateStatus('Chat ended — click Start Chat to begin again.');
 };
 
-// Handle finding a new chat
 const findNewChat = async () => {
     nextButton.disabled = true;
-    statusEl.textContent = 'Finding a new stranger...';
-    await cleanup();
+    updateStatus('Finding new stranger…');
+    await cleanup(true); // keep local camera alive
     try {
         await setupStreams();
         await findOrCreateRoom();
     } catch (error) {
-        console.error('Error finding new chat:', error);
-        console.error('Error stack:', error.stack);
+        console.error('Next chat error:', error);
         nextButton.disabled = false;
-        statusEl.textContent = `Error: ${error.message || 'Error finding new chat. Please try again.'}`;
+        updateStatus(`Error: ${error.message}`);
     }
 };
 
-// Function to fetch and display peer stats
-async function loadPeerStats(userId) {
-    if (!userId) return;
+/* ──────────────────────────────────────────────
+   1-CLICK CONNECT
+   ────────────────────────────────────────────── */
+async function connectWithStranger() {
+    if (!peerDjangoUserId) {
+        showToast('Cannot identify stranger. Try again.', 'error');
+        return;
+    }
 
-    // Clear previous stats first
+    connectButton.disabled = true;
+
+    try {
+        const response = await fetch('/submit-connection/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
+            },
+            body: JSON.stringify({ connection_user_id: peerDjangoUserId })
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+            showToast('Connected! You can message them later.', 'success');
+            connectButton.classList.add('connect-success');
+            setTimeout(() => connectButton.classList.remove('connect-success'), 2000);
+        } else {
+            showToast(data.error || 'Connection failed.', 'error');
+        }
+    } catch (error) {
+        console.error('Connect error:', error);
+        showToast('Connection failed. Try again.', 'error');
+    } finally {
+        connectButton.disabled = false;
+    }
+}
+
+/* ──────────────────────────────────────────────
+   PEER STATS
+   ────────────────────────────────────────────── */
+async function loadPeerStats(peerId) {
+    if (!peerId) return;
     clearPeerStats();
 
     try {
-        const response = await fetch(`/get-peer-stats/${userId}/`);
-        if (!response.ok) {
-            log('Error fetching peer stats:', response.status);
-            return;
-        }
+        const response = await fetch(`/get-peer-stats/${peerId}/`);
+        if (!response.ok) return;
 
         const data = await response.json();
-        if (data.success) {
-            displayPeerStats(data);
-        } else {
-            log('Error in peer stats response:', data.error);
-        }
+        if (data.success) displayPeerStats(data);
     } catch (error) {
-        log('Error fetching peer stats:', error);
+        log('Peer stats error:', error);
     }
 }
 
-// Function to clear peer stats from tooltip
-function clearPeerStats() {
-    const tooltipContent = document.getElementById('tooltipContent');
-    const tooltip = document.getElementById('peerStatsTooltip');
+function displayPeerStats(stats) {
+    const badge = document.getElementById('peerStatsBadge');
+    const content = document.getElementById('badgeContent');
+    if (!badge || !content) return;
 
-    if (tooltipContent) {
-        tooltipContent.innerHTML = '<p class="tooltip-text">Hover to load...</p>';
-    }
-
-    // Remove inline opacity style so CSS hover rule can work
-    if (tooltip) {
-        tooltip.style.removeProperty('opacity');
-    }
-}
-
-// Function to reset audio and video button states
-function resetMediaButtonStates() {
-    const toggleAudio = document.getElementById('toggleAudio');
-    const toggleVideo = document.getElementById('toggleVideo');
-
-    // Reset states to enabled (true)
-    isAudioEnabled = true;
-    isVideoEnabled = true;
-
-    // Remove red background class that indicates disabled state
-    if (toggleAudio) {
-        toggleAudio.classList.remove('bg-red-500');
-        toggleAudio.setAttribute('aria-pressed', 'false');
-    }
-
-    if (toggleVideo) {
-        toggleVideo.classList.remove('bg-red-500');
-        toggleVideo.setAttribute('aria-pressed', 'false');
-    }
-}
-
-// Function to display peer stats in tooltip
-function displayPeerStats(statsData) {
-    const tooltipContent = document.getElementById('tooltipContent');
-    if (!tooltipContent) return;
-
-    let html = '';
-
-    if (statsData.is_new_user) {
-        html = '<div class="new-user-badge">🆕 NEW USER</div>';
+    if (stats.is_new_user) {
+        content.innerHTML = '<span class="badge-new">🆕 NEW USER</span>';
     } else {
-        html = `
-            <div class="stat-item">
-                <span>Aura Points:</span>
-                <span class="text-indigo-300 font-semibold">${statsData.aura_points}</span>
-            </div>
-            <div class="stat-item">
-                <span>Avg Rating:</span>
-                <span class="text-indigo-300 font-semibold">⭐ ${statsData.avg_rating}</span>
-            </div>
-            <div class="stat-item">
-                <span>Ratings:</span>
-                <span class="text-indigo-300 font-semibold">${statsData.total_ratings}</span>
-            </div>
+        content.innerHTML = `
+            <span class="badge-stat">✨ ${stats.aura_points}</span>
+            <span class="badge-stat">⭐ ${stats.avg_rating}</span>
+            <span class="badge-stat">${stats.total_ratings} ratings</span>
         `;
     }
 
-    tooltipContent.innerHTML = html;
+    badge.classList.remove('hidden');
 }
 
-// Initialize when the page loads
+function clearPeerStats() {
+    const badge = document.getElementById('peerStatsBadge');
+    const content = document.getElementById('badgeContent');
+    if (badge) badge.classList.add('hidden');
+    if (content) content.innerHTML = '<span class="badge-loading">Loading…</span>';
+}
+
+function resetMediaButtons() {
+    const toggleAudio = document.getElementById('toggleAudio');
+    const toggleVideo = document.getElementById('toggleVideo');
+    const micOn = document.getElementById('micOnIcon');
+    const micOff = document.getElementById('micOffIcon');
+    const camOn = document.getElementById('camOnIcon');
+    const camOff = document.getElementById('camOffIcon');
+
+    isAudioEnabled = true;
+    isVideoEnabled = true;
+
+    if (toggleAudio) toggleAudio.classList.remove('is-off');
+    if (toggleVideo) toggleVideo.classList.remove('is-off');
+    if (micOn) micOn.classList.remove('hidden');
+    if (micOff) micOff.classList.add('hidden');
+    if (camOn) camOn.classList.remove('hidden');
+    if (camOff) camOff.classList.add('hidden');
+}
+
+/* ──────────────────────────────────────────────
+   PAGE LOAD — WIRE EVERYTHING UP
+   ────────────────────────────────────────────── */
 window.addEventListener('load', async () => {
     try {
         log('Page loaded');
 
-        // Initialize DOM elements
+        // Sections
+        preChatSection = document.getElementById('pre-chat');
+        inChatSection = document.getElementById('in-chat');
+        toolbar = document.getElementById('toolbar');
+
+        // Pre-chat
         startButton = document.getElementById('startButton');
-        stopButton = document.getElementById('stopButton');
-        nextButton = document.getElementById('nextButton');
-        homeButton = document.getElementById('homeButton');
-        connectButton = document.getElementById('connectButton');
-        reportButton = document.getElementById('reportButton');
-        rateButton = document.getElementById('rateButton');
-        localVideo = document.getElementById('localVideo');
-        remoteVideo = document.getElementById('remoteVideo');
         statusEl = document.getElementById('status');
-        videoContainer = document.getElementById('video-container');
-        loadingSpinner = document.getElementById('loading-spinner');
         onlineCountEl = document.getElementById('online-count');
         waitingUsersEl = document.getElementById('waiting-users');
 
-        // Initialize report modal elements
+        // Video
+        localVideo = document.getElementById('localVideo');
+        remoteVideo = document.getElementById('remoteVideo');
+        videoContainer = document.getElementById('remoteVideoContainer');
+        loadingSpinner = document.getElementById('loading-spinner');
+        chatStatusText = document.getElementById('chat-status-text');
+
+        // Toolbar buttons
+        stopButton = document.getElementById('stopButton');
+        nextButton = document.getElementById('nextButton');
+        connectButton = document.getElementById('connectButton');
+        reportButton = document.getElementById('reportButton');
+        rateButton = document.getElementById('rateButton');
+
+        // Report modal
         reportModal = document.getElementById('reportModal');
         reportForm = document.getElementById('reportForm');
         reportSuccess = document.getElementById('reportSuccess');
@@ -1122,7 +804,7 @@ window.addEventListener('load', async () => {
         cancelReportBtn = document.getElementById('cancelReport');
         closeSuccessModalBtn = document.getElementById('closeSuccessModal');
 
-        // Initialize rating modal elements
+        // Rating modal
         ratingModal = document.getElementById('ratingModal');
         ratingForm = document.getElementById('ratingForm');
         ratingSuccess = document.getElementById('ratingSuccess');
@@ -1130,328 +812,176 @@ window.addEventListener('load', async () => {
         cancelRatingBtn = document.getElementById('cancelRating');
         closeRatingSuccessModalBtn = document.getElementById('closeRatingSuccessModal');
 
-        // Initialize connect modal elements
-        connectModal = document.getElementById('connectModal');
-        connectForm = document.getElementById('connectForm');
-        connectSuccess = document.getElementById('connectSuccess');
-        closeConnectModalBtn = document.getElementById('closeConnectModal');
-        confirmConnectBtn = document.getElementById('confirmConnect');
-        cancelConnectBtn = document.getElementById('cancelConnect');
-        closeConnectSuccessModalBtn = document.getElementById('closeConnectSuccessModal');
-
-        // Check for missing elements
-        const requiredElements = {
-            startButton, stopButton, nextButton, homeButton, reportButton,
-            localVideo, remoteVideo, statusEl, videoContainer, loadingSpinner,
-            onlineCountEl, waitingUsersEl, reportModal, reportForm, reportSuccess,
-            closeModalBtn, cancelReportBtn, closeSuccessModalBtn
-        };
-
-        for (const [name, element] of Object.entries(requiredElements)) {
-            if (!element) {
-                console.error(`Missing element: ${name}`);
-            }
-        }
-
         log('DOM elements initialized');
 
-        // Set up all button click handlers
+        /* ── Button handlers ── */
         startButton.addEventListener('click', startChat);
         stopButton.addEventListener('click', stopChat);
         nextButton.addEventListener('click', findNewChat);
-        homeButton.addEventListener('click', () => window.location.href = '/home/');
 
+        // 1-click connect
+        if (connectButton) {
+            connectButton.addEventListener('click', connectWithStranger);
+        }
+
+        // Mic toggle
         document.getElementById('toggleAudio').onclick = () => {
-            if (localStream) {
-                const audioTrack = localStream.getAudioTracks()[0];
-                if (audioTrack) {
-                    isAudioEnabled = !isAudioEnabled;
-                    audioTrack.enabled = isAudioEnabled;
-                    const button = document.getElementById('toggleAudio');
-                    button.classList.toggle('bg-red-500', !isAudioEnabled);
-                    button.setAttribute('aria-pressed', !isAudioEnabled);
-                }
-            }
+            if (!localStream) return;
+            const track = localStream.getAudioTracks()[0];
+            if (!track) return;
+
+            isAudioEnabled = !isAudioEnabled;
+            track.enabled = isAudioEnabled;
+
+            const btn = document.getElementById('toggleAudio');
+            const micOn = document.getElementById('micOnIcon');
+            const micOff = document.getElementById('micOffIcon');
+
+            btn.classList.toggle('is-off', !isAudioEnabled);
+            micOn.classList.toggle('hidden', !isAudioEnabled);
+            micOff.classList.toggle('hidden', isAudioEnabled);
         };
 
+        // Camera toggle
         document.getElementById('toggleVideo').onclick = () => {
-            if (localStream) {
-                const videoTrack = localStream.getVideoTracks()[0];
-                if (videoTrack) {
-                    isVideoEnabled = !isVideoEnabled;
-                    videoTrack.enabled = isVideoEnabled;
-                    const button = document.getElementById('toggleVideo');
-                    button.classList.toggle('bg-red-500', !isVideoEnabled);
-                    button.setAttribute('aria-pressed', !isVideoEnabled);
-                }
-            }
+            if (!localStream) return;
+            const track = localStream.getVideoTracks()[0];
+            if (!track) return;
+
+            isVideoEnabled = !isVideoEnabled;
+            track.enabled = isVideoEnabled;
+
+            const btn = document.getElementById('toggleVideo');
+            const camOn = document.getElementById('camOnIcon');
+            const camOff = document.getElementById('camOffIcon');
+
+            btn.classList.toggle('is-off', !isVideoEnabled);
+            camOn.classList.toggle('hidden', !isVideoEnabled);
+            camOff.classList.toggle('hidden', isVideoEnabled);
         };
 
-        // Report modal handlers
+        /* ── Report modal ── */
         reportButton.onclick = () => {
             reportModal.classList.remove('hidden');
-            reportModal.classList.add('flex');
         };
 
         closeModalBtn.onclick = () => {
             reportModal.classList.add('hidden');
-            reportModal.classList.remove('flex');
             reportForm.reset();
         };
 
         cancelReportBtn.onclick = () => {
             reportModal.classList.add('hidden');
-            reportModal.classList.remove('flex');
             reportForm.reset();
         };
 
         closeSuccessModalBtn.onclick = () => {
             reportModal.classList.add('hidden');
-            reportModal.classList.remove('flex');
             reportForm.classList.remove('hidden');
             reportSuccess.classList.add('hidden');
             reportForm.reset();
         };
 
-        // Report form submission
         reportForm.onsubmit = async (e) => {
             e.preventDefault();
-
             const reason = document.getElementById('reportReason').value;
             const description = document.getElementById('reportDescription').value;
 
             if (!reason || !description.trim()) {
-                alert('Please fill in all fields');
+                showToast('Please fill in all fields.', 'warning');
                 return;
             }
 
             if (!peerDjangoUserId) {
-                alert('Unable to identify the user to report. Please try again.');
+                showToast('Unable to identify user to report.', 'error');
                 return;
             }
 
             try {
                 const response = await fetch('/report-user/', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': getCsrfToken()
-                    },
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
                     body: JSON.stringify({
                         room_id: currentRoomId,
                         reported_user_id: peerDjangoUserId,
-                        reason: reason,
-                        description: description
+                        reason, description
                     })
                 });
-
                 const data = await response.json();
-
                 if (response.ok && data.success) {
-                    // Show success message
                     reportForm.classList.add('hidden');
                     reportSuccess.classList.remove('hidden');
                 } else {
-                    alert(data.error || 'Failed to submit report. Please try again.');
+                    showToast(data.error || 'Failed to submit report.', 'error');
                 }
             } catch (error) {
-                console.error('Error submitting report:', error);
-                alert('Failed to submit report. Please try again.');
+                console.error('Report error:', error);
+                showToast('Failed to submit report.', 'error');
             }
         };
 
-        // Rating modal handlers
-        rateButton.onclick = () => {
-            // Reset rating form
-            selectedRatingValue = 0;
-            document.getElementById('selectedRating').textContent = '-';
-            document.getElementById('ratingValue').value = '';
-            // Reset star colors using custom CSS classes
-            document.querySelectorAll('.rating-star svg').forEach(star => {
-                star.classList.add('inactive');
-                star.classList.remove('active');
-            });
-            ratingForm.classList.remove('hidden');
-            ratingSuccess.classList.add('hidden');
-            ratingModal.classList.remove('hidden');
-            ratingModal.classList.add('flex');
-        };
+        /* ── Inline star-rating popover ── */
+        const popStars = document.querySelectorAll('.pop-star');
 
-        closeRatingModalBtn.onclick = () => {
-            ratingModal.classList.add('hidden');
-            ratingModal.classList.remove('flex');
-            ratingForm.reset();
-        };
-
-        cancelRatingBtn.onclick = () => {
-            ratingModal.classList.add('hidden');
-            ratingModal.classList.remove('flex');
-            ratingForm.reset();
-        };
-
-        closeRatingSuccessModalBtn.onclick = () => {
-            ratingModal.classList.add('hidden');
-            ratingModal.classList.remove('flex');
-            ratingForm.classList.remove('hidden');
-            ratingSuccess.classList.add('hidden');
-            ratingForm.reset();
-        };
-
-        // Star rating selection
-        document.querySelectorAll('.rating-star').forEach(button => {
-            button.onclick = (e) => {
-                e.preventDefault();
-                selectedRatingValue = parseInt(button.getAttribute('data-rating'));
-                document.getElementById('ratingValue').value = selectedRatingValue;
-                document.getElementById('selectedRating').textContent = selectedRatingValue;
-
-                // Update star colors using custom CSS classes
-                document.querySelectorAll('.rating-star svg').forEach((star, index) => {
-                    if (index < selectedRatingValue) {
-                        star.classList.remove('inactive');
-                        star.classList.add('active');
-                    } else {
-                        star.classList.add('inactive');
-                        star.classList.remove('active');
-                    }
+        // Hover: highlight all stars up to the hovered one
+        popStars.forEach((star, idx) => {
+            star.addEventListener('mouseenter', () => {
+                popStars.forEach((s, i) => {
+                    s.classList.toggle('star-hover', i <= idx);
                 });
-            };
+            });
+
+            star.addEventListener('mouseleave', () => {
+                popStars.forEach(s => s.classList.remove('star-hover'));
+            });
+
+            // Click: submit immediately
+            star.addEventListener('click', async () => {
+                const rating = parseInt(star.getAttribute('data-rating'));
+
+                if (!peerDjangoUserId) {
+                    showToast('Cannot identify stranger.', 'error');
+                    return;
+                }
+
+                // Flash all stars gold briefly
+                popStars.forEach((s, i) => {
+                    s.classList.toggle('star-hover', i < rating);
+                });
+
+                try {
+                    const response = await fetch('/submit-rating/', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
+                        body: JSON.stringify({ rated_user_id: peerDjangoUserId, rate_points: rating })
+                    });
+                    const data = await response.json();
+                    if (response.ok && data.success) {
+                        showToast(`Rated ${rating} star${rating > 1 ? 's' : ''} ⭐`, 'success');
+                    } else {
+                        showToast(data.error || 'Failed to submit rating.', 'error');
+                    }
+                } catch (error) {
+                    console.error('Rating error:', error);
+                    showToast('Failed to submit rating.', 'error');
+                }
+
+                // Reset star highlights after a moment
+                setTimeout(() => {
+                    popStars.forEach(s => s.classList.remove('star-hover'));
+                }, 600);
+            });
         });
 
-        // Rating form submission
-        ratingForm.onsubmit = async (e) => {
-            e.preventDefault();
-
-            const ratingValue = document.getElementById('ratingValue').value;
-
-            if (!ratingValue) {
-                alert('Please select a rating');
-                return;
-            }
-
-            if (!peerDjangoUserId) {
-                alert('Unable to identify the user to rate. Please try again.');
-                return;
-            }
-
-            try {
-                const response = await fetch('/submit-rating/', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': getCsrfToken()
-                    },
-                    body: JSON.stringify({
-                        rated_user_id: peerDjangoUserId,
-                        rate_points: parseInt(ratingValue)
-                    })
-                });
-
-                const data = await response.json();
-
-                if (response.ok && data.success) {
-                    // Show success message
-                    ratingForm.classList.add('hidden');
-                    ratingSuccess.classList.remove('hidden');
-                } else {
-                    alert(data.error || 'Failed to submit rating. Please try again.');
-                }
-            } catch (error) {
-                console.error('Error submitting rating:', error);
-                alert('Failed to submit rating. Please try again.');
-            }
-        };
-
-        // Connect modal handlers - only if button exists (verified users only)
-        if (connectButton) {
-            connectButton.onclick = () => {
-                connectForm.classList.remove('hidden');
-                connectSuccess.classList.add('hidden');
-                connectModal.classList.remove('hidden');
-                connectModal.classList.add('flex');
-            };
-        }
-
-        if (closeConnectModalBtn) {
-            closeConnectModalBtn.onclick = () => {
-                connectModal.classList.add('hidden');
-                connectModal.classList.remove('flex');
-            };
-        }
-
-        if (cancelConnectBtn) {
-            cancelConnectBtn.onclick = () => {
-                connectModal.classList.add('hidden');
-                connectModal.classList.remove('flex');
-            };
-        }
-
-        if (closeConnectSuccessModalBtn) {
-            closeConnectSuccessModalBtn.onclick = () => {
-                connectModal.classList.add('hidden');
-                connectModal.classList.remove('flex');
-                connectForm.classList.remove('hidden');
-                connectSuccess.classList.add('hidden');
-            };
-        }
-
-        // Connect confirmation - only if button exists (verified users only)
-        if (confirmConnectBtn) {
-            confirmConnectBtn.onclick = async () => {
-            if (!peerDjangoUserId) {
-                alert('Unable to identify the user to connect with. Please try again.');
-                return;
-            }
-
-            try {
-                confirmConnectBtn.disabled = true;
-                confirmConnectBtn.textContent = 'Connecting...';
-
-                const response = await fetch('/submit-connection/', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': getCsrfToken()
-                    },
-                    body: JSON.stringify({
-                        connection_user_id: peerDjangoUserId
-                    })
-                });
-
-                const data = await response.json();
-
-                if (response.ok && data.success) {
-                    // Show success message
-                    connectForm.classList.add('hidden');
-                    connectSuccess.classList.remove('hidden');
-                } else {
-                    alert(data.error || 'Failed to connect. Please try again.');
-                }
-            } catch (error) {
-                console.error('Error submitting connection:', error);
-                alert('Failed to connect. Please try again.');
-            } finally {
-                confirmConnectBtn.disabled = false;
-                confirmConnectBtn.textContent = 'Connect';
-            }
-            };
-        }
-
-        log('All button click handlers attached');
+        log('All handlers attached');
 
         await checkMediaPermissions();
-        log('Starting initialization');
         await initialize();
         log('Initialization complete');
     } catch (error) {
-        console.error('Initialization error:', error);
-        if (statusEl) {
-            statusEl.textContent = 'Failed to initialize. Please refresh the page.';
-        }
+        console.error('Init error:', error);
+        if (statusEl) statusEl.textContent = 'Failed to initialize. Please refresh.';
     }
 });
 
-// Clean up presence when page is closed
-window.addEventListener('beforeunload', async () => {
-    await removePresence();
-});
+window.addEventListener('beforeunload', async () => { await removePresence(); });
