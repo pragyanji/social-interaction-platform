@@ -79,6 +79,15 @@ def landing_page(request):
         return redirect("home")
     return render(request, "landing.html")
 
+
+def privacy_policy(request):
+    """
+    Display the privacy policy page.
+    Accessible to both authenticated and unauthenticated users.
+    """
+    return render(request, "privacy_policy.html")
+
+
 @login_required(login_url="signin")
 def start_video_chat(request):
     # Check if the user's banned status is active or not
@@ -188,16 +197,8 @@ def home(request):
 
 
 @login_required(login_url="signin")
-def profile_view(request, user_id=None):
-    # If user_id is provided, get that user's profile, otherwise show the current user's profile
-    if user_id:
-        try:
-            user = User.objects.get(id=user_id)
-        except User.DoesNotExist:
-            messages.error(request, "User not found!")
-            return redirect("home")
-    else:
-        user = request.user
+def profile_view(request): 
+    user = request.user
     
     connection_with = user
     # Get or create aura points
@@ -711,3 +712,4 @@ def mark_messages_as_read(request, user_id):
         'success': True,
         'marked_as_read': updated_count
     })
+

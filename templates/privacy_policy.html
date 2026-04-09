@@ -1,0 +1,266 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Privacy Policy · ChatSphere{% endblock %}
+
+{% block head_extra %}
+<style>
+.privacy-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.privacy-header {
+  text-align: center;
+  margin-bottom: 2.5rem;
+}
+
+.privacy-header h1 {
+  font-size: 2.25rem;
+  font-weight: 800;
+  color: var(--text-primary, #f1f5f9);
+  margin-bottom: 0.5rem;
+}
+
+.privacy-header p {
+  color: var(--text-secondary, #94a3b8);
+  font-size: 0.95rem;
+}
+
+.privacy-section {
+  background: var(--surface, #1e293b);
+  border-radius: 16px;
+  padding: 1.5rem 2rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid var(--border, #334155);
+}
+
+.privacy-section h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--accent, #8b5cf6);
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.privacy-section h2 i {
+  font-size: 1.1rem;
+}
+
+.privacy-section h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary, #f1f5f9);
+  margin: 1.25rem 0 0.75rem;
+}
+
+.privacy-section p,
+.privacy-section li {
+  color: var(--text-secondary, #cbd5e1);
+  line-height: 1.7;
+  font-size: 0.95rem;
+}
+
+.privacy-section ul {
+  margin: 0.75rem 0;
+  padding-left: 1.5rem;
+}
+
+.privacy-section li {
+  margin-bottom: 0.5rem;
+}
+
+.privacy-section a {
+  color: var(--accent, #8b5cf6);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.privacy-section a:hover {
+  text-decoration: underline;
+}
+
+.highlight-box {
+  background: rgba(139, 92, 246, 0.1);
+  border-left: 4px solid var(--accent, #8b5cf6);
+  padding: 1rem 1.25rem;
+  border-radius: 0 8px 8px 0;
+  margin: 1rem 0;
+}
+
+.highlight-box p {
+  margin: 0;
+  color: var(--text-primary, #f1f5f9);
+}
+
+.contact-box {
+  background: var(--surface-2, #0f172a);
+  border-radius: 12px;
+  padding: 1.5rem;
+  text-align: center;
+  margin-top: 1rem;
+}
+
+.contact-box p {
+  margin: 0;
+  color: var(--text-secondary, #94a3b8);
+}
+
+.contact-box a {
+  color: var(--accent, #8b5cf6);
+  font-weight: 600;
+}
+
+.last-updated {
+  text-align: center;
+  color: var(--text-muted, #64748b);
+  font-size: 0.875rem;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border, #334155);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="privacy-container">
+  <div class="privacy-header">
+    <h1><i class="fas fa-shield-halved"></i> Privacy Policy</h1>
+    <p>Your privacy matters to us. Here's how we protect your data.</p>
+  </div>
+
+  <div class="privacy-section">
+    <h2><i class="fas fa-circle-info"></i> Overview</h2>
+    <p>ChatSphere ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, store, and protect your personal information when you use our social interaction platform, including our website, messaging services, video chat features, and mobile applications (collectively, the "Services").</p>
+    <p>By using ChatSphere, you agree to the collection and use of information in accordance with this policy.</p>
+  </div>
+
+  <div class="privacy-section">
+    <h2><i class="fas fa-database"></i> Information We Collect</h2>
+    
+    <h3>Account Information</h3>
+    <ul>
+      <li>Name and username</li>
+      <li>Email address</li>
+      <li>Profile picture and bio</li>
+      <li>Password (encrypted)</li>
+      <li>Date of birth (to verify age requirements)</li>
+    </ul>
+
+    <h3>Content You Create</h3>
+    <ul>
+      <li>Messages and chat history</li>
+      <li>Photos, videos, and media shared</li>
+      <li>Voice messages and video call recordings (if enabled)</li>
+      <li>Posts, comments, and reactions</li>
+    </ul>
+
+    <h3>Connection Data</h3>
+    <ul>
+      <li>Your connections and friend lists</li>
+      <li>Interaction patterns and engagement metrics</li>
+      <li>Aura points, ratings, and streaks</li>
+    </ul>
+
+    <h3>Technical Information</h3>
+    <ul>
+      <li>IP address and device information</li>
+      <li>Browser type and operating system</li>
+      <li>Usage logs and analytics data</li>
+      <li>Cookies and similar technologies</li>
+    </ul>
+  </div>
+
+  <div class="privacy-section">
+    <h2><i class="fas fa-bullseye"></i> How We Use Your Information</h2>
+    <p>We use the information we collect to:</p>
+    <ul>
+      <li>Provide, maintain, and improve our Services</li>
+      <li>Enable messaging, video chat, and social connections</li>
+      <li>Personalize your experience and content recommendations</li>
+      <li>Calculate and display your Aura points, ratings, and streaks</li>
+      <li>Send you notifications, updates, and security alerts</li>
+      <li>Detect and prevent fraud, abuse, and security threats</li>
+      <li>Comply with legal obligations</li>
+    </ul>
+    
+    <div class="highlight-box">
+      <p><strong>Your messages are private:</strong> Private messages between you and your connections are encrypted and cannot be read by ChatSphere staff or third parties.</p>
+    </div>
+  </div>
+
+  <div class="privacy-section">
+    <h2><i class="fas fa-share-nodes"></i> Information Sharing</h2>
+    <p>We do not sell your personal information. We may share your data only in the following circumstances:</p>
+    <ul>
+      <li><strong>With Your Consent:</strong> When you explicitly choose to share information</li>
+      <li><strong>Service Providers:</strong> Trusted third parties who help us operate our Services (hosting, analytics, customer support)</li>
+      <li><strong>Legal Requirements:</strong> When required by law, court order, or to protect our rights and safety</li>
+      <li><strong>Business Transfers:</strong> In connection with a merger, acquisition, or sale of assets</li>
+    </ul>
+  </div>
+
+  <div class="privacy-section">
+    <h2><i class="fas fa-lock"></i> Data Security</h2>
+    <p>We implement industry-standard security measures to protect your data:</p>
+    <ul>
+      <li>End-to-end encryption for private messages</li>
+      <li>SSL/TLS encryption for data transmission</li>
+      <li>Secure data storage with access controls</li>
+      <li>Regular security audits and penetration testing</li>
+      <li>Two-factor authentication (2FA) support</li>
+    </ul>
+    <p>While we strive to protect your information, no method of transmission over the Internet is 100% secure. We encourage you to use strong passwords and enable 2FA.</p>
+  </div>
+
+  <div class="privacy-section">
+    <h2><i class="fas fa-user-check"></i> Your Rights and Choices</h2>
+    <p>You have control over your personal information:</p>
+    <ul>
+      <li><strong>Access:</strong> View and download your data from your profile settings</li>
+      <li><strong>Correction:</strong> Update your profile information at any time</li>
+      <li><strong>Deletion:</strong> Request account deletion and data removal</li>
+      <li><strong>Privacy Controls:</strong> Manage who can see your profile and contact you</li>
+      <li><strong>Notifications:</strong> Customize your notification preferences</li>
+    </ul>
+    <p>To exercise these rights, visit your <a href="{% url 'profile' %}">Profile Settings</a> or contact us directly.</p>
+  </div>
+
+  <div class="privacy-section">
+    <h2><i class="fas fa-cookie-bite"></i> Cookies and Tracking</h2>
+    <p>We use cookies and similar technologies to:</p>
+    <ul>
+      <li>Keep you logged in and maintain your session</li>
+      <li>Remember your preferences and settings</li>
+      <li>Analyze how you use our Services to improve them</li>
+      <li>Provide personalized content and features</li>
+    </ul>
+    <p>You can control cookies through your browser settings. Note that disabling cookies may affect some features of our Services.</p>
+  </div>
+
+  <div class="privacy-section">
+    <h2><i class="fas fa-child-reaching"></i> Children's Privacy</h2>
+    <p>ChatSphere is not intended for children under 13 years of age. We do not knowingly collect personal information from children under 13. If you are a parent or guardian and believe your child has provided us with personal information, please contact us immediately, and we will delete such information.</p>
+  </div>
+
+  <div class="privacy-section">
+    <h2><i class="fas fa-file-pen"></i> Changes to This Policy</h2>
+    <p>We may update this Privacy Policy from time to time. We will notify you of any changes by posting the new policy on this page and updating the "Last Updated" date. For significant changes, we will provide additional notice via email or through our Services.</p>
+    <p>Your continued use of ChatSphere after any changes indicates your acceptance of the updated Privacy Policy.</p>
+  </div>
+
+  <div class="privacy-section">
+    <h2><i class="fas fa-envelope"></i> Contact Us</h2>
+    <p>If you have any questions, concerns, or requests regarding this Privacy Policy or our data practices, please contact us:</p>
+    
+    <div class="contact-box">
+      <p><i class="fas fa-envelope" style="color: var(--accent, #8b5cf6); margin-right: 0.5rem;"></i> Email: <a href="mailto:privacy@chatsphere.app">privacy@chatsphere.app</a></p>
+      <p style="margin-top: 0.75rem;"><i class="fas fa-location-dot" style="color: var(--accent, #8b5cf6); margin-right: 0.5rem;"></i> ChatSphere, Inc.</p>
+    </div>
+  </div>
+
+  <p class="last-updated"><i class="fas fa-clock"></i> Last Updated: April 9, 2026</p>
+</div>
+{% endblock %}
