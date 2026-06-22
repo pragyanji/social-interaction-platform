@@ -92,6 +92,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.sites',
     'core_chatsphere',
+    'core_admin',
     'rest_framework',
     'sslserver',
     'corsheaders',
@@ -143,32 +144,17 @@ WSGI_APPLICATION = 'chatsphere.wsgi.application'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 
-# For Production, use PostgreSQL 
-
-# create a db.py file in chatsphere directory with db_data function
-# write the following code in db_data function
-# def db_data():
-#     'default': {
-#             'ENGINE': 'django.db.backends.postgresql',
-#             'NAME': '',
-#             'USER': '',
-#             'PASSWORD': '',
-#             'HOST': 'localhost',
-#             'PORT': '5432',
-#             "CONN_MAX_AGE": 60,
-#     }
-from .db import db_data
-DATABASES = db_data()
-
-
-# For Development, use SQLite
-# DATABASES = {
-     
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
-# }
+DATABASES = {
+    'default': {
+        'ENGINE': os.getenv('DATABASE_ENGINE'),
+        'NAME': os.getenv('DATABASE_NAME'),
+        'USER': os.getenv('DATABASE_USER'),
+        'PASSWORD': os.getenv('DATABASE_PASSWORD'),
+        'HOST': os.getenv('DATABASE_HOST'),
+        'PORT': os.getenv('DATABASE_PORT'),
+        'CONN_MAX_AGE': int(os.getenv('DATABASE_CONN_MAX_AGE', '0')),
+    }
+}
 
 
 # Password validation
@@ -229,6 +215,23 @@ AUTHENTICATION_BACKENDS = [
 LOGIN_URL = "signin"
 LOGIN_REDIRECT_URL = "home"
 LOGOUT_REDIRECT_URL = "landing"
+
+# ── django-allauth configuration ──
+ACCOUNT_LOGIN_METHODS = {"username", "email"}
+ACCOUNT_SIGNUP_FIELDS = ["email*", "username*", "password1*", "password2*"]
+ACCOUNT_EMAIL_VERIFICATION = "none"  # Skip email verification for now
+
+# Social account settings — skip the intermediate signup form
+SOCIALACCOUNT_AUTO_SIGNUP = True
+SOCIALACCOUNT_LOGIN_ON_GET = True  # Skip the "Continue?" interstitial
+SOCIALACCOUNT_ADAPTER = "core_chatsphere.adapters.CustomSocialAccountAdapter"
+
+SOCIALACCOUNT_PROVIDERS = {
+    "google": {
+        "SCOPE": ["profile", "email"],
+        "AUTH_PARAMS": {"access_type": "online"},
+    },
+}
 
 # Django Channels Configuration
 ASGI_APPLICATION = "chatsphere.asgi.application"

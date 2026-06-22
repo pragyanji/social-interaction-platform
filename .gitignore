@@ -80,3 +80,6 @@ ssl/
 
 #pgadmin/
 chatsphere/db.py
+
+# Documentation
+PROJECT_DOCUMENTATION.md
