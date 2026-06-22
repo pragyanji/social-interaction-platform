@@ -249,6 +249,30 @@
   font-weight: 700;
 }
 
+/* Chip nav hint — leaderboard link indicator */
+.chip-nav-hint {
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%) translateX(4px);
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #a78bfa;
+  opacity: 0;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  pointer-events: none;
+}
+
+.aura-chip:hover .chip-nav-hint {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
+}
+
 /* ── Section heading ── */
 .section-heading {
   margin: 0;

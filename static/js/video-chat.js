@@ -10,13 +10,14 @@ function log(...args) { if (DEBUG) console.log('[ChatSphere]', ...args); }
 /* ──────────────────────────────────────────────
    DOM REFERENCES
    ────────────────────────────────────────────── */
-let startButton, stopButton, nextButton, connectButton, reportButton, rateButton;
+let startButton, stopButton, nextButton, connectButton, reportButton;
 let localVideo, remoteVideo, videoContainer, loadingSpinner;
 let statusEl, chatStatusText, onlineCountEl, waitingUsersEl;
 let preChatSection, inChatSection, toolbar;
 let reportModal, reportForm, reportSuccess, closeModalBtn, cancelReportBtn, closeSuccessModalBtn;
 let ratingModal, ratingForm, ratingSuccess, closeRatingModalBtn, cancelRatingBtn, closeRatingSuccessModalBtn;
 let selectedRatingValue;
+let localPanel, remotePanel;
 
 /* ──────────────────────────────────────────────
    TOAST NOTIFICATION SYSTEM
@@ -691,6 +692,11 @@ async function connectWithStranger() {
             showToast('Connected! You can message them later.', 'success');
             connectButton.classList.add('connect-success');
             setTimeout(() => connectButton.classList.remove('connect-success'), 2000);
+
+            // Golden glow on both panels
+            triggerConnectGlow();
+            // Sparkle animation
+            triggerSparkles();
         } else {
             showToast(data.error || 'Connection failed.', 'error');
         }
@@ -700,6 +706,88 @@ async function connectWithStranger() {
     } finally {
         connectButton.disabled = false;
     }
+}
+
+/* ──────────────────────────────────────────────
+   CONNECT GOLDEN GLOW + SPARKLE
+   ────────────────────────────────────────────── */
+function triggerConnectGlow() {
+    const panels = document.querySelectorAll('.video-panel');
+    panels.forEach(p => {
+        p.classList.add('connect-glow');
+    });
+    setTimeout(() => {
+        panels.forEach(p => p.classList.remove('connect-glow'));
+    }, 2500);
+}
+
+function triggerSparkles() {
+    const canvas = document.getElementById('sparkleCanvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const particles = [];
+    const PARTICLE_COUNT = 80;
+    const DURATION = 2000;
+
+    // Create particles from center of each panel
+    const panels = document.querySelectorAll('.video-panel');
+    panels.forEach(panel => {
+        const rect = panel.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 2;
+
+        for (let i = 0; i < PARTICLE_COUNT / 2; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const speed = 1 + Math.random() * 4;
+            particles.push({
+                x: cx,
+                y: cy,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed,
+                size: 1.5 + Math.random() * 3,
+                alpha: 1,
+                decay: 0.01 + Math.random() * 0.02,
+                color: Math.random() > 0.5
+                    ? `rgba(251, 191, 36, `  // gold
+                    : `rgba(255, 215, 0, `    // brighter gold
+            });
+        }
+    });
+
+    const startTime = performance.now();
+
+    function animate(now) {
+        const elapsed = now - startTime;
+        if (elapsed > DURATION) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            return;
+        }
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        particles.forEach(p => {
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vy += 0.02; // gravity
+            p.alpha -= p.decay;
+            if (p.alpha <= 0) return;
+
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            ctx.fillStyle = p.color + p.alpha + ')';
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = p.color + '0.6)';
+            ctx.fill();
+            ctx.shadowBlur = 0;
+        });
+
+        requestAnimationFrame(animate);
+    }
+
+    requestAnimationFrame(animate);
 }
 
 /* ──────────────────────────────────────────────
@@ -729,7 +817,7 @@ function displayPeerStats(stats) {
         content.innerHTML = '<span class="badge-new">🆕 NEW USER</span>';
     } else {
         content.innerHTML = `
-            <span class="badge-stat">✨ ${stats.aura_points}</span>
+            <span class="badge-stat">🗿 ${stats.aura_points}</span>
             <span class="badge-stat">⭐ ${stats.avg_rating}</span>
             <span class="badge-stat">${stats.total_ratings} ratings</span>
         `;
@@ -743,6 +831,11 @@ function clearPeerStats() {
     const content = document.getElementById('badgeContent');
     if (badge) badge.classList.add('hidden');
     if (content) content.innerHTML = '<span class="badge-loading">Loading…</span>';
+    // Clear any star glow from remote panel
+    const rp = document.getElementById('remoteVideoContainer');
+    if (rp) {
+        for (let i = 1; i <= 5; i++) rp.classList.remove('star-glow-' + i);
+    }
 }
 
 function resetMediaButtons() {
@@ -794,7 +887,8 @@ window.addEventListener('load', async () => {
         nextButton = document.getElementById('nextButton');
         connectButton = document.getElementById('connectButton');
         reportButton = document.getElementById('reportButton');
-        rateButton = document.getElementById('rateButton');
+        localPanel = document.getElementById('localPanel');
+        remotePanel = document.getElementById('remoteVideoContainer');
 
         // Report modal
         reportModal = document.getElementById('reportModal');
@@ -920,22 +1014,44 @@ window.addEventListener('load', async () => {
             }
         };
 
-        /* ── Inline star-rating popover ── */
-        const popStars = document.querySelectorAll('.pop-star');
+        /* ── Inline star-rating (inside remote container) ── */
+        const inlineStars = document.querySelectorAll('.inline-star');
+        const remoteContainer = document.getElementById('remoteVideoContainer');
 
-        // Hover: highlight all stars up to the hovered one
-        popStars.forEach((star, idx) => {
+        // Clear all star glow classes
+        function clearStarGlow() {
+            if (!remoteContainer) return;
+            for (let i = 1; i <= 5; i++) {
+                remoteContainer.classList.remove('star-glow-' + i);
+            }
+        }
+
+        // Hover: highlight all stars up to the hovered one + glow container
+        inlineStars.forEach((star, idx) => {
             star.addEventListener('mouseenter', () => {
-                popStars.forEach((s, i) => {
-                    s.classList.toggle('star-hover', i <= idx);
+                // Highlight all stars up to this one
+                inlineStars.forEach((s, i) => {
+                    s.classList.toggle('star-active', i <= idx);
                 });
+                // Apply glow intensity to container
+                clearStarGlow();
+                if (remoteContainer) {
+                    remoteContainer.classList.add('star-glow-' + (idx + 1));
+                }
             });
+        });
 
-            star.addEventListener('mouseleave', () => {
-                popStars.forEach(s => s.classList.remove('star-hover'));
+        // When mouse leaves the star rating area, clear everything
+        const starRatingContainer = document.getElementById('inlineStarRating');
+        if (starRatingContainer) {
+            starRatingContainer.addEventListener('mouseleave', () => {
+                inlineStars.forEach(s => s.classList.remove('star-active'));
+                clearStarGlow();
             });
+        }
 
-            // Click: submit immediately
+        // Click: submit rating immediately
+        inlineStars.forEach((star) => {
             star.addEventListener('click', async () => {
                 const rating = parseInt(star.getAttribute('data-rating'));
 
@@ -944,10 +1060,17 @@ window.addEventListener('load', async () => {
                     return;
                 }
 
-                // Flash all stars gold briefly
-                popStars.forEach((s, i) => {
-                    s.classList.toggle('star-hover', i < rating);
+                // Flash confirmed state
+                inlineStars.forEach((s, i) => {
+                    s.classList.toggle('star-confirmed', i < rating);
+                    s.classList.toggle('star-active', i < rating);
                 });
+
+                // Apply max glow for the confirmed rating
+                clearStarGlow();
+                if (remoteContainer) {
+                    remoteContainer.classList.add('star-glow-' + rating);
+                }
 
                 try {
                     const response = await fetch('/submit-rating/', {
@@ -957,7 +1080,7 @@ window.addEventListener('load', async () => {
                     });
                     const data = await response.json();
                     if (response.ok && data.success) {
-                        showToast(`Rated ${rating} star${rating > 1 ? 's' : ''} ⭐`, 'success');
+                        showToast(`Rated ${rating} star${rating > 1 ? 's' : ''} ✨`, 'success');
                     } else {
                         showToast(data.error || 'Failed to submit rating.', 'error');
                     }
@@ -966,10 +1089,14 @@ window.addEventListener('load', async () => {
                     showToast('Failed to submit rating.', 'error');
                 }
 
-                // Reset star highlights after a moment
+                // Reset after a moment
                 setTimeout(() => {
-                    popStars.forEach(s => s.classList.remove('star-hover'));
-                }, 600);
+                    inlineStars.forEach(s => {
+                        s.classList.remove('star-confirmed');
+                        s.classList.remove('star-active');
+                    });
+                    clearStarGlow();
+                }, 1200);
             });
         });
 
