@@ -19,7 +19,12 @@
       </thead>
       <tbody>
         {% for entry in aura_entries %}
+        <!-- only admin can click in the users leader board -->
+        {% if entry.user.is_staff %}
         <tr onclick="window.location='{% url 'core_admin:user_detail' entry.user.id %}'" class="clickable-row">
+        {% else %}
+        <tr></tr>
+        {% endif %}
           <td>
             {% with rank=forloop.counter %}
               {% if rank == 1 %}<span class="rank-medal">🥇</span>
@@ -30,7 +35,11 @@
             {% endwith %}
           </td>
           <td>
+            {% if entry.user.is_staff %}
             <a href="{% url 'core_admin:user_detail' entry.user.id %}" class="text-link">{{ entry.user.username }}</a>
+            {% else %}
+            {{ entry.user.username }}
+            {% endif %}
           </td>
           <td><span class="aura-badge aura-lg">{{ entry.aura_points }}</span></td>
           <td class="text-green">+{{ entry.rating_component }}</td>

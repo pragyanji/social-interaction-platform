@@ -16,6 +16,9 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 from django.utils import timezone
+from . models import AuraPoints
+from django.core.paginator import Paginator
+
 
 from . import models
 from .serializers import ConversationMessageSerializer
@@ -713,3 +716,46 @@ def mark_messages_as_read(request, user_id):
         'marked_as_read': updated_count
     })
 
+# Api view to get aura leaderboard
+def aura_leaderboard(request):
+    aura_qs = AuraPoints.objects.select_related('user').order_by('-aura_points')
+    paginator = Paginator(aura_qs, 30)
+    page = paginator.get_page(request.GET.get('page'))
+    data = [
+        {
+            "id": entry.id,
+            "username": entry.user.username,
+            "aura_points": entry.aura_points,
+        }
+        for entry in page
+    ]
+    return JsonResponse({
+        "results": data,
+        "total": paginator.count,
+        "page": page.number,
+        "total_pages": paginator.num_pages
+    })
+
+# View to render aura leaderboard page for all users
+@login_required(login_url="signin")
+def aura_leaderboard_view(request):
+    aura_qs = AuraPoints.objects.select_related('user').order_by('-aura_points')
+
+    # Calculate current user's rank and aura
+    user_aura = AuraPoints.objects.filter(user=request.user).first()
+    if user_aura:
+        user_rank = AuraPoints.objects.filter(aura_points__gt=user_aura.aura_points).count() + 1
+        user_aura_points = user_aura.aura_points
+    else:
+        user_rank = None
+        user_aura_points = 0
+
+    paginator = Paginator(aura_qs, 30)
+    page = paginator.get_page(request.GET.get('page'))
+    context = {
+        'aura_entries': page,
+        'total': paginator.count,
+        'user_rank': user_rank,
+        'user_aura_points': user_aura_points,
+    }
+    return render(request, "aura_leaderboard.html", context)

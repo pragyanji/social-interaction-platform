@@ -3,7 +3,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.paginator import Paginator
-from django.db.models import Avg, Count, Q, Sum
+from django.db.models import Avg, Count, OuterRef, Q, Subquery, Sum
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
@@ -68,7 +68,9 @@ def user_list(request):
     filter_type = request.GET.get('filter', 'all')
 
     users = User.objects.annotate(
-        aura_total=Sum('aura__aura_points'),
+        aura_total=Subquery(
+            AuraPoints.objects.filter(user=OuterRef('pk')).values('aura_points')[:1]
+        ),
         rating_count=Count('ratings_received'),
         avg_rating=Avg('ratings_received__rate_points'),
     ).order_by('-date_joined')
