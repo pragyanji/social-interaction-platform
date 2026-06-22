@@ -35,15 +35,16 @@
 
   <!-- ── Stat chips ── -->
   <div class="stat-row">
-    <div class="stat-chip aura-chip">
-      <div class="chip-icon"><i class="fas fa-star-half-stroke"></i></div>
+    <div class="stat-chip aura-chip" onclick="window.location='{% url 'auraleaderboard' %}'" style="cursor:pointer;">
+      <div class="chip-icon">🗿</div>
       <div class="chip-body">
         <span class="chip-val">{{ aura_points }}</span>
         <span class="chip-lbl">Aura Points</span>
       </div>
+      <div class="chip-nav-hint"><i class="fas fa-trophy"></i> Leaderboard <i class="fas fa-chevron-right"></i></div>
       <!-- Hover tooltip -->
       <div class="chip-tooltip">
-        <p class="tt-title">💫 How Aura Works</p>
+        <p class="tt-title">🗿 How Aura Works</p>
         <ul>
           <li><span class="tt-up">↑</span> Positive ratings (2–5 ★)</li>
           <li><span class="tt-up">↑</span> Daily streak bonus</li>
@@ -68,7 +69,7 @@
   <div class="action-grid">
 
     <!-- Messages -->
-    <a class="action-card msg-card" href="{% url 'startmessagechat' %}">
+    <a class="action-card msg-card" href="{% url 'startmessagechat' 0%}">
       <div class="ac-glow"></div>
       <div class="ac-icon"><i class="fas fa-message"></i></div>
       <div class="ac-body">

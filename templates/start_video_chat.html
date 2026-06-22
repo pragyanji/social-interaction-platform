@@ -55,18 +55,37 @@
     <!-- ─── IN-CHAT VIEW ─── -->
     <section id="in-chat" class="in-chat hidden">
 
-        <!-- Video area -->
+        <!-- Video area: two side-by-side containers -->
         <div class="video-stage">
             <!-- Local video (You – left side) -->
-            <div class="video-local-pip">
+            <div class="video-panel video-local-pip" id="localPanel">
                 <video id="localVideo" autoplay muted playsinline class="vid"></video>
-                <div class="vid-label local-tag">You</div>
+                <div class="vid-label local-tag">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                    </svg>
+                    You
+                </div>
             </div>
 
             <!-- Remote video (Stranger – right side) -->
-            <div id="remoteVideoContainer" class="video-remote-wrap">
+            <div id="remoteVideoContainer" class="video-panel video-remote-wrap" >
                 <video id="remoteVideo" autoplay playsinline class="vid"></video>
-                <div class="vid-label remote-tag">Stranger</div>
+                <div class="vid-label remote-tag">
+                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path stroke-linecap="round" d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10A15.3 15.3 0 0112 2z"/>
+                    </svg>
+                    Stranger
+                </div>
+
+                <!-- Report button overlay (bottom-right of stranger's video) -->
+                <button id="reportButton" class="report-overlay-btn" title="Report" aria-label="Report stranger">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/>
+                        <line x1="4" y1="22" x2="4" y2="15" stroke-linecap="round"/>
+                    </svg>
+                </button>
 
                 <!-- Peer stats badge (persistent) -->
                 <div id="peerStatsBadge" class="peer-badge hidden">
@@ -83,6 +102,35 @@
                               d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
                 </div>
+
+                <!-- ★ Inline star rating (inside remote container, bottom) -->
+                <div class="inline-star-rating" id="inlineStarRating">
+                    <button type="button" class="inline-star" data-rating="1" aria-label="1 star">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
+                        </svg>
+                    </button>
+                    <button type="button" class="inline-star" data-rating="2" aria-label="2 stars">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
+                        </svg>
+                    </button>
+                    <button type="button" class="inline-star" data-rating="3" aria-label="3 stars">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
+                        </svg>
+                    </button>
+                    <button type="button" class="inline-star" data-rating="4" aria-label="4 stars">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
+                        </svg>
+                    </button>
+                    <button type="button" class="inline-star" data-rating="5" aria-label="5 stars">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
+                        </svg>
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -91,95 +139,69 @@
             <span id="chat-status-text">Looking for a stranger…</span>
         </div>
 
-        <!-- ─── FLOATING TOOLBAR ─── -->
+        <!-- ─── ACTION BUTTONS (below containers, centered) ─── -->
         <div id="toolbar" class="toolbar">
             <div class="toolbar-inner">
 
                 <!-- Mic toggle -->
-                <button id="toggleAudio" class="tb-btn" title="Toggle microphone" aria-label="Toggle microphone">
-                    <svg id="micOnIcon" class="tb-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M19 11a7 7 0 01-14 0m7 7v4m-4 0h8m-4-12a3 3 0 00-3 3v4a3 3 0 006 0v-4a3 3 0 00-3-3z"/>
+                <button id="toggleAudio" class="tb-btn tb-media" title="Mute" aria-label="Toggle microphone">
+                    <!-- Mic ON: clean microphone -->
+                    <svg id="micOnIcon" class="tb-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <rect x="9" y="1" width="6" height="12" rx="3"/>
+                        <path stroke-linecap="round" d="M19 10v1a7 7 0 01-14 0v-1"/>
+                        <line x1="12" y1="18" x2="12" y2="23" stroke-linecap="round"/>
+                        <line x1="8" y1="23" x2="16" y2="23" stroke-linecap="round"/>
                     </svg>
-                    <svg id="micOffIcon" class="tb-icon hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/>
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"/>
+                    <!-- Mic OFF: microphone with slash -->
+                    <svg id="micOffIcon" class="tb-icon hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <line x1="1" y1="1" x2="23" y2="23" stroke-linecap="round"/>
+                        <path stroke-linecap="round" d="M9 9v3a3 3 0 005.12 2.12M15 9.34V4a3 3 0 00-5.94-.6"/>
+                        <path stroke-linecap="round" d="M17 16.95A7 7 0 015 11v-1m14 0v1a7 7 0 01-.11 1.23"/>
+                        <line x1="12" y1="19" x2="12" y2="23" stroke-linecap="round"/>
+                        <line x1="8" y1="23" x2="16" y2="23" stroke-linecap="round"/>
                     </svg>
                 </button>
 
                 <!-- Camera toggle -->
-                <button id="toggleVideo" class="tb-btn" title="Toggle camera" aria-label="Toggle camera">
-                    <svg id="camOnIcon" class="tb-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                <button id="toggleVideo" class="tb-btn tb-media" title="Camera" aria-label="Toggle camera">
+                    <!-- Camera ON: video camera -->
+                    <svg id="camOnIcon" class="tb-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M23 7l-7 5 7 5V7z"/>
+                        <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
                     </svg>
-                    <svg id="camOffIcon" class="tb-icon hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728A9 9 0 015.636 5.636"/>
-                    </svg>
-                </button>
-
-                <div class="tb-divider"></div>
-
-                <!-- Next stranger -->
-                <button id="nextButton" class="tb-btn tb-accent" title="Next stranger" aria-label="Next stranger">
-                    <svg class="tb-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M13 5l7 7-7 7M5 5l7 7-7 7"/>
+                    <!-- Camera OFF: video camera with slash -->
+                    <svg id="camOffIcon" class="tb-icon hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M16 16v1a2 2 0 01-2 2H3a2 2 0 01-2-2V7a2 2 0 012-2h2m5.66 0H14a2 2 0 012 2v3.34l1 1L23 7v10"/>
+                        <line x1="1" y1="1" x2="23" y2="23" stroke-linecap="round"/>
                     </svg>
                 </button>
 
-                <!-- Connect (1-click) -->
-                <button id="connectButton" class="tb-btn tb-connect" title="Connect with stranger" aria-label="Connect with stranger">
-                    <svg class="tb-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+                <!-- Separator -->
+                <div class="toolbar-separator"></div>
+
+                <!-- Connect -->
+                <button id="connectButton" class="tb-btn tb-action tb-connect" title="Connect" aria-label="Connect with stranger">
+                    <svg class="tb-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+                        <circle cx="8.5" cy="7" r="4"/>
+                        <line x1="20" y1="8" x2="20" y2="14" stroke-linecap="round"/>
+                        <line x1="23" y1="11" x2="17" y2="11" stroke-linecap="round"/>
                     </svg>
                 </button>
 
-                <!-- Rate (inline popover) -->
-                <div class="rate-wrapper" id="rateWrapper">
-                    <div class="rate-popover" id="ratePopover">
-                        <button type="button" class="pop-star" data-rating="1" aria-label="1 star">
-                            <svg viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-                        </button>
-                        <button type="button" class="pop-star" data-rating="2" aria-label="2 stars">
-                            <svg viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-                        </button>
-                        <button type="button" class="pop-star" data-rating="3" aria-label="3 stars">
-                            <svg viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-                        </button>
-                        <button type="button" class="pop-star" data-rating="4" aria-label="4 stars">
-                            <svg viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-                        </button>
-                        <button type="button" class="pop-star" data-rating="5" aria-label="5 stars">
-                            <svg viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-                        </button>
-                    </div>
-                    <button id="rateButton" class="tb-btn tb-rate" title="" aria-label="Rate this stranger">
-                        <svg class="tb-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                  d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
-                        </svg>
-                    </button>
-                </div>
-
-                <!-- Report -->
-                <button id="reportButton" class="tb-btn tb-warn" title="Report stranger" aria-label="Report stranger">
-                    <svg class="tb-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+                <!-- Stop Chat: X icon -->
+                <button id="stopButton" class="tb-btn tb-action tb-stop" title="Stop Chat" aria-label="End chat">
+                    <svg class="tb-icon" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                        <line x1="18" y1="6" x2="6" y2="18" stroke-linecap="round"/>
+                        <line x1="6" y1="6" x2="18" y2="18" stroke-linecap="round"/>
                     </svg>
                 </button>
 
-                <div class="tb-divider"></div>
-
-                <!-- End chat -->
-                <button id="stopButton" class="tb-btn tb-end" title="End chat" aria-label="End chat">
-                    <svg class="tb-icon" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M3.68 16.07l3.92-3.11c.24-.19.56-.19.8 0l2.24 1.77c.71.56 1.71.56 2.42 0L16.4 12l3.92 3.07c1.67-2.37 1.67-5.77 0-8.14l-3.92 3.11c-.24.19-.56.19-.8 0l-2.24-1.77c-.71-.56-1.71-.56-2.42 0L7.6 11.2 3.68 8.13c-1.67 2.37-1.67 5.57 0 7.94z"/>
+                <!-- Next Stranger: skip-forward arrow -->
+                <button id="nextButton" class="tb-btn tb-action tb-next" title="Next Stranger" aria-label="Next stranger">
+                    <svg class="tb-icon" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M13 5l7 7-7 7"/>
                     </svg>
                 </button>
 
@@ -187,7 +209,7 @@
         </div>
     </section>
 
-    <!-- ─── REPORT MODAL (kept – needs form input) ─── -->
+    <!-- ─── REPORT MODAL ─── -->
     <div id="reportModal" class="modal hidden">
         <div class="modal-box">
             <div class="modal-header">
@@ -238,7 +260,7 @@
         </div>
     </div>
 
-    <!-- ─── RATING MODAL (kept – needs star input) ─── -->
+    <!-- ─── RATING MODAL (kept as fallback) ─── -->
     <div id="ratingModal" class="modal hidden">
         <div class="modal-box">
             <div class="modal-header">
@@ -302,6 +324,9 @@
             </div>
         </div>
     </div>
+
+    <!-- Sparkle canvas for connect animation -->
+    <canvas id="sparkleCanvas" class="sparkle-canvas"></canvas>
 
     <!-- Firebase Configuration -->
     <div id="django-config"
