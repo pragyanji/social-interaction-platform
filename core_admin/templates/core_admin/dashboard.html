@@ -6,7 +6,7 @@
 {% block content %}
 <!-- Stat Cards -->
 <div class="stat-grid">
-  <div class="stat-card">
+  <a href="{% url 'core_admin:user_list' %}" class="stat-card">
     <div class="stat-icon" style="background: linear-gradient(135deg, #7c3aed, #6366f1);">
       <i class="fas fa-users"></i>
     </div>
@@ -14,9 +14,9 @@
       <span class="stat-value">{{ total_users }}</span>
       <span class="stat-label">Total Users</span>
     </div>
-  </div>
+  </a>
 
-  <div class="stat-card">
+  <a href="{% url 'core_admin:report_list' %}" class="stat-card">
     <div class="stat-icon" style="background: linear-gradient(135deg, #ef4444, #dc2626);">
       <i class="fas fa-flag"></i>
     </div>
@@ -24,9 +24,9 @@
       <span class="stat-value">{{ open_reports }}</span>
       <span class="stat-label">Open Reports</span>
     </div>
-  </div>
+  </a>
 
-  <div class="stat-card">
+  <a href="{% url 'core_admin:user_list' %}?filter=banned" class="stat-card">
     <div class="stat-icon" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
       <i class="fas fa-ban"></i>
     </div>
@@ -34,19 +34,9 @@
       <span class="stat-value">{{ active_bans }}</span>
       <span class="stat-label">Active Bans</span>
     </div>
-  </div>
+  </a>
 
-  <div class="stat-card">
-    <div class="stat-icon" style="background: linear-gradient(135deg, #22c55e, #16a34a);">
-      <i class="fas fa-bolt"></i>
-    </div>
-    <div class="stat-info">
-      <span class="stat-value">{{ avg_aura }}</span>
-      <span class="stat-label">Avg Aura</span>
-    </div>
-  </div>
-
-  <div class="stat-card">
+  <a href="{% url 'core_admin:connections_list' %}" class="stat-card">
     <div class="stat-icon" style="background: linear-gradient(135deg, #0ea5e9, #0284c7);">
       <i class="fas fa-link"></i>
     </div>
@@ -54,15 +44,102 @@
       <span class="stat-value">{{ total_connections }}</span>
       <span class="stat-label">Connections</span>
     </div>
-  </div>
+  </a>
 
-  <div class="stat-card">
-    <div class="stat-icon" style="background: linear-gradient(135deg, #a855f7, #9333ea);">
-      <i class="fas fa-message"></i>
+  <a href="{% url 'core_admin:moderation_logs' %}" class="stat-card">
+    <div class="stat-icon" style="background: linear-gradient(135deg, #06b6d4, #0891b2);">
+      <i class="fas fa-shield-halved"></i>
     </div>
     <div class="stat-info">
-      <span class="stat-value">{{ total_messages }}</span>
-      <span class="stat-label">Messages</span>
+      <span class="stat-value">{{ total_moderation_logs }}</span>
+      <span class="stat-label">Moderation Logs</span>
+    </div>
+  </a>
+</div>
+
+<!-- ===== ANALYTICS SECTION ===== -->
+<div class="analytics-grid">
+  <!-- Signup Trend -->
+  <div class="card">
+    <div class="card-header">
+      <h2><i class="fas fa-chart-line"></i> User Signups (Last 7 Days)</h2>
+    </div>
+    <div class="card-body">
+      <div class="chart-container">
+        {% for item in signup_trend %}
+          <div class="chart-bar-wrap">
+            <span class="chart-val">{{ item.count }}</span>
+            <div class="chart-bar" style="height: {% if item.count > 0 %}{{ item.count|add:15 }}px{% else %}4px{% endif %}; background: linear-gradient(to top, #6366f1, #818cf8);"></div>
+            <span class="chart-label">{{ item.date }}</span>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Aura Distribution -->
+  <div class="card">
+    <div class="card-header">
+      <h2><i class="fas fa-gem"></i> Aura Tier Distribution</h2>
+    </div>
+    <div class="card-body">
+      <div class="progress-list">
+        {% for item in aura_distribution %}
+          <div class="progress-item">
+            <div class="progress-label">
+              <span>{{ item.tier }}</span>
+              <span>{{ item.count }} users</span>
+            </div>
+            <div class="progress-bar-bg">
+              <div class="progress-bar-fill" style="width: {% if total_users > 0 %}{% widthratio item.count total_users 100 %}{% else %}0{% endif %}%; background-color: {{ item.color }};"></div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="analytics-grid">
+  <!-- Ratings Breakdown -->
+  <div class="card">
+    <div class="card-header">
+      <h2><i class="fas fa-star-half-stroke"></i> Video Chat Ratings</h2>
+      <span class="card-sub-header">Total: {{ total_ratings }} given</span>
+    </div>
+    <div class="card-body">
+      <div class="progress-list">
+        {% for item in ratings_percentage %}
+          <div class="progress-item">
+            <div class="progress-label">
+              <span>{{ item.stars }} ★</span>
+              <span>{{ item.count }} ({{ item.percentage }}%)</span>
+            </div>
+            <div class="progress-bar-bg">
+              <div class="progress-bar-fill" style="width: {{ item.percentage }}%; background-color: #fbbf24;"></div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Moderation Analytics -->
+  <div class="card">
+    <div class="card-header">
+      <h2><i class="fas fa-shield-halved"></i> AI Moderation Activity</h2>
+    </div>
+    <div class="card-body">
+      <div class="mod-stats">
+        <div class="mod-stat-box warning-box">
+          <span class="mod-stat-num">{{ mod_warnings }}</span>
+          <span class="mod-stat-lbl">Warnings Issued</span>
+        </div>
+        <div class="mod-stat-box ban-box">
+          <span class="mod-stat-num">{{ mod_bans }}</span>
+          <span class="mod-stat-lbl">Auto-Bans Triggered</span>
+        </div>
+      </div>
     </div>
   </div>
 </div>

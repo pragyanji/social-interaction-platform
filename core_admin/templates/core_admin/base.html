@@ -29,21 +29,30 @@
     </div>
 
     <nav class="sidebar-nav">
-      <a href="{% url 'core_admin:dashboard' %}" class="nav-item {% if active_page == 'dashboard' %}active{% endif %}">
+      <a href="{% url 'core_admin:dashboard' %}" class="nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
         <i class="fas fa-chart-pie"></i> <span>Dashboard</span>
       </a>
-      <a href="{% url 'core_admin:user_list' %}" class="nav-item {% if active_page == 'users' %}active{% endif %}">
+      <a href="{% url 'core_admin:user_list' %}" class="nav-item {% if request.resolver_match.url_name == 'user_list' and request.GET.filter != 'banned' or request.resolver_match.url_name == 'user_detail' %}active{% endif %}">
         <i class="fas fa-users"></i> <span>Users</span>
       </a>
-      <a href="{% url 'core_admin:report_list' %}" class="nav-item {% if active_page == 'reports' %}active{% endif %}">
+      <a href="{% url 'core_admin:user_list' %}?filter=banned" class="nav-item {% if request.resolver_match.url_name == 'user_list' and request.GET.filter == 'banned' %}active{% endif %}">
+        <i class="fas fa-ban"></i> <span>Banned Users</span>
+      </a>
+      <a href="{% url 'core_admin:report_list' %}" class="nav-item {% if request.resolver_match.url_name == 'report_list' or request.resolver_match.url_name == 'report_detail' %}active{% endif %}">
         <i class="fas fa-flag"></i> <span>Reports</span>
         {% if open_reports_count %}<span class="nav-badge">{{ open_reports_count }}</span>{% endif %}
       </a>
-      <a href="{% url 'core_admin:connections_list' %}" class="nav-item {% if active_page == 'connections' %}active{% endif %}">
+      <a href="{% url 'core_admin:connections_list' %}" class="nav-item {% if request.resolver_match.url_name == 'connections_list' %}active{% endif %}">
         <i class="fas fa-link"></i> <span>Connections</span>
       </a>
-      <a href="{% url 'core_admin:aura_list' %}" class="nav-item {% if active_page == 'aura' %}active{% endif %}">
+      <a href="{% url 'core_admin:aura_list' %}" class="nav-item {% if request.resolver_match.url_name == 'aura_list' %}active{% endif %}">
         <i class="fas fa-star"></i> <span>Aura Board</span>
+      </a>
+      <a href="{% url 'core_admin:moderation_logs' %}" class="nav-item {% if request.resolver_match.url_name == 'moderation_logs' %}active{% endif %}">
+        <i class="fas fa-shield-halved"></i> <span>Moderation</span>
+      </a>
+      <a href="{% url 'core_admin:send_broadcast' %}" class="nav-item {% if request.resolver_match.url_name == 'send_broadcast' %}active{% endif %}">
+        <i class="fas fa-bullhorn"></i> <span>Send Broadcast</span>
       </a>
 
       <div class="nav-divider"></div>

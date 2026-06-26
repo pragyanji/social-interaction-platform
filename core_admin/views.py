@@ -11,7 +11,7 @@ from django.views.decorators.http import require_POST
 
 from core_chatsphere.models import (
     AuraPoints, BannedAcc, Connection, ConversationMessage,
-    DailyStreak, RatingPoints, Report,
+    DailyStreak, RatingPoints, Report, ModerationLog,
 )
 
 User = get_user_model()
@@ -30,19 +30,68 @@ def admin_required(view_func):
 # ─────────────────────────────────────────────
 @admin_required
 def dashboard(request):
+    import datetime
+    
     total_users = User.objects.count()
     active_bans = BannedAcc.objects.filter(active=True).count()
     open_reports = Report.objects.filter(report_status=Report.Status.OPEN).count()
     under_review = Report.objects.filter(report_status=Report.Status.UNDER_REVIEW).count()
     total_connections = Connection.objects.count()
-    total_messages = ConversationMessage.objects.count()
-
-    avg_aura = AuraPoints.objects.aggregate(avg=Avg('aura_points'))['avg'] or 0
+    total_moderation_logs = ModerationLog.objects.count()
 
     # Recent activity
     recent_reports = Report.objects.select_related('user', 'reported_to').order_by('-created_at')[:5]
     recent_bans = BannedAcc.objects.select_related('user', 'banned_by').order_by('-created_at')[:5]
     recent_users = User.objects.order_by('-date_joined')[:5]
+
+    # --- Analytics & Statistics ---
+    
+    # 1. Signups in the last 7 days
+    today = timezone.localdate()
+    signup_trend = []
+    for i in range(6, -1, -1):
+        day = today - datetime.timedelta(days=i)
+        count = User.objects.filter(date_joined__date=day).count()
+        signup_trend.append({
+            'date': day.strftime('%b %d'),
+            'count': count
+        })
+
+    # 2. Aura Tier Distribution
+    bronze_count = AuraPoints.objects.filter(aura_points__lte=100).count()
+    silver_count = AuraPoints.objects.filter(aura_points__gt=100, aura_points__lte=300).count()
+    gold_count = AuraPoints.objects.filter(aura_points__gt=300, aura_points__lte=750).count()
+    platinum_count = AuraPoints.objects.filter(aura_points__gt=750, aura_points__lte=1500).count()
+    diamond_count = AuraPoints.objects.filter(aura_points__gt=1500).count()
+    
+    aura_distribution = [
+        {'tier': 'Bronze (0-100)', 'count': bronze_count, 'color': '#b45309'},
+        {'tier': 'Silver (101-300)', 'count': silver_count, 'color': '#94a3b8'},
+        {'tier': 'Gold (301-750)', 'count': gold_count, 'color': '#fbbf24'},
+        {'tier': 'Platinum (751-1500)', 'count': platinum_count, 'color': '#22d3ee'},
+        {'tier': 'Diamond (1500+)', 'count': diamond_count, 'color': '#a855f7'},
+    ]
+
+    # 3. Community Ratings Distribution (1-5 Stars)
+    star_counts = RatingPoints.objects.values('rate_points').annotate(count=Count('id'))
+    ratings_breakdown = {i: 0 for i in range(1, 6)}
+    for sc in star_counts:
+        ratings_breakdown[sc['rate_points']] = sc['count']
+    
+    total_ratings = sum(ratings_breakdown.values())
+    ratings_percentage = []
+    for star in range(5, 0, -1):
+        count = ratings_breakdown[star]
+        percentage = round((count / total_ratings * 100), 1) if total_ratings > 0 else 0
+        ratings_percentage.append({
+            'stars': star,
+            'count': count,
+            'percentage': percentage
+        })
+
+    # 4. Moderation action distribution
+    warning_count = ModerationLog.objects.filter(action_taken=ModerationLog.Action.WARNING).count()
+    ban_count = ModerationLog.objects.filter(action_taken=ModerationLog.Action.BAN).count()
 
     context = {
         'total_users': total_users,
@@ -50,11 +99,18 @@ def dashboard(request):
         'open_reports': open_reports,
         'under_review': under_review,
         'total_connections': total_connections,
-        'total_messages': total_messages,
-        'avg_aura': round(avg_aura),
+        'total_moderation_logs': total_moderation_logs,
         'recent_reports': recent_reports,
         'recent_bans': recent_bans,
         'recent_users': recent_users,
+        
+        # Analytics context
+        'signup_trend': signup_trend,
+        'aura_distribution': aura_distribution,
+        'ratings_percentage': ratings_percentage,
+        'total_ratings': total_ratings,
+        'mod_warnings': warning_count,
+        'mod_bans': ban_count,
     }
     return render(request, 'core_admin/dashboard.html', context)
 
@@ -266,3 +322,106 @@ def aura_list(request):
         'total': paginator.count,
     }
     return render(request, 'core_admin/aura.html', context)
+
+
+# ─────────────────────────────────────────────
+# CONTENT MODERATION LOGS
+# ─────────────────────────────────────────────
+@admin_required
+def moderation_logs(request):
+    """View to list all video violations logged by NudeNet verification."""
+    from core_chatsphere.models import ModerationLog
+    logs = ModerationLog.objects.select_related('user').order_by('-created_at')
+    
+    paginator = Paginator(logs, 20)
+    page = paginator.get_page(request.GET.get("page"))
+    
+    context = {
+        'logs': page,
+        'total': paginator.count,
+    }
+    return render(request, 'core_admin/moderation_logs.html', context)
+
+
+@admin_required
+@require_POST
+def send_user_notification(request, user_id):
+    """Send a custom notification to a specific user."""
+    user = get_object_or_404(User, id=user_id)
+    title = request.POST.get('title', '').strip()
+    message = request.POST.get('message', '').strip()
+    
+    if title and message:
+        from core_chatsphere.models import Notification
+        Notification.objects.create(
+            user=user,
+            title=title,
+            message=message
+        )
+        messages.success(request, f'Notification sent successfully to {user.username}.')
+    else:
+        messages.error(request, 'Both title and message are required.')
+        
+    return redirect('core_admin:user_detail', user_id=user.id)
+
+
+@admin_required
+def send_broadcast(request):
+    """Send a notification to all users (broadcast) or a specific user."""
+    users_list = User.objects.filter(is_active=True).order_by('username')
+    
+    if request.method == 'POST':
+        title = request.POST.get('title', '').strip()
+        message = request.POST.get('message', '').strip()
+        recipient_type = request.POST.get('recipient_type', 'all')
+        target_username = request.POST.get('target_user', '').strip()
+        
+        if not title or not message:
+            messages.error(request, 'Both title and message are required.')
+            return render(request, 'core_admin/broadcast.html', {
+                'users': users_list,
+                'recipient_type': recipient_type,
+                'target_user': target_username
+            })
+            
+        from core_chatsphere.models import Notification
+        
+        if recipient_type == 'specific':
+            if not target_username:
+                messages.error(request, 'Please specify a user.')
+                return render(request, 'core_admin/broadcast.html', {
+                    'users': users_list,
+                    'recipient_type': recipient_type
+                })
+            
+            try:
+                target_user = User.objects.get(username=target_username)
+            except User.DoesNotExist:
+                messages.error(request, f'User with username "{target_username}" does not exist.')
+                return render(request, 'core_admin/broadcast.html', {
+                    'users': users_list,
+                    'recipient_type': recipient_type,
+                    'target_user': target_username,
+                    'form_title': title,
+                    'form_message': message,
+                })
+            
+            Notification.objects.create(
+                user=target_user,
+                title=title,
+                message=message
+            )
+            messages.success(request, f'Notification sent successfully to user {target_user.username}.')
+            return redirect('core_admin:dashboard')
+            
+        else:
+            users = User.objects.all()
+            notifications = [
+                Notification(user=u, title=title, message=message)
+                for u in users
+            ]
+            Notification.objects.bulk_create(notifications)
+            messages.success(request, f'Broadcast notification successfully sent to all {len(notifications)} users.')
+            return redirect('core_admin:dashboard')
+            
+    return render(request, 'core_admin/broadcast.html', {'users': users_list})

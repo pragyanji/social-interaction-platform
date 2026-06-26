@@ -22,4 +22,11 @@ urlpatterns = [
 
     # Aura leaderboard
     path('aura/', views.aura_list, name='aura_list'),
+
+    # Content Moderation Logs
+    path('moderation/', views.moderation_logs, name='moderation_logs'),
+
+    # Send Notification / Announcement
+    path('users/<int:user_id>/notify/', views.send_user_notification, name='send_user_notification'),
+    path('broadcast/', views.send_broadcast, name='send_broadcast'),
 ]

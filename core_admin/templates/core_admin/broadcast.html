@@ -1,0 +1,121 @@
+{% extends "core_admin/base.html" %}
+
+{% block title %}Send Broadcast{% endblock %}
+{% block page_title %}Send Broadcast{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 600px; margin: 2rem auto; border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg-card); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);">
+  <div class="card-header" style="border-bottom: 1px solid var(--border); padding: 20px 24px;">
+    <h2 style="display: flex; align-items: center; gap: 10px; margin: 0; font-size: 1.3rem; font-weight: 700; color: var(--text-primary);">
+      <i class="fas fa-bullhorn" style="color: var(--accent-light);"></i> Send Broadcast Announcement
+    </h2>
+  </div>
+  
+  <div class="card-body" style="padding: 24px;">
+    <!-- Recipient Type Tab-like Selector -->
+    <div class="recipient-type-selector" style="display: flex; gap: 8px; margin-bottom: 24px; background: rgba(0,0,0,0.2); padding: 6px; border-radius: var(--radius-sm); border: 1px solid var(--border);">
+      <label style="flex: 1; text-align: center; margin: 0; cursor: pointer; position: relative;">
+        <input type="radio" name="recipient_type" value="all" {% if not recipient_type or recipient_type == 'all' %}checked{% endif %} style="display: none;" onchange="toggleRecipientType(this.value)" />
+        <span class="tab-button" id="tab-all" style="display: block; padding: 10px; border-radius: var(--radius-xs); font-weight: 600; font-size: 0.9rem; transition: all 0.2s;">
+          <i class="fas fa-users" style="margin-right: 6px;"></i> All Users (Broadcast)
+        </span>
+      </label>
+      <label style="flex: 1; text-align: center; margin: 0; cursor: pointer; position: relative;">
+        <input type="radio" name="recipient_type" value="specific" {% if recipient_type == 'specific' %}checked{% endif %} style="display: none;" onchange="toggleRecipientType(this.value)" />
+        <span class="tab-button" id="tab-specific" style="display: block; padding: 10px; border-radius: var(--radius-xs); font-weight: 600; font-size: 0.9rem; transition: all 0.2s;">
+          <i class="fas fa-user" style="margin-right: 6px;"></i> Specific User
+        </span>
+      </label>
+    </div>
+
+    <form method="post" action="{% url 'core_admin:send_broadcast' %}">
+      {% csrf_token %}
+      
+      <!-- Real input for recipient type inside the form -->
+      <input type="hidden" name="recipient_type" id="hidden_recipient_type" value="{{ recipient_type|default:'all' }}" />
+
+      <!-- Specific User Input Group -->
+      <div id="specific-user-group" class="form-group" style="margin-bottom: 20px; display: none;">
+        <label class="form-label" style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-secondary); font-size: 0.9rem;">Recipient Username</label>
+        <div style="position: relative;">
+          <span style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-weight: 600;">@</span>
+          <input type="text" name="target_user" id="target_user" placeholder="Type username..." class="form-input" list="users-datalist" style="padding-left: 32px; width: 100%;" value="{{ target_user|default:'' }}" />
+        </div>
+        <datalist id="users-datalist">
+          {% for u in users %}
+            <option value="{{ u.username }}">{{ u.username }} ({{ u.email|default:"No email" }})</option>
+          {% endfor %}
+        </datalist>
+        <small class="text-muted" style="display: block; margin-top: 6px; font-size: 0.8rem; color: var(--text-muted);">
+          Search from active registered users. Autocomplete is browser native.
+        </small>
+      </div>
+
+      <!-- Notification Fields -->
+      <div class="form-group" style="margin-bottom: 18px;">
+        <label class="form-label" style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-secondary); font-size: 0.9rem;">Notification Title</label>
+        <input type="text" name="title" value="{{ form_title|default:'' }}" placeholder="e.g. Scheduled Maintenance, Warning, Community Update..." class="form-input" style="width: 100%;" required />
+      </div>
+      
+      <div class="form-group" style="margin-bottom: 24px;">
+        <label class="form-label" style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-secondary); font-size: 0.9rem;">Notification Message</label>
+        <textarea name="message" placeholder="Type the announcement details or message content..." class="form-input" rows="5" style="width: 100%; resize: vertical; height: auto;" required>{{ form_message|default:'' }}</textarea>
+      </div>
+      
+      <!-- Action Buttons -->
+      <div style="display: flex; gap: 12px; justify-content: flex-end; border-top: 1px solid var(--border); padding-top: 20px;">
+        <a href="{% url 'core_admin:dashboard' %}" class="btn" style="background: rgba(255,255,255,0.05); color: var(--text-secondary); border: 1px solid var(--border); padding: 10px 20px; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; transition: all 0.2s; font-weight: 500;">
+          Cancel
+        </a>
+        <button type="submit" class="btn btn-primary" style="padding: 10px 20px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; transition: all 0.2s; background: var(--accent); color: white; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px var(--accent-glow);">
+          <i class="fas fa-paper-plane"></i> <span id="submit-btn-text">Send Broadcast</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<style>
+.recipient-type-selector label input:checked + .tab-button {
+  background: var(--accent);
+  color: white;
+  box-shadow: 0 4px 12px var(--accent-glow);
+}
+.recipient-type-selector label input:not(:checked) + .tab-button {
+  color: var(--text-secondary);
+}
+.recipient-type-selector label input:not(:checked) + .tab-button:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+}
+</style>
+
+<script>
+function toggleRecipientType(val) {
+  const specificGroup = document.getElementById('specific-user-group');
+  const targetUserInput = document.getElementById('target_user');
+  const hiddenInput = document.getElementById('hidden_recipient_type');
+  const submitText = document.getElementById('submit-btn-text');
+
+  hiddenInput.value = val;
+
+  if (val === 'specific') {
+    specificGroup.style.display = 'block';
+    targetUserInput.setAttribute('required', 'required');
+    submitText.innerText = 'Send Notification';
+  } else {
+    specificGroup.style.display = 'none';
+    targetUserInput.removeAttribute('required');
+    submitText.innerText = 'Send Broadcast';
+  }
+}
+
+// Initial layout check on page load
+document.addEventListener('DOMContentLoaded', () => {
+  const checkedRadio = document.querySelector('input[name="recipient_type"]:checked');
+  if (checkedRadio) {
+    toggleRecipientType(checkedRadio.value);
+  }
+});
+</script>
+{% endblock %}

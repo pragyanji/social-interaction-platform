@@ -1,0 +1,157 @@
+{% extends "core_admin/base.html" %}
+
+{% block title %}Moderation Logs{% endblock %}
+{% block page_title %}Moderation Logs <span class="title-count">({{ total }})</span>{% endblock %}
+
+{% block head_extra %}
+<style>
+  .mod-thumb {
+    width: 80px;
+    height: 60px;
+    border-radius: 6px;
+    object-fit: cover;
+    border: 1px solid var(--gx-border, #334155);
+    cursor: pointer;
+    transition: transform 0.2s;
+  }
+  .mod-thumb:hover {
+    transform: scale(1.08);
+  }
+  .badge-action {
+    display: inline-block;
+    padding: 0.25rem 0.6rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+  .badge-warning {
+    background: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
+  }
+  .badge-ban {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+  }
+  .confidence-bar-bg {
+    width: 100px;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+    overflow: hidden;
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 0.5rem;
+  }
+  .confidence-bar-fill {
+    height: 100%;
+    background: var(--accent, #8b5cf6);
+  }
+  .confidence-high {
+    background: #ef4444;
+  }
+  /* Overlay modal for full-size viewing */
+  .mod-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    z-index: 9999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+  }
+  .mod-overlay img {
+    max-width: 90%;
+    max-height: 90%;
+    border-radius: 12px;
+    box-shadow: 0 0 25px rgba(0, 0, 0, 0.5);
+  }
+  .mod-overlay-close {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    color: white;
+    font-size: 2rem;
+    cursor: pointer;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-body no-pad">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>User</th>
+          <th>Type</th>
+          <th>Confidence</th>
+          <th>Action</th>
+          <th>Violating Frame</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for log in logs %}
+        <tr>
+          <td>{{ log.created_at|date:"Y-m-d H:i:s" }}</td>
+          <td>
+            <a href="{% url 'core_admin:user_detail' log.user.id %}" class="text-link" style="font-weight: 600;">
+              {{ log.user.username }}
+            </a>
+          </td>
+          <td>
+            <span class="text-muted" style="font-size: 0.85rem;">{{ log.get_content_type_display }}</span>
+          </td>
+          <td>
+            <span class="confidence-bar-bg">
+              <span class="confidence-bar-fill {% if log.confidence > 0.8 %}confidence-high{% endif %}" style="width: {% widthratio log.confidence 1 100 %}%"></span>
+            </span>
+            <span style="font-size: 0.85rem; font-weight: 600;">{{ log.confidence|floatformat:2 }}</span>
+          </td>
+          <td>
+            {% if log.action_taken == 'BAN' %}
+              <span class="badge-action badge-ban">Banned</span>
+            {% else %}
+              <span class="badge-action badge-warning">Warning</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if log.image_path %}
+              <img src="/media/{{ log.image_path }}" class="mod-thumb" alt="Flagged frame" onclick="showBigImage('/media/{{ log.image_path }}')" />
+            {% else %}
+              <span class="text-muted" style="font-size: 0.85rem;">No Image</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="empty-text">No content moderation logs recorded yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% include "core_admin/includes/pagination.html" with page=logs %}
+
+<!-- Image overlay modal -->
+<div id="modOverlay" class="mod-overlay" onclick="hideBigImage()">
+  <span class="mod-overlay-close">&times;</span>
+  <img id="modOverlayImg" src="" alt="Violation Fullscreen" />
+</div>
+
+<script>
+function showBigImage(src) {
+  const overlay = document.getElementById('modOverlay');
+  const img = document.getElementById('modOverlayImg');
+  img.src = src;
+  overlay.style.display = 'flex';
+}
+
+function hideBigImage() {
+  document.getElementById('modOverlay').style.display = 'none';
+}
+</script>
+{% endblock %}

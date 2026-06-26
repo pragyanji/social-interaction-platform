@@ -51,7 +51,15 @@
         <div class="aura-breakdown">
           <div class="aura-row"><span>Rating Component</span><span class="text-green">+{{ aura.rating_component }}</span></div>
           <div class="aura-row"><span>Streak Bonus</span><span class="text-green">+{{ aura.streak_component }}</span></div>
-          <div class="aura-row"><span>Report Penalty</span><span class="text-red">-{{ aura.report_penalty }}</span></div>
+          {% if aura.manual_report_penalty > 0 %}
+            <div class="aura-row"><span>Report Penalty (Manual)</span><span class="text-red">-{{ aura.manual_report_penalty }}</span></div>
+          {% endif %}
+          {% if aura.warning_penalty > 0 %}
+            <div class="aura-row"><span>Warning Penalty (Auto-mod)</span><span class="text-red">-{{ aura.warning_penalty }}</span></div>
+          {% endif %}
+          {% if aura.manual_report_penalty == 0 and aura.warning_penalty == 0 %}
+            <div class="aura-row"><span>Penalties</span><span class="text-red">-0</span></div>
+          {% endif %}
           <div class="aura-row aura-total"><span>Total</span><span>{{ aura.aura_points }}</span></div>
         </div>
       </div>
@@ -89,6 +97,25 @@
             </button>
           </form>
         {% endif %}
+      </div>
+    </div>
+
+    <!-- Send Notification -->
+    <div class="card">
+      <div class="card-header"><h2><i class="fas fa-envelope"></i> Send Notification</h2></div>
+      <div class="card-body">
+        <form method="post" action="{% url 'core_admin:send_user_notification' profile_user.id %}">
+          {% csrf_token %}
+          <div class="form-group" style="margin-bottom: 12px;">
+            <input type="text" name="title" placeholder="Notification Title..." class="form-input" required />
+          </div>
+          <div class="form-group" style="margin-bottom: 12px;">
+            <textarea name="message" placeholder="Message content..." class="form-input" rows="3" style="resize: vertical; height: auto;" required></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary" style="border: none; border-radius: 6px; padding: 8px 16px; cursor: pointer; font-weight: 600;">
+            <i class="fas fa-paper-plane"></i> Send Notification
+          </button>
+        </form>
       </div>
     </div>
 
