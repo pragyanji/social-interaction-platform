@@ -27,6 +27,14 @@ urlpatterns = [
     path("api/messages/<int:user_id>/", views.get_message_history, name="message_history"),
     path("api/messages/<int:user_id>/read/", views.mark_messages_as_read, name="mark_read"),
     path("api/aura/leaderboard/", views.aura_leaderboard, name="aura_leaderboard"),
+    path("terms/", views.terms_conditions, name="terms_conditions"),
+    path("notifications/", views.notifications_view, name="notifications"),
+    path("banned/", views.banned_view, name="banned_view"),
+    path("api/moderate-frame/", views.moderate_frame, name="moderate_frame"),
+    path("api/notifications/mark-read/", views.mark_notifications_read, name="mark_notifications_read"),
+    path("api/notifications/delete/<int:notif_id>/", views.delete_notification, name="delete_notification"),
+    path("api/notifications/delete-all/", views.delete_all_notifications, name="delete_all_notifications"),
+    path("api/check-status/", views.check_user_status, name="check_user_status"),
 ]
 
 if settings.DEBUG:

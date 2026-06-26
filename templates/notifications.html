@@ -1,0 +1,684 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Notifications · ChatSphere{% endblock %}
+
+{% block head_extra %}
+<style>
+.notif-container {
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 1rem;
+}
+
+.notif-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.notif-title {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: var(--text-primary, #f1f5f9);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.btn-mark-read {
+    background: var(--surface, #1e293b);
+    border: 1px solid var(--border, #334155);
+    color: var(--text-secondary, #cbd5e1);
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.2s;
+}
+
+.btn-mark-read:hover:not(:disabled) {
+    background: var(--border, #334155);
+    color: var(--text-primary, #f1f5f9);
+}
+
+.btn-mark-read:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.notif-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.notif-card {
+    background: var(--surface, #1e293b);
+    border: 1px solid var(--border, #334155);
+    border-radius: 12px;
+    padding: 1.25rem;
+    display: flex;
+    gap: 1.25rem;
+    align-items: center;
+    transition: transform 0.2s, border-color 0.2s;
+}
+
+.notif-card.unread {
+    border-left: 4px solid var(--accent, #8b5cf6);
+    background: rgba(139, 92, 246, 0.04);
+}
+
+.notif-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--accent, #8b5cf6);
+}
+
+.notif-icon-wrap {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(139, 92, 246, 0.1);
+    color: var(--accent, #8b5cf6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+.notif-card.warning-type .notif-icon-wrap {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--danger, #ef4444);
+}
+
+.notif-content {
+    flex: 1;
+}
+
+.notif-subject {
+    color: var(--text-primary, #f1f5f9);
+    font-weight: 600;
+    font-size: 1.05rem;
+    margin: 0 0 0.4rem 0;
+}
+
+.notif-message {
+    color: var(--text-secondary, #cbd5e1);
+    font-size: 0.925rem;
+    line-height: 1.5;
+    margin: 0 0 0.75rem 0;
+}
+
+.notif-time {
+    font-size: 0.8rem;
+    color: var(--text-muted, #64748b);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.notif-media {
+    width: 120px;
+    height: 90px;
+    border-radius: 8px;
+    object-fit: cover;
+    border: 1px solid var(--border, #334155);
+    cursor: pointer;
+    transition: transform 0.2s;
+    flex-shrink: 0;
+}
+
+.notif-media:hover {
+    transform: scale(1.04);
+}
+
+.notif-empty {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: var(--surface, #1e293b);
+    border: 1px solid var(--border, #334155);
+    border-radius: 16px;
+}
+
+.notif-empty i {
+    font-size: 3rem;
+    color: var(--text-muted, #64748b);
+    margin-bottom: 1rem;
+}
+
+.notif-empty p {
+    color: var(--text-secondary, #cbd5e1);
+    font-size: 1.05rem;
+    margin: 0;
+}
+
+/* Image overlay modal styles */
+.img-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.95);
+    z-index: 9999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
+.img-overlay img {
+    max-width: 90%;
+    max-height: 90%;
+    border-radius: 12px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.6);
+}
+
+.img-overlay-close {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    color: white;
+    font-size: 2rem;
+    cursor: pointer;
+}
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 2rem;
+}
+
+.pagination-link {
+    background: var(--surface, #1e293b);
+    border: 1px solid var(--border, #334155);
+    color: var(--text-secondary, #cbd5e1);
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.pagination-link:hover {
+    border-color: var(--accent, #8b5cf6);
+    color: var(--text-primary, #f1f5f9);
+}
+
+.pagination-current {
+    background: var(--accent, #8b5cf6);
+    color: white;
+    border: 1px solid var(--accent, #8b5cf6);
+}
+
+.btn-delete-all {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid var(--danger, #ef4444);
+    color: var(--danger, #ef4444);
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.2s;
+}
+
+.btn-delete-all:hover:not(:disabled) {
+    background: var(--danger, #ef4444);
+    color: white;
+}
+
+.btn-delete-all:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-delete-single {
+    background: rgba(239, 68, 68, 0.03);
+    border: 1px solid var(--border, #334155);
+    color: var(--text-muted, #64748b);
+    cursor: pointer;
+    padding: 0.6rem;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    width: 40px;
+    height: 40px;
+    align-self: center;
+    flex-shrink: 0;
+    margin-left: 0.5rem;
+    font-size: 1.05rem;
+}
+
+.btn-delete-single:hover {
+    background: rgba(239, 68, 68, 0.12);
+    border-color: var(--danger, #ef4444);
+    color: var(--danger, #ef4444);
+}
+
+/* Custom Confirmation Modal Styles */
+.confirm-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(15, 23, 42, 0.8);
+    backdrop-filter: blur(8px);
+    z-index: 10000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+}
+
+.confirm-modal-overlay.show {
+    display: flex;
+    opacity: 1;
+}
+
+.confirm-modal-content {
+    background: var(--surface, #1e293b);
+    border: 1px solid var(--border, #334155);
+    border-radius: 16px;
+    padding: 2rem;
+    max-width: 400px;
+    width: 90%;
+    text-align: center;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.4);
+    transform: scale(0.9);
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.confirm-modal-overlay.show .confirm-modal-content {
+    transform: scale(1);
+}
+
+.confirm-modal-icon {
+    width: 56px;
+    height: 56px;
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--danger, #ef4444);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    margin: 0 auto 1.25rem auto;
+}
+
+.confirm-modal-title {
+    color: var(--text-primary, #f1f5f9);
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin: 0 0 0.5rem 0;
+}
+
+.confirm-modal-message {
+    color: var(--text-secondary, #cbd5e1);
+    font-size: 0.95rem;
+    line-height: 1.5;
+    margin: 0 0 1.5rem 0;
+}
+
+.confirm-modal-actions {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: center;
+}
+
+.btn-confirm-cancel {
+    background: transparent;
+    border: 1px solid var(--border, #334155);
+    color: var(--text-secondary, #cbd5e1);
+    padding: 0.6rem 1.25rem;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+    flex: 1;
+}
+
+.btn-confirm-cancel:hover {
+    background: var(--border, #334155);
+    color: var(--text-primary, #f1f5f9);
+}
+
+.btn-confirm-delete {
+    background: var(--danger, #ef4444);
+    border: 1px solid var(--danger, #ef4444);
+    color: white;
+    padding: 0.6rem 1.25rem;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+    flex: 1;
+}
+
+.btn-confirm-delete:hover {
+    background: #dc2626;
+    border-color: #dc2626;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="notif-container">
+    <div class="notif-header">
+        <h1 class="notif-title">
+            <i class="fas fa-bell"></i> Notifications
+        </h1>
+        <div style="display: flex; gap: 0.75rem;">
+            {% if unread_notifications_count > 0 %}
+            <button class="btn-mark-read" id="markReadBtn" onclick="markAllAsRead()">
+                <i class="fas fa-check-double"></i> Mark all as read
+            </button>
+            {% endif %}
+            {% if notifications %}
+            <button class="btn-delete-all" id="deleteAllBtn" onclick="deleteAllNotifications()">
+                <i class="fas fa-trash-can"></i> Delete all
+            </button>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="notif-list" id="notifList">
+        {% if notifications %}
+            {% for notif in notifications %}
+            <div class="notif-card {% if not notif.is_read %}unread{% endif %} {% if 'Warning' in notif.title or 'Banned' in notif.title %}warning-type{% endif %}" id="notif-card-{{ notif.id }}">
+                <div class="notif-icon-wrap">
+                    {% if 'Warning' in notif.title or 'Banned' in notif.title %}
+                        <i class="fas fa-triangle-exclamation"></i>
+                    {% else %}
+                        <i class="fas fa-envelope-open-text"></i>
+                    {% endif %}
+                </div>
+                
+                <div class="notif-content">
+                    <h3 class="notif-subject">{{ notif.title }}</h3>
+                    <p class="notif-message">{{ notif.message }}</p>
+                    <div class="notif-time">
+                        <i class="far fa-clock"></i> {{ notif.created_at|date:"F j, Y, g:i a" }}
+                    </div>
+                </div>
+
+                {% if notif.image %}
+                    <img src="{{ notif.image.url }}" alt="Notification Media" class="notif-media" onclick="openOverlay('{{ notif.image.url }}')" />
+                {% endif %}
+
+                <button class="btn-delete-single" onclick="deleteNotification({{ notif.id }})" title="Delete notification">
+                    <i class="fas fa-trash-can"></i>
+                </button>
+            </div>
+            {% endfor %}
+
+            {% if notifications.has_other_pages %}
+            <div class="pagination">
+                {% if notifications.has_previous %}
+                    <a href="?page={{ notifications.previous_page_number }}" class="pagination-link">&laquo;</a>
+                {% endif %}
+                
+                {% for num in notifications.paginator.page_range %}
+                    {% if notifications.number == num %}
+                        <span class="pagination-link pagination-current">{{ num }}</span>
+                    {% elif num > notifications.number|add:'-3' and num < notifications.number|add:'3' %}
+                        <a href="?page={{ num }}" class="pagination-link">{{ num }}</a>
+                    {% endif %}
+                {% endfor %}
+
+                {% if notifications.has_next %}
+                    <a href="?page={{ notifications.next_page_number }}" class="pagination-link">&raquo;</a>
+                {% endif %}
+            </div>
+            {% endif %}
+
+        {% else %}
+            <div class="notif-empty">
+                <i class="far fa-bell-slash"></i>
+                <p>You have no notifications yet.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Image Viewer Modal Overlay -->
+<div id="imageOverlay" class="img-overlay" onclick="closeOverlay()">
+    <span class="img-overlay-close">&times;</span>
+    <img id="overlayImage" src="" alt="Expanded Proof" />
+</div>
+
+<!-- Custom Confirmation Modal -->
+<div id="confirmModal" class="confirm-modal-overlay">
+    <div class="confirm-modal-content">
+        <div class="confirm-modal-icon">
+            <i class="fas fa-trash-can"></i>
+        </div>
+        <h3 class="confirm-modal-title">Delete Notification</h3>
+        <p class="confirm-modal-message">Are you sure you want to delete this notification? This action cannot be undone.</p>
+        <div class="confirm-modal-actions">
+            <button class="btn-confirm-cancel" onclick="closeConfirmModal()">Cancel</button>
+            <button class="btn-confirm-delete" id="confirmDeleteBtn">Delete</button>
+        </div>
+    </div>
+</div>
+
+<script>
+function openOverlay(src) {
+    const overlay = document.getElementById('imageOverlay');
+    const img = document.getElementById('overlayImage');
+    img.src = src;
+    overlay.style.display = 'flex';
+}
+
+function closeOverlay() {
+    document.getElementById('imageOverlay').style.display = 'none';
+}
+
+function getCsrfToken() {
+    return document.cookie.split('; ').find(row => row.startsWith('csrftoken='))?.split('=')[1];
+}
+
+async function markAllAsRead() {
+    const btn = document.getElementById('markReadBtn');
+    if (!btn) return;
+    
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Marking...';
+    
+    try {
+        const response = await fetch("{% url 'mark_notifications_read' %}", {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCsrfToken(),
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            // Remove unread indicators dynamically
+            document.querySelectorAll('.notif-card.unread').forEach(card => {
+                card.classList.remove('unread');
+            });
+            // Hide badge globally
+            const badge = document.querySelector('.notification-badge');
+            if (badge) badge.remove();
+            
+            btn.remove();
+        } else {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-check-double"></i> Mark all as read';
+            alert('Failed to mark notifications as read.');
+        }
+    } catch (e) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-check-double"></i> Mark all as read';
+        console.error(e);
+    }
+}
+
+let deleteCallback = null;
+
+function showConfirmModal(title, message, onConfirm) {
+    const modal = document.getElementById('confirmModal');
+    const modalTitle = modal.querySelector('.confirm-modal-title');
+    const modalMessage = modal.querySelector('.confirm-modal-message');
+    const deleteBtn = document.getElementById('confirmDeleteBtn');
+    
+    modalTitle.textContent = title;
+    modalMessage.textContent = message;
+    
+    modal.style.display = 'flex';
+    // Force reflow
+    modal.offsetHeight;
+    modal.classList.add('show');
+    
+    deleteCallback = onConfirm;
+}
+
+function closeConfirmModal() {
+    const modal = document.getElementById('confirmModal');
+    modal.classList.remove('show');
+    setTimeout(() => {
+        modal.style.display = 'none';
+        deleteCallback = null;
+    }, 250);
+}
+
+document.getElementById('confirmDeleteBtn').addEventListener('click', () => {
+    if (deleteCallback) {
+        deleteCallback();
+    }
+    closeConfirmModal();
+});
+
+async function deleteNotification(id) {
+    showConfirmModal(
+        'Delete Notification',
+        'Are you sure you want to delete this notification? This action cannot be undone.',
+        async () => {
+            try {
+                const url = `{% url 'delete_notification' 0 %}`.replace('0', id);
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': getCsrfToken(),
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    const card = document.getElementById(`notif-card-${id}`);
+                    if (card) {
+                        card.style.opacity = '0';
+                        card.style.transform = 'scale(0.9)';
+                        card.style.transition = 'all 0.3s ease';
+                        setTimeout(() => {
+                            card.remove();
+                            // If no notification left, show empty state
+                            const list = document.getElementById('notifList');
+                            if (list && list.querySelectorAll('.notif-card').length === 0) {
+                                list.innerHTML = `
+                                    <div class="notif-empty">
+                                        <i class="far fa-bell-slash"></i>
+                                        <p>You have no notifications yet.</p>
+                                    </div>
+                                `;
+                                const deleteAllBtn = document.getElementById('deleteAllBtn');
+                                if (deleteAllBtn) deleteAllBtn.remove();
+                                const markReadBtn = document.getElementById('markReadBtn');
+                                if (markReadBtn) markReadBtn.remove();
+                                // Hide badge globally
+                                const badge = document.querySelector('.notification-badge');
+                                if (badge) badge.remove();
+                            }
+                        }, 300);
+                    }
+                } else {
+                    alert('Failed to delete notification.');
+                }
+            } catch (e) {
+                console.error(e);
+                alert('An error occurred.');
+            }
+        }
+    );
+}
+
+async function deleteAllNotifications() {
+    showConfirmModal(
+        'Delete All Notifications',
+        'Are you sure you want to delete all notifications? This action cannot be undone and all alerts will be cleared.',
+        async () => {
+            const btn = document.getElementById('deleteAllBtn');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
+            }
+            
+            try {
+                const response = await fetch("{% url 'delete_all_notifications' %}", {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': getCsrfToken(),
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    const list = document.getElementById('notifList');
+                    if (list) {
+                        list.style.opacity = '0';
+                        list.style.transition = 'opacity 0.3s ease';
+                        setTimeout(() => {
+                            list.innerHTML = `
+                                <div class="notif-empty">
+                                    <i class="far fa-bell-slash"></i>
+                                    <p>You have no notifications yet.</p>
+                                </div>
+                            `;
+                            list.style.opacity = '1';
+                            
+                            const deleteAllBtn = document.getElementById('deleteAllBtn');
+                            if (deleteAllBtn) deleteAllBtn.remove();
+                            const markReadBtn = document.getElementById('markReadBtn');
+                            if (markReadBtn) markReadBtn.remove();
+                            
+                            // Hide badge globally
+                            const badge = document.querySelector('.notification-badge');
+                            if (badge) badge.remove();
+                        }, 300);
+                    }
+                } else {
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fas fa-trash-can"></i> Delete all';
+                    }
+                    alert('Failed to delete notifications.');
+                }
+            } catch (e) {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-trash-can"></i> Delete all';
+                }
+                console.error(e);
+                alert('An error occurred.');
+            }
+        }
+    );
+}
+</script>
+{% endblock %}

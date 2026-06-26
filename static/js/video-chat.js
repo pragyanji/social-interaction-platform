@@ -1,10 +1,12 @@
 // Firebase Setup
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getDatabase, ref, set, get, onValue, push, remove, update, serverTimestamp, onDisconnect } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
+import { getDatabase, ref, set, get, onValue, push, remove, update, serverTimestamp, onDisconnect, runTransaction } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
 import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
 // Debug flag
-const DEBUG = true;
+// const DEBUG = true;
+const DEBUG = false;
+
 function log(...args) { if (DEBUG) console.log('[ChatSphere]', ...args); }
 
 /* ──────────────────────────────────────────────
@@ -90,10 +92,40 @@ async function checkMediaPermissions() {
 const servers = {
     iceServers: [
         { urls: ['stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302'] },
+        // NOTE: For video/audio to work across different networks (e.g. Wi-Fi to Cellular),
+        // you MUST configure a TURN server below. STUN is not sufficient for symmetric NATs.
+        // You can register for free TURN credentials from Metered.ca, Twilio, or Xirsys.
+        /*
+        {
+            urls: ['turn:your-turn-server.com:3478'],
+            username: 'your-username',
+            credential: 'your-password'
+        }
+        */
     ],
     iceCandidatePoolSize: 10,
 };
-let pc = new RTCPeerConnection(servers);
+
+function createPeerConnection() {
+    const peerConnection = new RTCPeerConnection(servers);
+
+    peerConnection.onconnectionstatechange = () => {
+        log("Connection state:", peerConnection.connectionState);
+        updateStatus("Connection: " + peerConnection.connectionState);
+    };
+
+    peerConnection.oniceconnectionstatechange = () => {
+        log("ICE state:", peerConnection.iceConnectionState);
+    };
+
+    peerConnection.onsignalingstatechange = () => {
+        log("Signaling state:", peerConnection.signalingState);
+    };
+
+    return peerConnection;
+}
+
+let pc = createPeerConnection();
 
 /* ──────────────────────────────────────────────
    APP STATE
@@ -102,14 +134,257 @@ let localStream = null;
 let remoteStream = null;
 let currentRoomId = null;
 let userId = null;
+const sessionId = 'session_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
 let djangoUserId = window.DJANGO_USER_ID || "";
 let peerDjangoUserId = null;
 let isAudioEnabled = true;
 let isVideoEnabled = true;
 let roomListener = null;
 let isReconnecting = false;
+let reportedPeersToday = new Set();
+let ratedPeersToday = new Set();
+let isMatching = false;
+let lastPeerDjangoId = null;
+let lastPeerSessionId = null;
 
 log('Django User ID:', djangoUserId);
+
+/* ──────────────────────────────────────────────
+   CONTENT MODERATION STATE & HELPERS
+   ────────────────────────────────────────────── */
+let nsfwModel = null;
+let moderationInterval = null;
+const SCAN_INTERVAL = 3000; // 3 seconds
+
+async function loadNSFWModel() {
+    try {
+        // Wait for TF.js and NSFWJS CDN scripts to fully load
+        log('Waiting for TF.js + NSFWJS CDN scripts...');
+        if (window.__nsfwReady) {
+            await window.__nsfwReady;
+        }
+        
+        if (typeof tf === 'undefined') {
+            console.error('TensorFlow.js is not available on the page. Model loading aborted.');
+            return;
+        }
+        if (typeof nsfwjs === 'undefined') {
+            console.error('NSFWJS library is not available on the page. Model loading aborted.');
+            return;
+        }
+        
+        log('TF.js version:', tf.version ? tf.version.tfjs : (tf.version_core || 'unknown'));
+        log('Forcing CPU backend for precision consistency (safeguard against WebGL Apple Silicon bugs)...');
+        await tf.setBackend('cpu');
+        await tf.ready();
+        log('TF.js backend ready:', tf.getBackend());
+        
+        log('Loading NSFWJS model (MobileNetV2 from CDN)...');
+        nsfwModel = await nsfwjs.load('https://cdn.jsdelivr.net/gh/infinitered/nsfwjs@v2.4.1/example/nsfw_demo/public/quant_nsfw_mobilenet/');
+        log('✅ NSFW model loaded successfully. Model object:', nsfwModel);
+    } catch (e) {
+        console.error('NSFWJS Model load failed:', e);
+        console.error('Stack trace:', e.stack);
+    }
+}
+
+function startModeration() {
+    if (moderationInterval) return;
+    let lastFrameHash = null;
+    
+    // Add debug visualizer if DEBUG is active
+    let debugCanvas = document.getElementById('nsfwDebugCanvas');
+    if (!debugCanvas && DEBUG) {
+        debugCanvas = document.createElement('canvas');
+        debugCanvas.id = 'nsfwDebugCanvas';
+        debugCanvas.style.position = 'fixed';
+        debugCanvas.style.bottom = '10px';
+        debugCanvas.style.left = '10px';
+        debugCanvas.style.width = '112px';
+        debugCanvas.style.height = '112px';
+        debugCanvas.style.zIndex = '9999';
+        debugCanvas.style.border = '2px solid var(--danger, #ef4444)';
+        debugCanvas.style.borderRadius = '6px';
+        debugCanvas.style.backgroundColor = 'black';
+        document.body.appendChild(debugCanvas);
+        
+        // Add a small label
+        const debugLabel = document.createElement('div');
+        debugLabel.id = 'nsfwDebugLabel';
+        debugLabel.innerText = 'NSFW Scan Frame';
+        debugLabel.style.position = 'fixed';
+        debugLabel.style.bottom = '125px';
+        debugLabel.style.left = '10px';
+        debugLabel.style.zIndex = '9999';
+        debugLabel.style.background = 'rgba(0,0,0,0.8)';
+        debugLabel.style.color = 'white';
+        debugLabel.style.fontSize = '10px';
+        debugLabel.style.padding = '2px 6px';
+        debugLabel.style.borderRadius = '4px';
+        document.body.appendChild(debugLabel);
+    }
+    
+    log('🔍 Starting moderation loop. Current state:');
+    log('  - nsfwModel:', nsfwModel ? 'LOADED' : 'NOT LOADED');
+    log('  - remoteVideo element:', remoteVideo ? 'FOUND' : 'MISSING');
+    log('  - peerDjangoUserId:', peerDjangoUserId || 'NOT SET');
+    
+    moderationInterval = setInterval(async () => {
+        if (!remoteVideo) {
+            log('⏭️ Moderation skip: remoteVideo element not found.');
+            return;
+        }
+        
+        const vw = remoteVideo.videoWidth;
+        const vh = remoteVideo.videoHeight;
+        const rs = remoteVideo.readyState;
+        
+        // readyState >= 1 (HAVE_METADATA) is enough, but also check that video dimensions are valid
+        if (rs < 1 || vw === 0 || vh === 0) {
+            log(`⏭️ Moderation skip: video not rendering yet (readyState=${rs}, ${vw}x${vh}).`);
+            return;
+        }
+        if (!nsfwModel) {
+            log('⏭️ Moderation skip: NSFWJS model not loaded yet.');
+            return;
+        }
+        if (!peerDjangoUserId) {
+            log('⏭️ Moderation skip: peerDjangoUserId not resolved.');
+            return;
+        }
+        
+        // Capture the remote video frame at 224x224 (NSFWJS expected input size)
+        log('📸 Attempting to capture remote video frame...');
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = 224;
+        canvas.height = 224;
+        ctx.drawImage(remoteVideo, 0, 0, 224, 224);
+        log(`📸 Captured 224x224 frame from remoteVideo (src dimensions: ${vw}x${vh}, readyState: ${rs})`);
+        
+        // Update debug visualizer
+        if (debugCanvas) {
+            debugCanvas.width = 224;
+            debugCanvas.height = 224;
+            const debugCtx = debugCanvas.getContext('2d');
+            debugCtx.drawImage(canvas, 0, 0);
+        }
+        
+        // Quick sanity check: is the canvas actually drawing anything?
+        const pixelCheck = ctx.getImageData(112, 112, 1, 1).data;
+        const isBlank = pixelCheck[0] === 0 && pixelCheck[1] === 0 && pixelCheck[2] === 0 && pixelCheck[3] === 0;
+        if (isBlank) {
+            log('⏭️ Moderation skip: captured frame is blank (all black). Remote stream may not have video data.');
+            return;
+        }
+
+        // Dynamic freeze check: has the frame content changed?
+        // Sample pixels across a 3x3 grid to detect changes
+        let currentFrameHash = 0;
+        const sampleCoords = [56, 112, 168];
+        for (const x of sampleCoords) {
+            for (const y of sampleCoords) {
+                const pixel = ctx.getImageData(x, y, 1, 1).data;
+                currentFrameHash += pixel[0] + pixel[1] + pixel[2] + pixel[3];
+            }
+        }
+        
+        if (lastFrameHash !== null && currentFrameHash === lastFrameHash) {
+            log('⏭️ Moderation skip: frame is 100% identical to the previous one (frozen/static stream).');
+            return;
+        }
+        lastFrameHash = currentFrameHash;
+        
+        try {
+            log('🔬 Classifying remote video frame...');
+            const predictions = await nsfwModel.classify(canvas);
+            log('📊 Classification results:', JSON.stringify(predictions));
+            
+            const porn = predictions.find(p => p.className === 'Porn')?.probability || 0;
+            const hentai = predictions.find(p => p.className === 'Hentai')?.probability || 0;
+            const combinedScore = Math.max(porn, hentai);
+            
+            log(`   Porn: ${(porn * 100).toFixed(1)}%, Hentai: ${(hentai * 100).toFixed(1)}%, Max: ${(combinedScore * 100).toFixed(1)}%`);
+            
+            if (combinedScore > 0.70) {
+                log('🚨 Inappropriate content detected client-side! Score:', combinedScore);
+                await handleNSFWViolation(combinedScore, canvas);
+            }
+        } catch (e) {
+            console.error('Classification error:', e);
+        }
+    }, SCAN_INTERVAL);
+    log('✅ Automated moderation scanning started (interval: ' + SCAN_INTERVAL + 'ms)');
+}
+
+function stopModeration() {
+    if (moderationInterval) {
+        clearInterval(moderationInterval);
+        moderationInterval = null;
+        log('Automated moderation scanning stopped');
+    }
+    const overlay = document.getElementById('nsfwBlurOverlay');
+    if (overlay) overlay.classList.add('hidden');
+    
+    // Clean up debug visualizer
+    const debugCanvas = document.getElementById('nsfwDebugCanvas');
+    const debugLabel = document.getElementById('nsfwDebugLabel');
+    if (debugCanvas) debugCanvas.remove();
+    if (debugLabel) debugLabel.remove();
+}
+
+async function handleNSFWViolation(confidence, canvas) {
+    // 1. Blur the video instantly client-side
+    const overlay = document.getElementById('nsfwBlurOverlay');
+    if (overlay) overlay.classList.remove('hidden');
+    
+    showToast('⚠️ Inappropriate content detected. Verifying...', 'warning', 4000);
+    
+    // 2. Extract base64 image data (low-quality JPEG to minimize payload size)
+    const frameData = canvas.toDataURL('image/jpeg', 0.6);
+    
+    // 3. Post to the frame moderation endpoint for server-side verification
+    try {
+        const response = await fetch('/api/moderate-frame/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
+            },
+            body: JSON.stringify({
+                frame: frameData,
+                user_id: peerDjangoUserId,
+                confidence: confidence
+            })
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            if (result.status === 'nsfw') {
+                if (result.action === 'ban') {
+                    showToast('🔴 Stranger has been permanently banned for terms violation.', 'error', 5000);
+                    await cleanup();
+                    showPreChat();
+                } else {
+                    showToast('⚠️ Stranger flagged for NSFW video violation. Warning issued.', 'warning', 5000);
+                    // Skip stranger automatically
+                    setTimeout(async () => {
+                        updateStatus('Skipping violator...');
+                        await findNewChat();
+                    }, 2000);
+                }
+            } else {
+                log('Server verified frame as safe. Unblurring remote video.');
+                if (overlay) overlay.classList.add('hidden');
+            }
+        } else {
+            console.error('Server moderation validation failed');
+        }
+    } catch (err) {
+        console.error('Moderation request failed:', err);
+    }
+}
+
 
 /* ──────────────────────────────────────────────
    TOOLBAR AUTO-HIDE
@@ -194,55 +469,7 @@ async function startChat() {
     }
 }
 
-/* ──────────────────────────────────────────────
-   CONNECTION STATE LISTENERS
-   ────────────────────────────────────────────── */
-pc.onconnectionstatechange = () => {
-    log("Connection state:", pc.connectionState);
-    updateStatus("Connection: " + pc.connectionState);
-};
 
-pc.oniceconnectionstatechange = () => {
-    log("ICE state:", pc.iceConnectionState);
-};
-
-pc.onsignalingstatechange = () => {
-    log("Signaling state:", pc.signalingState);
-};
-
-/* ──────────────────────────────────────────────
-   PRESENCE SYSTEM
-   ────────────────────────────────────────────── */
-async function setupPresence() {
-    if (!userId) return;
-    try {
-        const presenceRef = ref(db, `presence/${userId}`);
-
-        async function updatePresence() {
-            await set(presenceRef, { online: true, lastSeen: Date.now() });
-        }
-
-        await updatePresence();
-        window.presenceInterval = setInterval(updatePresence, 30000);
-        onDisconnect(presenceRef).remove();
-
-        document.addEventListener('visibilitychange', async () => {
-            if (document.hidden) {
-                await update(presenceRef, { online: false, lastSeen: Date.now() });
-            } else {
-                await updatePresence();
-            }
-        });
-
-        window.addEventListener('beforeunload', () => {
-            navigator.sendBeacon && set(presenceRef, { online: false, lastSeen: Date.now() });
-        });
-
-        log('Presence tracking setup');
-    } catch (error) {
-        console.error('Presence error:', error);
-    }
-}
 
 function trackOnlineUsers() {
     const roomsRef = ref(db, 'rooms');
@@ -292,10 +519,6 @@ function trackWaitingUsers() {
     });
 }
 
-async function removePresence() {
-    if (!userId) return;
-    try { await remove(ref(db, `presence/${userId}`)); } catch (e) { /* ignore */ }
-}
 
 /* ──────────────────────────────────────────────
    ROOM MONITORING
@@ -313,13 +536,7 @@ function monitorRoomStatus() {
             isReconnecting = true;
             updateStatus('Stranger left. Finding new partner…');
 
-            if (roomListener) { roomListener(); roomListener = null; }
-
-            currentRoomId = null;
-
-            // Keep local camera alive, only stop remote
-            if (remoteStream) remoteStream.getTracks().forEach(t => t.stop());
-            if (pc) { pc.close(); pc = new RTCPeerConnection(servers); }
+            await cleanup(true); // keep local camera alive and clean up all signaling/UI state
 
             try {
                 await setupStreams();
@@ -340,13 +557,19 @@ function monitorRoomStatus() {
 async function cleanupAllStaleRooms() {
     try {
         const STALE_TIMEOUT = 120000;
+        const MAX_CALL_DURATION = 1800000; // 30 minutes
         const now = Date.now();
 
         for (const path of ['rooms', 'waiting_rooms']) {
             const snapshot = await get(ref(db, path));
             if (!snapshot.exists()) continue;
             for (const [id, room] of Object.entries(snapshot.val())) {
-                if ((room.createdAt && now - room.createdAt > STALE_TIMEOUT) || !room.createdAt) {
+                const isWaitingRoom = room.status === 'waiting' || path === 'waiting_rooms';
+                const isStaleWaiting = isWaitingRoom && room.createdAt && (now - room.createdAt > STALE_TIMEOUT);
+                const isStaleFull = room.status === 'full' && room.createdAt && (now - room.createdAt > MAX_CALL_DURATION);
+                const isCorrupt = !room.createdAt;
+
+                if (isStaleWaiting || isStaleFull || isCorrupt) {
                     await remove(ref(db, `${path}/${id}`));
                 }
             }
@@ -356,11 +579,34 @@ async function cleanupAllStaleRooms() {
     }
 }
 
+// Check status periodically to kick banned users instantly from active calls
+function startBanStatusHeartbeat() {
+    setInterval(async () => {
+        // Only run check if the user is actively in a call (has a currentRoomId)
+        if (!currentRoomId) return;
+
+        try {
+            const response = await fetch('/api/check-status/');
+            if (response.redirected && response.url.includes('/banned/')) {
+                window.location.href = response.url;
+            } else if (response.ok) {
+                const data = await response.json();
+                if (data.banned) {
+                    window.location.href = '/banned/';
+                }
+            }
+        } catch (err) {
+            console.error('Ban status check error:', err);
+        }
+    }, 15000);
+}
+
 /* ──────────────────────────────────────────────
    INITIALIZE
    ────────────────────────────────────────────── */
 async function initialize() {
     log('Initializing');
+    startBanStatusHeartbeat();
     try {
         if (!window.FIREBASE_CONFIG) throw new Error('Firebase config not found');
 
@@ -384,7 +630,7 @@ async function initialize() {
             startButton.disabled = false;
             updateStatus('Ready — click Start Chat to begin!');
 
-            try { await setupPresence(); } catch (e) { /* non-fatal */ }
+
         } else {
             userId = null;
             startButton.disabled = true;
@@ -404,16 +650,17 @@ const setupStreams = async () => {
             localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
         }
 
-        remoteStream = new MediaStream();
-
         localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
 
         pc.ontrack = (event) => {
-            event.streams[0].getTracks().forEach(track => remoteStream.addTrack(track));
+            log('pc.ontrack: remote stream received', event.streams[0]);
+            remoteStream = event.streams[0];
+            remoteVideo.srcObject = remoteStream;
+            remoteVideo.play().catch(e => console.error("Error playing remote video:", e));
         };
 
         localVideo.srcObject = localStream;
-        remoteVideo.srcObject = remoteStream;
+        localVideo.play().catch(e => console.error("Error playing local video:", e));
 
         // Switch to in-chat view
         showInChat();
@@ -437,7 +684,7 @@ async function cleanupRooms() {
         const snapshot = await get(ref(db, path));
         if (!snapshot.exists()) continue;
         for (const [key, room] of Object.entries(snapshot.val())) {
-            if (room.creatorId === userId || room.joinerId === userId) {
+            if (room.creatorId === sessionId || room.joinerId === sessionId) {
                 await remove(ref(db, `${path}/${key}`));
             }
         }
@@ -448,6 +695,11 @@ async function cleanupRooms() {
    FIND OR CREATE ROOM
    ────────────────────────────────────────────── */
 async function findOrCreateRoom() {
+    if (isMatching) {
+        log('findOrCreateRoom already in progress, ignoring duplicate call.');
+        return;
+    }
+    isMatching = true;
     try {
         updateStatus('Looking for a stranger…');
         loadingSpinner.classList.remove('hidden');
@@ -461,32 +713,67 @@ async function findOrCreateRoom() {
 
         if (waitingRooms.exists()) {
             const rooms = waitingRooms.val();
-            const availableRoom = Object.entries(rooms).find(([_, room]) => room.creatorId !== userId);
+            // Filter rooms where we aren't the creator and exclude immediate previous peer
+            const candidateRooms = Object.entries(rooms)
+                .filter(([_, room]) => {
+                    const isSelf = room.creatorId === sessionId || (djangoUserId && room.creatorDjangoId === djangoUserId);
+                    const isLastPeer = room.creatorId === lastPeerSessionId || (lastPeerDjangoId && room.creatorDjangoId === lastPeerDjangoId);
+                    return !isSelf && !isLastPeer;
+                })
+                .sort((a, b) => (a[1].createdAt || 0) - (b[1].createdAt || 0));
 
-            if (availableRoom) {
-                const [roomId, roomData] = availableRoom;
+            for (const [roomId, rData] of candidateRooms) {
                 updateStatus('Found a stranger! Connecting…');
-                currentRoomId = roomId;
+                const roomRef = ref(db, `rooms/${roomId}`);
 
-                const existingRoomSnapshot = await get(ref(db, `rooms/${roomId}`));
-                const existingRoomData = existingRoomSnapshot.val();
+                try {
+                    // Claim the room atomically
+                    const transactionResult = await runTransaction(roomRef, (currentVal) => {
+                        if (currentVal) {
+                            if (currentVal.status === 'waiting') {
+                                currentVal.status = 'full';
+                                currentVal.joinerId = sessionId;
+                                currentVal.joinerDjangoId = djangoUserId;
+                                return currentVal;
+                            }
+                        }
+                        return; // abort transaction
+                    });
 
-                if (!existingRoomData) throw new Error('Room data not found.');
-                if (!existingRoomData.offer) throw new Error('No offer found in room.');
+                    if (transactionResult.committed) {
+                        currentRoomId = roomId;
 
-                peerDjangoUserId = existingRoomData.creatorDjangoId;
-                if (peerDjangoUserId) loadPeerStats(peerDjangoUserId);
+                        // We successfully claimed this room!
+                        // Remove from waiting_rooms
+                        await remove(ref(db, `waiting_rooms/${roomId}`));
 
-                await remove(ref(db, `waiting_rooms/${roomId}`));
-                await update(ref(db, `rooms/${roomId}`), {
-                    status: 'full',
-                    joinerId: userId,
-                    joinerDjangoId: djangoUserId
-                });
+                        // Register onDisconnect for the joiner to delete the room if they disconnect abruptly
+                        try {
+                            onDisconnect(roomRef).remove();
+                        } catch (disError) {
+                            log('onDisconnect setup error:', disError);
+                        }
 
-                updateStatus('Connecting to stranger…');
-                await startCallAsCallee();
-                return;
+                        const updatedRoomVal = transactionResult.snapshot.val();
+                        if (!updatedRoomVal || !updatedRoomVal.offer) {
+                            throw new Error('Room offer missing or corrupt.');
+                        }
+
+                        peerDjangoUserId = updatedRoomVal.creatorDjangoId;
+                        lastPeerDjangoId = peerDjangoUserId;
+                        lastPeerSessionId = updatedRoomVal.creatorId;
+
+                        if (peerDjangoUserId) loadPeerStats(peerDjangoUserId);
+
+                        updateStatus('Connecting to stranger…');
+                        await startCallAsCallee();
+                        return;
+                    } else {
+                        log(`Failed to claim room ${roomId}: already taken. Trying next candidate...`);
+                    }
+                } catch (txError) {
+                    console.error(`Transaction claim failed for room ${roomId}:`, txError);
+                }
             }
         }
 
@@ -501,7 +788,7 @@ async function findOrCreateRoom() {
         await pc.setLocalDescription(offerDescription);
 
         await set(newRoomRef, {
-            creatorId: userId,
+            creatorId: sessionId,
             creatorDjangoId: djangoUserId,
             status: 'waiting',
             createdAt: timestamp,
@@ -509,11 +796,19 @@ async function findOrCreateRoom() {
         });
 
         await set(ref(db, `waiting_rooms/${currentRoomId}`), {
-            creatorId: userId,
+            creatorId: sessionId,
             creatorDjangoId: djangoUserId,
             status: 'waiting',
             createdAt: timestamp
         });
+
+        // Set up onDisconnect for the room and waiting room refs
+        try {
+            onDisconnect(newRoomRef).remove();
+            onDisconnect(ref(db, `waiting_rooms/${currentRoomId}`)).remove();
+        } catch (disError) {
+            log('onDisconnect setup error:', disError);
+        }
 
         await startCallAsCaller();
     } catch (error) {
@@ -523,6 +818,8 @@ async function findOrCreateRoom() {
         nextButton.disabled = false;
         if (currentRoomId) await cleanup();
         throw error;
+    } finally {
+        isMatching = false;
     }
 }
 
@@ -538,23 +835,40 @@ const startCallAsCaller = async () => {
         }
     };
 
+    let hasSetRemoteDescription = false;
     onValue(roomRef, async (snapshot) => {
         const data = snapshot.val();
-        if (!pc.currentRemoteDescription && data?.answer) {
-            await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
+        if (!hasSetRemoteDescription && data?.answer) {
+            hasSetRemoteDescription = true;
+            try {
+                await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
 
-            peerDjangoUserId = data.joinerDjangoId;
-            if (peerDjangoUserId) loadPeerStats(peerDjangoUserId);
+                peerDjangoUserId = data.joinerDjangoId;
+                lastPeerDjangoId = peerDjangoUserId;
+                lastPeerSessionId = data.joinerId;
 
-            updateStatus('Stranger connected!');
-            loadingSpinner.classList.add('hidden');
-            nextButton.disabled = false;
-            monitorRoomStatus();
+                if (peerDjangoUserId) loadPeerStats(peerDjangoUserId);
+
+                updateStatus('Stranger connected!');
+                loadingSpinner.classList.add('hidden');
+                nextButton.disabled = false;
+                monitorRoomStatus();
+                startModeration();
+            } catch (err) {
+                hasSetRemoteDescription = false;
+                console.error("setRemoteDescription error:", err);
+            }
         }
     });
 
+    const addedCalleeCandidates = new Set();
     onValue(ref(db, `rooms/${currentRoomId}/calleeCandidates`), (snapshot) => {
-        snapshot.forEach(child => pc.addIceCandidate(new RTCIceCandidate(child.val())));
+        snapshot.forEach(child => {
+            if (!addedCalleeCandidates.has(child.key)) {
+                addedCalleeCandidates.add(child.key);
+                pc.addIceCandidate(new RTCIceCandidate(child.val())).catch(e => log('ICE error:', e));
+            }
+        });
     });
 };
 
@@ -583,9 +897,13 @@ const startCallAsCallee = async () => {
             answer: { type: answerDescription.type, sdp: answerDescription.sdp }
         });
 
+        const addedCallerCandidates = new Set();
         onValue(ref(db, `rooms/${currentRoomId}/callerCandidates`), (snapshot) => {
             snapshot.forEach(child => {
-                pc.addIceCandidate(new RTCIceCandidate(child.val())).catch(e => log('ICE error:', e));
+                if (!addedCallerCandidates.has(child.key)) {
+                    addedCallerCandidates.add(child.key);
+                    pc.addIceCandidate(new RTCIceCandidate(child.val())).catch(e => log('ICE error:', e));
+                }
             });
         });
 
@@ -593,6 +911,7 @@ const startCallAsCallee = async () => {
         loadingSpinner.classList.add('hidden');
         nextButton.disabled = false;
         monitorRoomStatus();
+        startModeration();
     } catch (error) {
         console.error('Callee error:', error);
         updateStatus(`Connection failed: ${error.message}`);
@@ -608,6 +927,8 @@ const cleanup = async (keepLocalStream = false) => {
 
     if (currentRoomId) {
         try {
+            onDisconnect(ref(db, `rooms/${currentRoomId}`)).cancel();
+            onDisconnect(ref(db, `waiting_rooms/${currentRoomId}`)).cancel();
             await remove(ref(db, `rooms/${currentRoomId}`));
             await remove(ref(db, `waiting_rooms/${currentRoomId}`));
         } catch (e) { /* ignore */ }
@@ -625,15 +946,17 @@ const cleanup = async (keepLocalStream = false) => {
         pc.ontrack = null;
         pc.onicecandidate = null;
         pc.close();
-        pc = new RTCPeerConnection(servers);
+        pc = createPeerConnection();
     }
 
     if (remoteVideo?.srcObject) remoteVideo.srcObject = null;
 
     currentRoomId = null;
+    isMatching = false;
     peerDjangoUserId = null;
     clearPeerStats();
     resetMediaButtons();
+    stopModeration();
     isAudioEnabled = true;
     isVideoEnabled = true;
 };
@@ -956,6 +1279,10 @@ window.addEventListener('load', async () => {
 
         /* ── Report modal ── */
         reportButton.onclick = () => {
+            if (peerDjangoUserId && reportedPeersToday.has(peerDjangoUserId)) {
+                showToast('You have already reported this user today.', 'warning');
+                return;
+            }
             reportModal.classList.remove('hidden');
         };
 
@@ -991,6 +1318,11 @@ window.addEventListener('load', async () => {
                 return;
             }
 
+            if (reportedPeersToday.has(peerDjangoUserId)) {
+                showToast('You have already reported this user today.', 'warning');
+                return;
+            }
+
             try {
                 const response = await fetch('/report-user/', {
                     method: 'POST',
@@ -1005,6 +1337,7 @@ window.addEventListener('load', async () => {
                 if (response.ok && data.success) {
                     reportForm.classList.add('hidden');
                     reportSuccess.classList.remove('hidden');
+                    reportedPeersToday.add(peerDjangoUserId);
                 } else {
                     showToast(data.error || 'Failed to submit report.', 'error');
                 }
@@ -1060,6 +1393,11 @@ window.addEventListener('load', async () => {
                     return;
                 }
 
+                if (ratedPeersToday.has(peerDjangoUserId)) {
+                    showToast('You have already rated this user today. Try again tomorrow.', 'warning');
+                    return;
+                }
+
                 // Flash confirmed state
                 inlineStars.forEach((s, i) => {
                     s.classList.toggle('star-confirmed', i < rating);
@@ -1081,6 +1419,7 @@ window.addEventListener('load', async () => {
                     const data = await response.json();
                     if (response.ok && data.success) {
                         showToast(`Rated ${rating} star${rating > 1 ? 's' : ''} ✨`, 'success');
+                        ratedPeersToday.add(peerDjangoUserId);
                     } else {
                         showToast(data.error || 'Failed to submit rating.', 'error');
                     }
@@ -1104,6 +1443,7 @@ window.addEventListener('load', async () => {
 
         await checkMediaPermissions();
         await initialize();
+        await loadNSFWModel();
         log('Initialization complete');
     } catch (error) {
         console.error('Init error:', error);
@@ -1111,4 +1451,4 @@ window.addEventListener('load', async () => {
     }
 });
 
-window.addEventListener('beforeunload', async () => { await removePresence(); });
+

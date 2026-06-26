@@ -79,6 +79,16 @@
                     Stranger
                 </div>
 
+                <!-- NSFW Blur Overlay -->
+                <div id="nsfwBlurOverlay" class="nsfw-blur-overlay hidden">
+                    <div class="nsfw-warning">
+                        <i class="fas fa-eye-slash fa-3x" style="margin-bottom: 1rem; display: block;"></i>
+                        <span style="display: block; font-size: 1.15rem; margin-bottom: 0.25rem;">Content Hidden for Safety</span>
+                        <small style="color: var(--text-secondary, #94a3b8); font-size: 0.85rem;">Inappropriate content was flagged client-side</small>
+                    </div>
+                </div>
+
+
                 <!-- Report button overlay (bottom-right of stranger's video) -->
                 <button id="reportButton" class="report-overlay-btn" title="Report" aria-label="Report stranger">
                     <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -340,6 +350,29 @@
         window.DJANGO_USER_ID = _cfg.userId;
     </script>
 
-    <script type="module" src="{% static 'js/video-chat.js' %}"></script>
+    <!-- Content Moderation: TensorFlow.js + NSFWJS -->
+    <script>
+        // Create a global promise that resolves when both TF.js and NSFWJS are loaded
+        // Includes a 15-second timeout fallback so the app doesn't hang on CDN failure
+        window.__nsfwTimeoutId = null;
+        window.__nsfwReady = new Promise((resolve) => {
+            window.__resolveNsfwReady = resolve;
+            window.__nsfwTimeoutId = setTimeout(() => {
+                console.warn('[ChatSphere] CDN loading timed out after 15s');
+                resolve(); // resolve anyway so loadNSFWModel can report what's missing
+            }, 15000);
+        });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.21.0/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/nsfwjs@2.4.2/dist/nsfwjs.min.js"></script>
+    <script>
+        // CDN scripts loaded — cancel the timeout and resolve the promise
+        if (window.__nsfwTimeoutId) clearTimeout(window.__nsfwTimeoutId);
+        console.log('[ChatSphere] TF.js and NSFWJS CDN scripts loaded successfully');
+        console.log('[ChatSphere] tf version:', typeof tf !== 'undefined' ? (tf.version ? tf.version.tfjs : tf.version_core) : 'MISSING');
+        console.log('[ChatSphere] nsfwjs available:', typeof nsfwjs !== 'undefined');
+        window.__resolveNsfwReady();
+    </script>
+    <script type="module" src="{% static 'js/video-chat.js' %}?v=11"></script>
 </body>
 </html>

@@ -1,0 +1,227 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Age Verification — ChatSphere{% endblock %}
+
+{% block head_extra %}
+<style>
+  /* ── Galaxy Purple variables (shared with video chat) ── */
+  :root {
+    --gx-bg-deep: #06050f;
+    --gx-bg-mid: #0d0a1f;
+    --gx-surface: #111025;
+    --gx-card: #0a0918;
+    --gx-purple-300: #a855f7;
+    --gx-purple-400: #9333ea;
+    --gx-purple-500: #7c3aed;
+    --gx-purple-600: #6d28d9;
+    --gx-purple-700: #5b21b6;
+    --gx-text: #f0eef5;
+    --gx-muted: #9b8ec4;
+    --gx-border: rgba(139, 92, 246, 0.15);
+    --gx-glass: rgba(13, 10, 35, 0.75);
+    --gx-glow: rgba(139, 92, 246, 0.4);
+    --gx-danger: #ef4444;
+    --gx-radius: 1rem;
+  }
+
+  /* ── Page override ── */
+  body {
+    background: var(--gx-bg-deep) !important;
+    color: var(--gx-text) !important;
+    min-height: 100vh;
+    font-family: 'Inter', 'Segoe UI', sans-serif;
+  }
+
+  .age-gate {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: calc(100vh - 80px);
+    padding: 2rem 1rem;
+  }
+
+  .age-card {
+    background: var(--gx-surface);
+    border: 1px solid var(--gx-border);
+    border-radius: var(--gx-radius);
+    padding: 3rem 2.5rem;
+    max-width: 500px;
+    width: 100%;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    animation: cardFadeIn 0.5s ease-out;
+  }
+
+  .age-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--gx-purple-600), var(--gx-purple-300), var(--gx-purple-600));
+  }
+
+  @keyframes cardFadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── Shield icon ── */
+  .age-icon {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--gx-purple-700), var(--gx-purple-400));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.5rem;
+    box-shadow: 0 0 30px rgba(139, 92, 246, 0.3);
+  }
+
+  .age-icon svg {
+    width: 36px;
+    height: 36px;
+    fill: none;
+    stroke: var(--gx-text);
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .age-card h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: var(--gx-text);
+  }
+
+  .age-card .subtitle {
+    color: var(--gx-muted);
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin-bottom: 2rem;
+  }
+
+  /* ── Two buttons side-by-side ── */
+  .age-choices {
+    display: flex;
+    gap: 1rem;
+  }
+
+  .age-btn {
+    flex: 1;
+    padding: 1rem 1.5rem;
+    border-radius: 0.75rem;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.25s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* "I'm 18+" button — primary purple */
+  .age-btn--above {
+    background: linear-gradient(135deg, var(--gx-purple-500), var(--gx-purple-400));
+    color: #fff;
+    box-shadow: 0 4px 20px rgba(124, 58, 237, 0.3);
+  }
+
+  .age-btn--above:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 28px rgba(124, 58, 237, 0.45);
+  }
+
+  .age-btn--above:active {
+    transform: translateY(0);
+  }
+
+  /* "Under 18" button — ghost/outline */
+  .age-btn--below {
+    background: transparent;
+    color: var(--gx-muted);
+    border: 1px solid var(--gx-border);
+  }
+
+  .age-btn--below:hover {
+    background: rgba(139, 92, 246, 0.08);
+    color: var(--gx-text);
+    border-color: var(--gx-purple-500);
+  }
+
+  /* ── Fine print ── */
+  .age-note {
+    margin-top: 1.5rem;
+    font-size: 0.78rem;
+    color: var(--gx-muted);
+    line-height: 1.5;
+    opacity: 0.7;
+  }
+
+  .age-note svg {
+    width: 14px;
+    height: 14px;
+    vertical-align: -2px;
+    margin-right: 4px;
+    stroke: var(--gx-muted);
+    fill: none;
+    stroke-width: 2;
+  }
+
+  /* ── Mobile ── */
+  @media (max-width: 480px) {
+    .age-card {
+      padding: 2rem 1.5rem;
+    }
+    .age-choices {
+      flex-direction: column;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="age-gate">
+  <div class="age-card">
+    <!-- Shield icon -->
+    <div class="age-icon">
+      <svg viewBox="0 0 24 24">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        <polyline points="9 12 11 14 15 10"/>
+      </svg>
+    </div>
+
+    <h2>Age Verification</h2>
+    <p class="subtitle">
+      Video Chat is available for users aged 18 and above.<br>
+      Please confirm your age to continue.
+    </p>
+
+    <div class="age-choices">
+      <form method="post" action="{% url 'startvideochat' %}">
+        {% csrf_token %}
+        <input type="hidden" name="age_choice" value="above">
+        <button type="submit" class="age-btn age-btn--above">
+          I'm 18 or Older
+        </button>
+      </form>
+      <form method="post" action="{% url 'startvideochat' %}">
+        {% csrf_token %}
+        <input type="hidden" name="age_choice" value="below">
+        <button type="submit" class="age-btn age-btn--below">
+          I'm Under 18
+        </button>
+      </form>
+    </div>
+
+    <p class="age-note">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+      Your selection is saved to your profile. This choice cannot be changed later.
+    </p>
+  </div>
+</section>
+{% endblock %}

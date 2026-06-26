@@ -42,9 +42,9 @@
     </div>
     <div class="hero-avatars">
       <div class="avatar-stack">
-        <div class="avatar av1">PP</div>
-        <div class="avatar av2">KP</div>
-        <div class="avatar av3">SS</div>
+        <img src="{% static 'img/avatar_man.png' %}" alt="User" class="avatar-img" />
+        <img src="{% static 'img/avatar_woman1.png' %}" alt="User" class="avatar-img" />
+        <img src="{% static 'img/avatar_woman2.png' %}" alt="User" class="avatar-img" />
         <div class="avatar av4">RK</div>
         <div class="avatar av5">MG</div>
       </div>
@@ -55,19 +55,41 @@
   <!-- Floating UI mockup elements -->
   <div class="hero-float float-left" aria-hidden="true">
     <div class="float-card">
-      <div class="float-icon"><i class="fas fa-video"></i></div>
+      <img src="{% static 'img/avatar_woman1.png' %}" alt="User" class="float-avatar-img" />
       <div class="float-text">
-        <span class="float-label">Video Chat</span>
-        <span class="float-value">HD Quality</span>
+        <span class="float-label">Kritishma</span>
+        <span class="float-value">Connected <span class="status-dot green"></span></span>
       </div>
     </div>
   </div>
   <div class="hero-float float-right" aria-hidden="true">
     <div class="float-card">
-      <div class="float-icon aura"><i class="fas fa-star"></i></div>
+      <img src="{% static 'img/avatar_man.png' %}" alt="User" class="float-avatar-img" />
       <div class="float-text">
-        <span class="float-label">Aura Points</span>
-        <span class="float-value">+150 earned</span>
+        <span class="float-label">Aura score</span>
+        <span class="float-value">🗿 +150 earned</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== APP PREVIEW SECTION ===== -->
+<section class="app-preview-section reveal">
+  <div class="hero-preview-container">
+    <div class="browser-window">
+      <div class="browser-titlebar">
+        <div class="browser-dots">
+          <span class="browser-dot dot-red"></span>
+          <span class="browser-dot dot-yellow"></span>
+          <span class="browser-dot dot-green"></span>
+        </div>
+        <div class="browser-address">chatsphere.app/video</div>
+      </div>
+      <div class="browser-content">
+        <video autoplay loop muted playsinline class="mockup-screenshot">
+          <source src="{% static 'videos/video_call_demo.mp4' %}" type="video/mp4">
+          Your browser does not support the video tag.
+        </video>
       </div>
     </div>
   </div>
@@ -120,14 +142,14 @@
       <div class="feature-icon-wrap icon-blue">
         <i class="fas fa-shield-halved"></i>
       </div>
-      <h3>Safe & Verified</h3>
-      <p>Identity verification and AI-powered moderation create a trusted space. Real people only — no bots, no fakes.</p>
-      <div class="feature-tag">ID Verified</div>
+      <h3>Safe & Moderated</h3>
+      <p>Real-time AI content moderation scans and filters explicit material instantly to maintain a safe, respectful environment.</p>
+      <div class="feature-tag">AI Protected</div>
     </div>
 
     <div class="feature-card reveal" style="--delay:0.15s">
-      <div class="feature-icon-wrap icon-amber">
-        <i class="fas fa-star"></i>
+      <div class="feature-icon-wrap icon-amber" style="font-size: 1.5rem; display: flex; align-items: center; justify-content: center;">
+        🗿
       </div>
       <h3>Aura Points</h3>
       <p>Build your reputation through positive interactions. Earn points, unlock badges, and rise through the community ranks.</p>
@@ -209,7 +231,9 @@
       </div>
       <p class="testimonial-text">"I've met amazing people from all over the world on ChatSphere. The video quality is excellent and the community is so welcoming. Couldn't recommend it more!"</p>
       <div class="testimonial-author">
-        <div class="testimonial-avatar av-purple">PP</div>
+        <div class="testimonial-avatar">
+          <img src="{% static 'img/avatar_man.png' %}" alt="Pragyan P." class="testimonial-avatar-img" />
+        </div>
         <div class="testimonial-info">
           <h4>Pragyan P.</h4>
           <p>Active Member · 🇳🇵 Nepal</p>
@@ -223,7 +247,9 @@
       </div>
       <p class="testimonial-text">"The Aura Points system is genius! It genuinely encourages positive interactions. I've made real, lasting friendships here that I'd never have found anywhere else."</p>
       <div class="testimonial-author">
-        <div class="testimonial-avatar av-blue">KP</div>
+        <div class="testimonial-avatar">
+          <img src="{% static 'img/avatar_woman1.png' %}" alt="Kritishma P." class="testimonial-avatar-img" />
+        </div>
         <div class="testimonial-info">
           <h4>Kritishma P.</h4>
           <p>Community Member · 🇮🇳 India</p>
@@ -238,7 +264,9 @@
       </div>
       <p class="testimonial-text">"As someone who's shy, I love how easy it is to meet new people here. The moderation team does a fantastic job keeping things safe and respectful."</p>
       <div class="testimonial-author">
-        <div class="testimonial-avatar av-pink">SS</div>
+        <div class="testimonial-avatar">
+          <img src="{% static 'img/avatar_woman2.png' %}" alt="Shristi S." class="testimonial-avatar-img" />
+        </div>
         <div class="testimonial-info">
           <h4>Shristi S.</h4>
           <p>New Member · 🇳🇵 Nepal</p>
@@ -265,7 +293,7 @@
         <span>Sign In</span>
       </a>
     </div>
-    <p class="cta-note"><i class="fas fa-lock"></i> Free forever • No credit card required • Cancel anytime</p>
+    <p class="cta-note"><i class="fas fa-lock"></i> Free forever • No credit card required</p>
   </div>
 </section>
 
@@ -352,7 +380,7 @@
 {% block footer %}
 <footer class="site-footer">
   <div class="container">
-    <small>© <span id="y"></span> ChatSphere · <a href="{% url 'privacy_policy' %}">Privacy Policy</a></small>
+    <small>© <span id="y"></span> ChatSphere · <a href="{% url 'terms_conditions' %}">Terms &amp; Conditions</a> · <a href="{% url 'privacy_policy' %}">Privacy Policy</a></small>
   </div>
 </footer>
 {% endblock %}

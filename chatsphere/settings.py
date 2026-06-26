@@ -110,6 +110,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'core_chatsphere.middleware.BannedUserMiddleware',
     'allauth.account.middleware.AccountMiddleware',
     'core_chatsphere.middleware.LoggingMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
@@ -128,6 +129,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'core_chatsphere.context_processors.unread_notifications_count',
             ],
         },
     },
@@ -240,7 +242,13 @@ CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [("localhost", 6379)],
+            "hosts": [
+                {
+                    "address": "redis://127.0.0.1:6379",
+                    "socket_timeout": 15.0,
+                    "socket_connect_timeout": 15.0,
+                }
+            ],
         },
     }
 }

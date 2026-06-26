@@ -1106,3 +1106,39 @@ body.video-chat-body::before {
     padding: 0.5rem 1rem 2rem;
   }
 }
+
+/* ══════════════════════════════════════════════
+   CONTENT MODERATION BLUR OVERLAY
+   ══════════════════════════════════════════════ */
+.nsfw-blur-overlay {
+  position: absolute;
+  inset: 0;
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
+  background: rgba(15, 23, 42, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  border-radius: inherit;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.nsfw-blur-overlay.hidden {
+  display: none !important;
+}
+
+.nsfw-warning {
+  text-align: center;
+  color: var(--danger, #ef4444);
+  font-weight: 600;
+  padding: 1.5rem;
+  max-width: 80%;
+  animation: slideUp 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.nsfw-warning i {
+  color: var(--danger, #ef4444);
+  margin-bottom: 0.75rem;
+}
+

@@ -1,0 +1,273 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Account Suspended · ChatSphere{% endblock %}
+
+{% block head_extra %}
+<style>
+.banned-container {
+    max-width: 700px;
+    margin: 3rem auto;
+    padding: 1.5rem;
+}
+
+.banned-card {
+    background: rgba(30, 41, 59, 0.7);
+    border: 1px solid var(--danger, #ef4444);
+    border-radius: 20px;
+    padding: 2.5rem 2rem;
+    text-align: center;
+    backdrop-filter: blur(20px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+
+.banned-icon {
+    font-size: 4rem;
+    color: var(--danger, #ef4444);
+    margin-bottom: 1.5rem;
+    animation: pulse 2s infinite;
+}
+
+.banned-title {
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--text-primary, #f1f5f9);
+    margin-bottom: 0.5rem;
+}
+
+.banned-subtitle {
+    color: var(--text-secondary, #94a3b8);
+    font-size: 1rem;
+    margin-bottom: 2rem;
+}
+
+.banned-details {
+    background: var(--surface-2, #0f172a);
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-align: left;
+    margin-bottom: 2rem;
+    border: 1px solid var(--border, #334155);
+}
+
+.banned-details h3 {
+    color: var(--text-primary, #f1f5f9);
+    font-size: 1.1rem;
+    margin-bottom: 0.75rem;
+}
+
+.banned-details p {
+    color: var(--text-secondary, #cbd5e1);
+    line-height: 1.6;
+    margin: 0;
+}
+
+.violations-section {
+    text-align: left;
+    margin-bottom: 2.5rem;
+}
+
+.violations-section h3 {
+    color: var(--text-primary, #f1f5f9);
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid var(--border, #334155);
+    padding-bottom: 0.5rem;
+}
+
+.violation-card {
+    background: var(--surface, #1e293b);
+    border-radius: 12px;
+    border: 1px solid var(--border, #334155);
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+    display: flex;
+    gap: 1.25rem;
+    align-items: flex-start;
+}
+
+.violation-thumb {
+    width: 140px;
+    height: 105px;
+    border-radius: 8px;
+    object-fit: cover;
+    border: 1px solid var(--border, #334155);
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.violation-thumb:hover {
+    transform: scale(1.04);
+}
+
+.violation-info {
+    flex: 1;
+}
+
+.violation-info h4 {
+    color: var(--danger, #ef4444);
+    margin: 0 0 0.5rem 0;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.violation-info p {
+    margin: 0 0 0.5rem 0;
+    font-size: 0.9rem;
+    color: var(--text-secondary, #cbd5e1);
+    line-height: 1.5;
+}
+
+.violation-date {
+    font-size: 0.8rem;
+    color: var(--text-muted, #64748b);
+}
+
+.banned-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+}
+
+.btn-banned-logout {
+    background: var(--danger, #ef4444);
+    color: white;
+    padding: 0.75rem 1.75rem;
+    border-radius: 10px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-banned-logout:hover {
+    background: #dc2626;
+}
+
+.btn-banned-support {
+    background: transparent;
+    border: 1px solid var(--border, #334155);
+    color: var(--text-secondary, #94a3b8);
+    padding: 0.75rem 1.75rem;
+    border-radius: 10px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background 0.2s;
+}
+
+.btn-banned-support:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-primary, #f1f5f9);
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.05); opacity: 0.8; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+/* Image overlay modal styles */
+.img-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.95);
+    z-index: 9999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
+.img-overlay img {
+    max-width: 90%;
+    max-height: 90%;
+    border-radius: 12px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.6);
+}
+
+.img-overlay-close {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    color: white;
+    font-size: 2rem;
+    cursor: pointer;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="banned-container">
+    <div class="banned-card">
+        <i class="fas fa-ban banned-icon"></i>
+        <h1 class="banned-title">Account Banned</h1>
+        <p class="banned-subtitle">Your access to ChatSphere has been terminated for violating our Terms of Service.</p>
+        
+        <div class="banned-details">
+            <h3>Ban Reason</h3>
+            <p>{{ ban.banned_reason }}</p>
+            <p style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted, #64748b);">
+                <strong>Ban Date:</strong> {{ ban.created_at|date:"F j, Y, g:i a" }}
+            </p>
+        </div>
+
+        {% if violations %}
+        <div class="violations-section">
+            <h3>Violation History (Visual Proof)</h3>
+            <p style="font-size: 0.875rem; color: var(--text-secondary, #94a3b8); margin-bottom: 1.25rem;">
+                Under our 3-strike policy, your account is banned upon receiving three confirmed content violations. 
+                Below are the documented image frames that triggered this ban:
+            </p>
+
+            {% for violation in violations %}
+            <div class="violation-card">
+                {% if violation.image %}
+                    <img src="{{ violation.image.url }}" alt="Violation Screenshot" class="violation-thumb" onclick="openOverlay('{{ violation.image.url }}')" />
+                {% endif %}
+                <div class="violation-info">
+                    <h4>{{ violation.title }}</h4>
+                    <p>{{ violation.message }}</p>
+                    <div class="violation-date">
+                        <i class="far fa-clock"></i> {{ violation.created_at|date:"F j, Y, g:i a" }}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="banned-actions">
+            <form action="{% url 'logout' %}" method="post" style="margin: 0;">
+                {% csrf_token %}
+                <button type="submit" class="btn-banned-logout">
+                    <i class="fas fa-arrow-right-from-bracket"></i> Logout
+                </button>
+            </form>
+            <a href="mailto:support@chatsphere.app?subject=Ban Appeal - {{ request.user.username }}" class="btn-banned-support">
+                <i class="far fa-envelope"></i> Contact Support / Appeal
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Image Viewer Modal Overlay -->
+<div id="imageOverlay" class="img-overlay" onclick="closeOverlay()">
+    <span class="img-overlay-close">&times;</span>
+    <img id="overlayImage" src="" alt="Expanded Proof" />
+</div>
+
+<script>
+function openOverlay(src) {
+    const overlay = document.getElementById('imageOverlay');
+    const img = document.getElementById('overlayImage');
+    img.src = src;
+    overlay.style.display = 'flex';
+}
+
+function closeOverlay() {
+    document.getElementById('imageOverlay').style.display = 'none';
+}
+</script>
+{% endblock %}

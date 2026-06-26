@@ -1,4 +1,5 @@
 from __future__ import annotations
+from django.views.decorators.http import require_POST
 
 import json
 from django.conf import settings
@@ -7,7 +8,7 @@ from django.contrib.auth import get_user_model, login, logout, authenticate, upd
 from .video_chat_config import FIREBASE_CONFIG
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm, PasswordChangeForm
-from django.shortcuts import render, redirect, resolve_url
+from django.shortcuts import render, redirect, resolve_url, get_object_or_404
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
@@ -97,6 +98,33 @@ def start_video_chat(request):
     if models.BannedAcc.objects.filter(user=request.user, active=True).exists():
         messages.error(request, "You are banned from using Video Chat feature. Please contact support for more information.")
         return redirect("home")
+
+    user = request.user
+
+    # If the user already declared they are below 18, block access
+    if user.age == 0:
+        messages.error(request, "Video Chat is only available for users aged 18 and above.")
+        return redirect("home")
+
+    # If the user has never declared their age, show the verification page
+    if user.age is None:
+        if request.method == "POST":
+            choice = request.POST.get("age_choice")
+            if choice == "above":
+                user.age = 1
+                user.save(update_fields=["age"])
+                return redirect("startvideochat")
+            elif choice == "below":
+                user.age = 0
+                user.save(update_fields=["age"])
+                messages.error(request, "Video Chat is only available for users aged 18 and above.")
+                return redirect("home")
+            else:
+                # Invalid or missing choice — re-show the page
+                return render(request, "age_verification.html")
+        else:
+            return render(request, "age_verification.html")
+
     context = {
         'firebase_config': json.dumps(FIREBASE_CONFIG),
     }
@@ -343,6 +371,24 @@ def report_user(request):
                 'error': 'You cannot report yourself'
             }, status=400)
 
+        # Check for report limiting - only one report per day from same user to same target user
+        from django.utils import timezone
+        now = timezone.now()
+        start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        end_of_day = now.replace(hour=23, minute=59, second=59, microsecond=999999)
+
+        existing_report = models.Report.objects.filter(
+            user=request.user,
+            reported_to=reported_user,
+            created_at__range=(start_of_day, end_of_day)
+        ).first()
+
+        if existing_report:
+            return JsonResponse({
+                'success': False,
+                'error': 'You have already reported this user today.'
+            }, status=400)
+
         # Format the report description with room context
         report_desc = f"[Room: {room_id}] [Reason: {reason}]\n\n{description}"
 
@@ -429,13 +475,14 @@ def submit_rating(request):
 
         # Check for rate limiting - only one rating per day from same user to same target user
         from django.utils import timezone
-        from datetime import timedelta
+        now = timezone.now()
+        start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        end_of_day = now.replace(hour=23, minute=59, second=59, microsecond=999999)
 
-        today = timezone.now().date()
         existing_rating = models.RatingPoints.objects.filter(
             given_by=request.user,
             given_to=rated_user,
-            created_at__date=today
+            created_at__range=(start_of_day, end_of_day)
         ).first()
 
         if existing_rating:
@@ -759,3 +806,234 @@ def aura_leaderboard_view(request):
         'user_aura_points': user_aura_points,
     }
     return render(request, "aura_leaderboard.html", context)
+
+
+# -------------------------------------------------------------
+# CONTENT MODERATION, NOTIFICATIONS & POLICIES
+# -------------------------------------------------------------
+
+@login_required(login_url="signin")
+@require_POST
+def moderate_frame(request):
+    """
+    Receives a video chat frame, runs NudeNet locally to check for nudity/NSFW content.
+    If confirmed, penalizes user aura, saves frame, sends warning notification,
+    and bans user automatically on the 3rd strike.
+    """
+    import base64
+    import json
+    import uuid
+    import tempfile
+    import os
+    from django.core.files.base import ContentFile
+    from django.core.files.storage import default_storage
+    from django.shortcuts import get_object_or_404
+    from django.contrib.auth import get_user_model
+    from nudenet import NudeDetector
+    from .models import Notification, ModerationLog, Report, AuraPoints, BannedAcc
+    
+    # Cache the NudeDetector instance globally so it's loaded only once
+    if not hasattr(moderate_frame, '_detector'):
+        moderate_frame._detector = NudeDetector()
+
+    try:
+        data = json.loads(request.body)
+        frame_data = data.get("frame")  # base64 JPEG format
+        violating_user_id = data.get("user_id")  # User ID of the peer whose video was scanned
+        
+        if not frame_data or not violating_user_id:
+            return JsonResponse({"error": "Missing parameters"}, status=400)
+        
+        # Resolve target violating user
+        User = get_user_model()
+        violating_user = get_object_or_404(User, id=violating_user_id)
+        
+        # Decode base64 frame
+        format, imgstr = frame_data.split(';base64,') if ';base64,' in frame_data else (None, frame_data)
+        image_data = base64.b64decode(imgstr)
+        
+        # Save frame temporarily for NudeNet scanning
+        with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as temp_img:
+            temp_img.write(image_data)
+            temp_path = temp_img.name
+        
+        try:
+            detector = moderate_frame._detector
+            detections = detector.detect(temp_path)
+            
+            # Filter for explicit visual categories
+            EXPLICIT_CLASSES = {
+                "FEMALE_BREAST_EXPOSED", "FEMALE_GENITALIA_EXPOSED",
+                "BUTTOCKS_EXPOSED", "ANUS_EXPOSED", "MALE_GENITALIA_EXPOSED"
+            }
+            violations = [d for d in detections if d["class"] in EXPLICIT_CLASSES and d["score"] > 0.6]
+            is_nsfw = len(violations) > 0
+            
+            if is_nsfw:
+                # 1. Save frame to media root under moderation/
+                filename = f"violation_{violating_user.id}_{uuid.uuid4().hex[:8]}.jpg"
+                saved_path = default_storage.save(f"moderation/{filename}", ContentFile(image_data))
+                
+                # 2. Get current violation counts
+                existing_violations_count = ModerationLog.objects.filter(
+                    user=violating_user,
+                    content_type=ModerationLog.ContentType.VIDEO_NSFW,
+                    action_taken__in=[ModerationLog.Action.WARNING, ModerationLog.Action.BAN]
+                ).count()
+                new_count = existing_violations_count + 1
+                
+                # 3. Deduct Aura points & create Report
+                Report.objects.create(
+                    user=request.user,  # Reporter is the peer
+                    reported_to=violating_user,
+                    report_desc="Automated Detection: Explicit video content (NSFW) detected on live call.",
+                    report_status=Report.Status.CLOSED
+                )
+                
+                # 4. Check Ban Threshold
+                if new_count >= 3:
+                    # Execute Ban
+                    BannedAcc.objects.update_or_create(
+                        user=violating_user,
+                        defaults={
+                            "banned_by": None,
+                            "banned_reason": "Automated Content Moderation: 3 NSFW video chat violations confirmed.",
+                            "active": True
+                        }
+                    )
+                    
+                    # Log Moderation action
+                    ModerationLog.objects.create(
+                        user=violating_user,
+                        content_type=ModerationLog.ContentType.VIDEO_NSFW,
+                        source=ModerationLog.Source.SERVER,
+                        action_taken=ModerationLog.Action.BAN,
+                        confidence=max([v["score"] for v in violations]),
+                        image_path=saved_path,
+                        details={"violations": violations}
+                    )
+                    
+                    # Notification: Account Suspended
+                    Notification.objects.create(
+                        user=violating_user,
+                        title="Your Account Has Been Banned",
+                        message=(
+                            "Your account has been permanently suspended due to repeated violations of our Terms of Service. "
+                            "Violation #3: Explicit video content was confirmed by our verification system. "
+                            "You are banned from using ChatSphere's matching and communication tools."
+                        ),
+                        image=saved_path
+                    )
+                    action_taken = "ban"
+                else:
+                    # Log Moderation action
+                    ModerationLog.objects.create(
+                        user=violating_user,
+                        content_type=ModerationLog.ContentType.VIDEO_NSFW,
+                        source=ModerationLog.Source.SERVER,
+                        action_taken=ModerationLog.Action.WARNING,
+                        confidence=max([v["score"] for v in violations]),
+                        image_path=saved_path,
+                        details={"violations": violations}
+                    )
+                    
+                    # Notification: Warning Issued
+                    Notification.objects.create(
+                        user=violating_user,
+                        title="Content Moderation Warning (NSFW Video)",
+                        message=(
+                            "Our automated systems detected inappropriate behavior/NSFW content on your video stream. "
+                            f"This is violation #{new_count} of 3. Reaching 3 violations will result in an automatic account ban. "
+                            "A penalty of 150 Aura Points has been applied to your account."
+                        ),
+                        image=saved_path
+                    )
+                    action_taken = "warning"
+                
+                # Recalculate aura points to enforce penalty
+                aura_obj, _ = AuraPoints.objects.get_or_create(user=violating_user)
+                aura_obj.recalc()
+                
+                return JsonResponse({
+                    "status": "nsfw",
+                    "action": action_taken,
+                    "violations_count": new_count,
+                    "message": "Nudity detected. Action: " + action_taken
+                })
+            
+            else:
+                return JsonResponse({"status": "safe", "message": "Frame classified as safe"})
+        finally:
+            if os.path.exists(temp_path):
+                os.unlink(temp_path)
+                
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+
+
+@login_required(login_url="signin")
+def notifications_view(request):
+    """Render the user notifications dashboard."""
+    from .models import Notification
+    user_notifications = Notification.objects.filter(user=request.user).order_by("-created_at")
+    paginator = Paginator(user_notifications, 15)
+    page = paginator.get_page(request.GET.get("page"))
+    
+    return render(request, "notifications.html", {"notifications": page})
+
+
+@login_required(login_url="signin")
+@require_POST
+def mark_notifications_read(request):
+    """Mark all unread notifications of the user as read."""
+    from .models import Notification
+    Notification.objects.filter(user=request.user, is_read=False).update(is_read=True)
+    return JsonResponse({"status": "success"})
+
+
+@login_required(login_url="signin")
+@require_POST
+def delete_notification(request, notif_id):
+    """Delete a specific notification of the user."""
+    from .models import Notification
+    notification = get_object_or_404(Notification, id=notif_id, user=request.user)
+    notification.delete()
+    return JsonResponse({"status": "success"})
+
+
+@login_required(login_url="signin")
+@require_POST
+def delete_all_notifications(request):
+    """Delete all notifications of the user."""
+    from .models import Notification
+    Notification.objects.filter(user=request.user).delete()
+    return JsonResponse({"status": "success"})
+
+
+def terms_conditions(request):
+    """Display the terms & conditions page."""
+    return render(request, "terms_conditions.html")
+
+
+@login_required(login_url="signin")
+def banned_view(request):
+    """
+    Displays a custom suspension screen for banned accounts,
+    including the reasons and violating screenshots.
+    """
+    from .models import BannedAcc, Notification
+    ban = get_object_or_404(BannedAcc, user=request.user, active=True)
+    notifications = Notification.objects.filter(
+        user=request.user, 
+        image__isnull=False
+    ).exclude(image="").order_by("-created_at")
+    
+    return render(request, "banned.html", {"ban": ban, "violations": notifications})
+
+
+@login_required(login_url="signin")
+def check_user_status(request):
+    """Check if the requesting user is banned or active. Returns JSON."""
+    from .models import BannedAcc
+    is_banned = BannedAcc.objects.filter(user=request.user, active=True).exists()
+    return JsonResponse({"banned": is_banned})

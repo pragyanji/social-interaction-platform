@@ -157,6 +157,13 @@
       <li>Posts, comments, and reactions</li>
     </ul>
 
+    <h3>Real-Time Content Moderation Frames</h3>
+    <ul>
+      <li><strong>Local Processing:</strong> Live video chat feeds are scanned locally on your device using client-side machine learning models to detect inappropriate content (NSFW/exposure).</li>
+      <li><strong>Server Verification & Retention:</strong> If client-side scanning flags a potential violation, the violating image frame is securely sent to our server. We run a verification model locally on our server to confirm the violation.</li>
+      <li><strong>Enforcement Logs:</strong> Confirmed violating frames are stored securely on our servers to generate warning notifications, deduct Aura points, and enforce auto-ban rules. Safe frames are discarded immediately.</li>
+    </ul>
+
     <h3>Connection Data</h3>
     <ul>
       <li>Your connections and friend lists</li>

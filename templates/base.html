@@ -40,6 +40,15 @@
             <i class="fas fa-user-group"></i>
             <span>Connections</span>
           </a>
+          <a href="{% url 'notifications' %}" class="nav-icon-link" title="Notifications">
+            <div style="position: relative; display: inline-block;">
+              <i class="fas fa-bell"></i>
+              {% if unread_notifications_count > 0 %}
+                <span class="notification-badge">{{ unread_notifications_count }}</span>
+              {% endif %}
+            </div>
+            <span>Notifications</span>
+          </a>
 
           <!-- Profile Dropdown -->
           <div class="profile-dropdown">

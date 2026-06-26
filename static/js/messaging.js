@@ -95,7 +95,7 @@ class MessagingClient {
         // Send any queued messages
         while (this.messageQueue.length > 0) {
             const message = this.messageQueue.shift();
-            this.sendMessage(message);
+            this.send(message);
         }
     }
 

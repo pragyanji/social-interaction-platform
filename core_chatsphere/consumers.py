@@ -4,12 +4,18 @@ Handles sending and receiving messages in real-time.
 """
 
 import json
+import asyncio
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from django.db.models import Q
 from .models import ConversationMessage
+from better_profanity import profanity
+
+# Load default profanity words list
+profanity.load_censor_words()
+
 
 User = get_user_model()
 
@@ -57,6 +63,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     async def receive(self, text_data):
         """Called when a message is received from the WebSocket."""
+        # Terminate connection immediately if user is banned
+        if await self.is_user_banned():
+            await self.close()
+            return
+
         try:
             data = json.loads(text_data)
             message_type = data.get('type')
@@ -78,8 +89,16 @@ class ChatConsumer(AsyncWebsocketConsumer):
         if not message:
             return
 
+        # Censor profane words in a separate thread to prevent blocking the event loop
+        import time
+        t0 = time.time()
+        message = await asyncio.to_thread(profanity.censor, message)
+        print(f"[ChatSphere] Censor operation took: {(time.time() - t0) * 1000:.2f}ms")
+
         # Save message to database
+        t1 = time.time()
         saved_message = await self.save_message(message)
+        print(f"[ChatSphere] Save to DB operation took: {(time.time() - t1) * 1000:.2f}ms")
 
         if saved_message:
             # Broadcast message to all users in the chat room
@@ -142,9 +161,21 @@ class ChatConsumer(AsyncWebsocketConsumer):
         }))
 
     @database_sync_to_async
+    def is_user_banned(self):
+        """Check if the current requesting user is banned."""
+        from .models import BannedAcc
+        return BannedAcc.objects.filter(user=self.user, active=True).exists()
+
+    @database_sync_to_async
     def can_chat(self):
         """Check if the requesting user can chat with the target user."""
-        from .models import Connection
+        from .models import Connection, BannedAcc
+
+        # If either user is banned, prevent chat connection
+        if BannedAcc.objects.filter(user=self.user, active=True).exists():
+            return False
+        if BannedAcc.objects.filter(user_id=self.user_id, active=True).exists():
+            return False
 
         # Check if both users are connected (connection exists in either direction)
         return Connection.objects.filter(

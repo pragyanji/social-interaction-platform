@@ -19,6 +19,11 @@ class User(AbstractUser):
     """
     full_name = models.CharField(max_length=150, blank=True)
     profile_pic = models.ImageField(upload_to="profiles/", blank=True, null=True)
+    AGE_CHOICES = [
+        (0, 'Below 18'),
+        (1, 'Above 18'),
+    ]
+    age = models.IntegerField(choices=AGE_CHOICES, blank=True, null=True)
 
     def __str__(self) -> str:
         return self.username
@@ -150,18 +155,36 @@ class AuraPoints(models.Model):
         verbose_name = "Aura points"
         verbose_name_plural = "Aura points"
 
+    @property
+    def warning_penalty(self) -> int:
+        """Calculate penalty from automated content warnings (150 points each)."""
+        from core_chatsphere.models import ModerationLog
+        warning_count = ModerationLog.objects.filter(
+            user=self.user,
+            action_taken=ModerationLog.Action.WARNING
+        ).count()
+        return warning_count * 150
+
+    @property
+    def manual_report_penalty(self) -> int:
+        """Calculate penalty from user-submitted manual reports (50 points each)."""
+        from core_chatsphere.models import Report
+        manual_report_count = Report.objects.filter(reported_to=self.user).exclude(report_desc__icontains="Automated Detection").count()
+        return manual_report_count * 50
+
     def recalc(self) -> int:
         """
         Recalculate Aura Points using the complete formula:
 
-        Total Aura = (Rating Component) + (Streak Component) + (Verified Bonus) - (Report Penalty)
+        Total Aura = (Rating Component) + (Streak Component) + (Verified Bonus) - (Report & Warning Penalties)
 
         Where:
         - Rating Component = Σ(star_rating × point_value) for all ratings received
           5★: +50, 4★: +30, 3★: +15, 2★: +5, 1★: -5
         - Streak Component = current_streak × 5 points per day
         - Verified Bonus = 50 points if user is verified
-        - Report Penalty = report_count × 50 points
+        - Report Penalty = manual_reports × 50 points
+        - Warning Penalty = moderation_warnings × 150 points
         """
         # Rating component: weighted sum by star rating
         RATING_WEIGHTS = {
@@ -188,17 +211,16 @@ class AuraPoints(models.Model):
         except DailyStreak.DoesNotExist:
             streak_component = 0
 
-        # Report penalty: count of reports × 50 points
-        report_count = Report.objects.filter(reported_to=self.user).count()
-        report_penalty = report_count * 50
+        # Enforce penalties: warnings (150 pts each) + manual reports (50 pts each)
+        total_penalty = self.warning_penalty + self.manual_report_penalty
 
         # Calculate total (minimum 0, cannot go negative)
-        total = max(0, rating_component + streak_component - report_penalty)
+        total = max(0, rating_component + streak_component - total_penalty)
 
         # Update all components
         self.rating_component = rating_component
         self.streak_component = streak_component
-        self.report_penalty = report_penalty
+        self.report_penalty = total_penalty
         self.aura_points = total
         self.last_recalculated = timezone.now()
         self.save(update_fields=[
@@ -313,3 +335,69 @@ class DailyStreak(models.Model):
             self.last_visit_date = today
         
         self.save()
+
+
+# -----------------------------
+# Notifications
+# -----------------------------
+class Notification(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="notifications"
+    )
+    title = models.CharField(max_length=150)
+    message = models.TextField()
+    image = models.ImageField(upload_to="moderation/", null=True, blank=True)
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["user", "is_read"]),
+            models.Index(fields=["user", "created_at"]),
+        ]
+
+    def __str__(self):
+        return f"Notification<{self.user} - {self.title}>"
+
+
+# -----------------------------
+# Content Moderation Logs (Video only)
+# -----------------------------
+class ModerationLog(models.Model):
+    class ContentType(models.TextChoices):
+        VIDEO_NSFW = "VIDEO_NSFW", "Video NSFW"
+        TEXT_PROFANITY = "TEXT_PROFANITY", "Text Profanity"
+    
+    class Source(models.TextChoices):
+        CLIENT = "CLIENT", "Client-side"
+        SERVER = "SERVER", "Server-side"
+        AUTO = "AUTO", "Automatic System"
+    
+    class Action(models.TextChoices):
+        WARNING = "WARNING", "Warning Issued"
+        BLUR = "BLUR", "Video Blurred"
+        DISCONNECT = "DISCONNECT", "Call Disconnected"
+        CENSORED = "CENSORED", "Text Censored"
+        BAN = "BAN", "User Banned"
+    
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="moderation_logs"
+    )
+    content_type = models.CharField(max_length=20, choices=ContentType.choices)
+    source = models.CharField(max_length=10, choices=Source.choices)
+    action_taken = models.CharField(max_length=15, choices=Action.choices)
+    confidence = models.FloatField()
+    image_path = models.CharField(max_length=255, blank=True, null=True)
+    details = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["user", "content_type"]),
+            models.Index(fields=["created_at"]),
+        ]
+
+    def __str__(self):
+        return f"Moderation<{self.user} - {self.content_type} - {self.action_taken}>"
