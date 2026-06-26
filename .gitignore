@@ -82,8 +82,4 @@ ssl/
 chatsphere/db.py
 
 # Documentation
-PROJECT_DOCUMENTATION.md
-message_chat.md
-video_chat_architecture.md
-content_moderation_docs.md
-AURA_POINTS_PLAN.md
+*.md
