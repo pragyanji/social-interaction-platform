@@ -25,3 +25,5 @@ sqlparse==0.5.3
 typing_extensions==4.15.0
 tzdata==2025.2
 urllib3==2.5.0
+nudenet>=3.4.0
+better-profanity>=0.7.0
