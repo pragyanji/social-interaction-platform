@@ -766,7 +766,7 @@ def mark_messages_as_read(request, user_id):
 # Api view to get aura leaderboard
 def aura_leaderboard(request):
     aura_qs = AuraPoints.objects.select_related('user').order_by('-aura_points')
-    paginator = Paginator(aura_qs, 30)
+    paginator = Paginator(aura_qs, 10)
     page = paginator.get_page(request.GET.get('page'))
     data = [
         {
@@ -797,7 +797,7 @@ def aura_leaderboard_view(request):
         user_rank = None
         user_aura_points = 0
 
-    paginator = Paginator(aura_qs, 30)
+    paginator = Paginator(aura_qs, 10)
     page = paginator.get_page(request.GET.get('page'))
     context = {
         'aura_entries': page,

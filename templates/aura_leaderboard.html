@@ -437,7 +437,7 @@
   <!-- Leaderboard rows -->
   <div class="lb-list">
     {% for entry in aura_entries %}
-      {% with rank=forloop.counter %}
+      {% with rank=aura_entries.start_index|add:forloop.counter0 %}
       <div class="lb-row{% if rank == 1 %} lb-gold{% elif rank == 2 %} lb-silver{% elif rank == 3 %} lb-bronze{% endif %}{% if entry.user == request.user %} lb-me{% endif %}">
 
         <!-- Rank -->

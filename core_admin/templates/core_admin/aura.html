@@ -23,10 +23,10 @@
         {% if entry.user.is_staff %}
         <tr onclick="window.location='{% url 'core_admin:user_detail' entry.user.id %}'" class="clickable-row">
         {% else %}
-        <tr></tr>
+        <tr>
         {% endif %}
           <td>
-            {% with rank=forloop.counter %}
+            {% with rank=aura_entries.start_index|add:forloop.counter0 %}
               {% if rank == 1 %}<span class="rank-medal">🥇</span>
               {% elif rank == 2 %}<span class="rank-medal">🥈</span>
               {% elif rank == 3 %}<span class="rank-medal">🥉</span>

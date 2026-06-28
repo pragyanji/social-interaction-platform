@@ -314,7 +314,7 @@ def connections_list(request):
 def aura_list(request):
     aura_qs = AuraPoints.objects.select_related('user').order_by('-aura_points')
 
-    paginator = Paginator(aura_qs, 30)
+    paginator = Paginator(aura_qs, 10)
     page = paginator.get_page(request.GET.get('page'))
 
     context = {
@@ -387,31 +387,32 @@ def send_broadcast(request):
         from core_chatsphere.models import Notification
         
         if recipient_type == 'specific':
-            if not target_username:
-                messages.error(request, 'Please specify a user.')
-                return render(request, 'core_admin/broadcast.html', {
-                    'users': users_list,
-                    'recipient_type': recipient_type
-                })
-            
-            try:
-                target_user = User.objects.get(username=target_username)
-            except User.DoesNotExist:
-                messages.error(request, f'User with username "{target_username}" does not exist.')
+            selected_usernames = request.POST.getlist('selected_users')
+            if not selected_usernames:
+                messages.error(request, 'Please select at least one recipient user.')
                 return render(request, 'core_admin/broadcast.html', {
                     'users': users_list,
                     'recipient_type': recipient_type,
-                    'target_user': target_username,
                     'form_title': title,
                     'form_message': message,
                 })
             
-            Notification.objects.create(
-                user=target_user,
-                title=title,
-                message=message
-            )
-            messages.success(request, f'Notification sent successfully to user {target_user.username}.')
+            selected_users = User.objects.filter(username__in=selected_usernames, is_active=True)
+            if not selected_users.exists():
+                messages.error(request, 'Selected users do not exist or are inactive.')
+                return render(request, 'core_admin/broadcast.html', {
+                    'users': users_list,
+                    'recipient_type': recipient_type,
+                    'form_title': title,
+                    'form_message': message,
+                })
+            
+            notifications = [
+                Notification(user=u, title=title, message=message)
+                for u in selected_users
+            ]
+            Notification.objects.bulk_create(notifications)
+            messages.success(request, f'Notification sent successfully to {len(notifications)} selected user(s).')
             return redirect('core_admin:dashboard')
             
         else:
