@@ -122,7 +122,7 @@ ROOT_URLCONF = 'chatsphere.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / "templates"],
+        'DIRS': [BASE_DIR / "core_chatsphere" / "templates"],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -195,7 +195,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = "/static/"                      # ← leading slash!
-STATICFILES_DIRS = [BASE_DIR / "static"]     # ← tell Django about project-level /static
+STATICFILES_DIRS = [BASE_DIR / "core_chatsphere" / "static"]     # ← tell Django about project-level /static
 STATIC_ROOT = BASE_DIR / "staticfiles"       # ← used later for collectstatic (prod)
 
 # Default primary key field type
@@ -208,7 +208,7 @@ AUTH_USER_MODEL = "core_chatsphere.User"
 SITE_ID = 2
 
 MEDIA_URL = "/media/"
-MEDIA_ROOT = BASE_DIR / "media"
+MEDIA_ROOT = BASE_DIR / "core_chatsphere" / "media"
 
 
 AUTHENTICATION_BACKENDS = [
