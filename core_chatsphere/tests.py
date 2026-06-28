@@ -12,12 +12,28 @@ class ContentModerationTestCase(TestCase):
         self.client = Client()
 
     def test_profanity_censorship(self):
-        """Test that better-profanity correctly censors messages."""
+        """Test that better-profanity correctly censors English, Hindi, and Nepali words."""
+        from .profanity_words import NEPALI_HINDI_PROFANITY
         profanity.load_censor_words()
-        text = "This is a bad shit word."
-        censored = profanity.censor(text)
-        self.assertIn("****", censored)
-        self.assertNotIn("shit", censored)
+        profanity.add_censor_words(NEPALI_HINDI_PROFANITY)
+        
+        # Test English
+        text_en = "This is a bad shit word."
+        censored_en = profanity.censor(text_en)
+        self.assertIn("****", censored_en)
+        self.assertNotIn("shit", censored_en)
+
+        # Test Hindi Roman
+        text_hi = "kya haal hai saala chutiya"
+        censored_hi = profanity.censor(text_hi)
+        self.assertIn("****", censored_hi)
+        self.assertNotIn("chutiya", censored_hi)
+
+        # Test Nepali Roman
+        text_ne = "yo muji chikne daka"
+        censored_ne = profanity.censor(text_ne)
+        self.assertIn("****", censored_ne)
+        self.assertNotIn("muji", censored_ne)
 
     def test_notification_creation(self):
         """Test that notification model saves correctly."""

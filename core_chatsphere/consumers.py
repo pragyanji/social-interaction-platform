@@ -12,9 +12,12 @@ from django.utils import timezone
 from django.db.models import Q
 from .models import ConversationMessage
 from better_profanity import profanity
+from .profanity_words import NEPALI_HINDI_PROFANITY
 
 # Load default profanity words list
 profanity.load_censor_words()
+# Add custom Romanized Hindi and Nepali profanity words
+profanity.add_censor_words(NEPALI_HINDI_PROFANITY)
 
 
 User = get_user_model()
