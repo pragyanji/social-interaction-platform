@@ -4,6 +4,7 @@
 
 {% block head_extra %}
 <link rel="stylesheet" href="{% static 'css/home.css' %}" />
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script id="firebase-config-data" type="application/json">{{ firebase_config|safe }}</script>
 <script>
   window.FIREBASE_CONFIG = JSON.parse(document.getElementById('firebase-config-data').textContent);
@@ -63,56 +64,220 @@
     </div>
   </div>
 
-  <!-- ── Action cards ── -->
-  <h2 class="section-heading">What would you like to do?</h2>
-
-  <div class="action-grid">
-
-    <!-- Messages -->
-    <a class="action-card msg-card" href="{% url 'startmessagechat' 0%}">
-      <div class="ac-glow"></div>
-      <div class="ac-icon"><i class="fas fa-message"></i></div>
-      <div class="ac-body">
-        <h3 class="ac-title">Message Chat</h3>
-        <p class="ac-desc">Text with people you've connected with during video chat.</p>
+  <!-- ── Action Card (Main Video Chat CTA) ── -->
+  <h2 class="section-heading">Connect Instantly</h2>
+  <div style="margin-bottom: 1.5rem;">
+    <a class="full-width-cta" href="{% url 'startvideochat' %}">
+      <div style="display: flex; align-items: center; gap: 1.5rem; position: relative;">
+        <div class="ac-icon" style="width: 60px; height: 60px; border-radius: 14px; background: rgba(124, 58, 237, 0.15); display: flex; align-items: center; justify-content: center; font-size: 1.6rem; color: #a78bfa; border: 1px solid rgba(124, 58, 237, 0.2);">
+          <i class="fas fa-video"></i>
+        </div>
+        <div>
+          <h3 style="margin: 0 0 0.2rem; font-size: 1.3rem; font-weight: 700; color: #f1f5f9; letter-spacing: -0.01em;">Start Video Chat</h3>
+          <p style="margin: 0; font-size: 0.88rem; color: #94a3b8; font-weight: 500;">Match with global strangers, have real conversations, and build your reputation.</p>
+        </div>
       </div>
       <div class="ac-arrow"><i class="fas fa-arrow-right"></i></div>
     </a>
+  </div>
 
-    <!-- Video -->
-    <a class="action-card vid-card" href="{% url 'startvideochat' %}">
-      <div class="ac-glow"></div>
-      <div class="ac-icon"><i class="fas fa-video"></i></div>
-      <div class="ac-body">
-        <h3 class="ac-title">Video Chat</h3>
-        <p class="ac-desc">Go face-to-face with strangers from around the globe.</p>
-      </div>
-      <div class="ac-arrow"><i class="fas fa-arrow-right"></i></div>
-    </a>
+  <!-- ── Personal Analytics Dashboard ── -->
+  <h2 class="analytics-heading">
+    <i class="fas fa-chart-line"></i> Personal Analytics
+  </h2>
 
-    <!-- Connections -->
-    <a class="action-card conn-card" href="{% url 'connections' %}">
-      <div class="ac-glow"></div>
-      <div class="ac-icon"><i class="fas fa-user-group"></i></div>
-      <div class="ac-body">
-        <h3 class="ac-title">Connections</h3>
-        <p class="ac-desc">View and manage the people you've connected with.</p>
-      </div>
-      <div class="ac-arrow"><i class="fas fa-arrow-right"></i></div>
-    </a>
+  <div class="analytics-grid">
+    
+    <!-- Aura Gained Last 7 Days -->
+    <div class="analytics-card">
+      <span class="an-title">Aura (Last 7 Days)</span>
+      <span class="an-val {% if aura_gained_7_days > 0 %}val-green{% elif aura_gained_7_days < 0 %}val-red{% endif %}">
+        {% if aura_gained_7_days > 0 %}+{% endif %}{{ aura_gained_7_days }}
+      </span>
+      <span class="an-desc">
+        Net change from new ratings received minus warnings &amp; report penalties.
+      </span>
+    </div>
 
-    <!-- Profile -->
-    <a class="action-card prof-card" href="{% url 'profile' %}">
-      <div class="ac-glow"></div>
-      <div class="ac-icon"><i class="fas fa-user"></i></div>
-      <div class="ac-body">
-        <h3 class="ac-title">My Profile</h3>
-        <p class="ac-desc">View your stats, streak, ratings, and edit your info.</p>
-      </div>
-      <div class="ac-arrow"><i class="fas fa-arrow-right"></i></div>
-    </a>
+    <!-- Connections Made -->
+    <div class="analytics-card">
+      <span class="an-title">Total Connections</span>
+      <span class="an-val">
+        {{ total_connections }}
+      </span>
+      <span class="an-desc">
+        <span class="an-trend val-green" style="color: #10b981;">+{{ connections_7_days }}</span> new bidirectional connections in the last 7 days.
+      </span>
+    </div>
+
+    <!-- Rating Stats -->
+    <div class="analytics-card">
+      <span class="an-title">Average Rating</span>
+      <span class="an-val">
+        ⭐ {{ avg_rating }}
+      </span>
+      <span class="an-desc">
+        Based on <strong>{{ total_ratings }}</strong> total rating{{ total_ratings|pluralize }} received from peers.
+      </span>
+    </div>
+
+    <!-- Safety Status / Warnings -->
+    <div class="analytics-card">
+      <span class="an-title">Safety Strikes</span>
+      <span class="an-val {% if warning_count > 0 %}val-red{% else %}val-green{% endif %}">
+        {{ warning_count }} <span style="font-size: 1.1rem; font-weight: 600; color: #64748b;">/ 3</span>
+      </span>
+      <span class="an-desc">
+        {% if warning_count == 0 %}
+          🟢 Excellent standing! Keep maintaining community guidelines.
+        {% elif warning_count == 1 %}
+          ⚠️ 1 strike. Please respect other users.
+        {% else %}
+          🚨 2 strikes. 1 more warning will trigger an automated permanent ban.
+        {% endif %}
+      </span>
+    </div>
 
   </div>
+
+  <!-- ── Chart Analytics Container ── -->
+  <div class="charts-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-bottom: 3rem;">
+    <!-- Aura History Chart Card -->
+    <div class="analytics-card chart-card" style="padding: 1.5rem; min-height: 320px; display: flex; flex-direction: column; justify-content: space-between;">
+      <span class="an-title" style="margin-bottom: 12px; display: flex; align-items: center; gap: 6px;"><i class="fas fa-chart-area" style="color: #a78bfa;"></i> Aura Trend (7 Days)</span>
+      <div style="flex-grow: 1; position: relative; height: 220px;">
+        <canvas id="auraChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Connections Chart Card -->
+    <div class="analytics-card chart-card" style="padding: 1.5rem; min-height: 320px; display: flex; flex-direction: column; justify-content: space-between;">
+      <span class="an-title" style="margin-bottom: 12px; display: flex; align-items: center; gap: 6px;"><i class="fas fa-chart-bar" style="color: #f472b6;"></i> Daily Connections (7 Days)</span>
+      <div style="flex-grow: 1; position: relative; height: 220px;">
+        <canvas id="connectionsChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // 1. Aura Trend Chart
+      const auraCtx = document.getElementById('auraChart').getContext('2d');
+      const auraGrad = auraCtx.createLinearGradient(0, 0, 0, 200);
+      auraGrad.addColorStop(0, 'rgba(167, 139, 250, 0.35)');
+      auraGrad.addColorStop(1, 'rgba(167, 139, 250, 0)');
+      
+      new Chart(auraCtx, {
+        type: 'line',
+        data: {
+          labels: {{ chart_labels|safe }},
+          datasets: [{
+            label: 'Aura Points',
+            data: {{ aura_history|safe }},
+            borderColor: '#a78bfa',
+            borderWidth: 3,
+            pointBackgroundColor: '#a78bfa',
+            pointBorderColor: '#0f172a',
+            pointBorderWidth: 2,
+            pointHoverBackgroundColor: '#ffffff',
+            pointHoverBorderColor: '#7c3aed',
+            pointHoverRadius: 6,
+            pointRadius: 4,
+            fill: true,
+            backgroundColor: auraGrad,
+            tension: 0.35
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: 'rgba(15, 23, 42, 0.95)',
+              titleColor: '#f8fafc',
+              bodyColor: '#e2e8f0',
+              borderColor: 'rgba(255, 255, 255, 0.1)',
+              borderWidth: 1,
+              displayColors: false,
+              padding: 10,
+              callbacks: {
+                label: function(context) {
+                  return '🗿 ' + context.parsed.y + ' Aura';
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: { color: '#64748b', font: { weight: '600', size: 11 } }
+            },
+            y: {
+              grid: { color: 'rgba(255, 255, 255, 0.04)' },
+              ticks: { color: '#64748b', font: { weight: '600', size: 11 } }
+            }
+          }
+        }
+      });
+
+      // 2. Connections Chart
+      const connCtx = document.getElementById('connectionsChart').getContext('2d');
+      const connGrad = connCtx.createLinearGradient(0, 0, 0, 200);
+      connGrad.addColorStop(0, '#f472b6');
+      connGrad.addColorStop(1, '#db2777');
+      
+      new Chart(connCtx, {
+        type: 'bar',
+        data: {
+          labels: {{ chart_labels|safe }},
+          datasets: [{
+            label: 'New Connections',
+            data: {{ connections_history|safe }},
+            backgroundColor: connGrad,
+            borderRadius: 6,
+            barPercentage: 0.55
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: 'rgba(15, 23, 42, 0.95)',
+              titleColor: '#f8fafc',
+              bodyColor: '#e2e8f0',
+              borderColor: 'rgba(255, 255, 255, 0.1)',
+              borderWidth: 1,
+              displayColors: false,
+              padding: 10,
+              callbacks: {
+                label: function(context) {
+                  return '🤝 ' + context.parsed.y + ' connection' + (context.parsed.y === 1 ? '' : 's');
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: { color: '#64748b', font: { weight: '600', size: 11 } }
+            },
+            y: {
+              grid: { color: 'rgba(255, 255, 255, 0.04)' },
+              ticks: { 
+                color: '#64748b', 
+                font: { weight: '600', size: 11 },
+                stepSize: 1,
+                precision: 0
+              }
+            }
+          }
+        }
+      });
+    });
+  </script>
 </div>
 
 {% else %}

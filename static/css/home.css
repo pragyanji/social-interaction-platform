@@ -602,3 +602,153 @@
 
   /* keep cards compact on phone */
 }
+
+/* ===================================================
+   Personal Analytics & Full Width CTA Styling
+   =================================================== */
+
+.analytics-heading {
+  margin-top: 2.5rem;
+  margin-bottom: 1.25rem;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  letter-spacing: -0.02em;
+}
+
+.analytics-heading i {
+  color: #a78bfa;
+}
+
+.analytics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 3rem;
+}
+
+.analytics-card {
+  position: relative;
+  padding: 1.5rem;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+  overflow: hidden;
+}
+
+.analytics-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at 10% 10%, rgba(124, 58, 237, 0.04) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.analytics-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(124, 58, 237, 0.25);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+}
+
+.an-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #94a3b8;
+  letter-spacing: 0.08em;
+}
+
+.an-val {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #f8fafc;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.an-val.val-green {
+  color: #10b981 !important;
+  text-shadow: 0 0 20px rgba(16, 185, 129, 0.15);
+}
+
+.an-val.val-red {
+  color: #ef4444 !important;
+  text-shadow: 0 0 20px rgba(239, 68, 68, 0.15);
+}
+
+.an-desc {
+  font-size: 0.8rem;
+  color: #64748b;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.an-trend {
+  font-weight: 600;
+}
+
+/* Full Width Video Chat CTA */
+.full-width-cta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2.2rem 2.4rem;
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.1) 0%, rgba(236, 72, 153, 0.06) 100%);
+  border: 1px solid rgba(124, 58, 237, 0.2);
+  text-decoration: none;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.full-width-cta::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 15% 50%, rgba(124, 58, 237, 0.18) 0%, transparent 60%);
+  opacity: 0.8;
+  transition: opacity 0.3s ease;
+}
+
+.full-width-cta:hover {
+  transform: translateY(-4px);
+  border-color: rgba(124, 58, 237, 0.45);
+  box-shadow: 0 12px 40px rgba(124, 58, 237, 0.25);
+}
+
+.full-width-cta:hover::before {
+  opacity: 1;
+}
+
+.full-width-cta .ac-arrow {
+  background: rgba(124, 58, 237, 0.12);
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  color: #a78bfa;
+  border: 1px solid rgba(124, 58, 237, 0.15);
+  transition: all 0.3s ease;
+}
+
+.full-width-cta:hover .ac-arrow {
+  background: #7c3aed;
+  color: #ffffff;
+  transform: translateX(4px);
+  box-shadow: 0 0 15px rgba(124, 58, 237, 0.5);
+}

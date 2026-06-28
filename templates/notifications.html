@@ -514,7 +514,7 @@ async function markAllAsRead() {
                 card.classList.remove('unread');
             });
             // Hide badge globally
-            const badge = document.querySelector('.notification-badge');
+            const badge = document.getElementById('notifications-badge');
             if (badge) badge.remove();
             
             btn.remove();
@@ -602,7 +602,7 @@ async function deleteNotification(id) {
                                 const markReadBtn = document.getElementById('markReadBtn');
                                 if (markReadBtn) markReadBtn.remove();
                                 // Hide badge globally
-                                const badge = document.querySelector('.notification-badge');
+                                const badge = document.getElementById('notifications-badge');
                                 if (badge) badge.remove();
                             }
                         }, 300);
@@ -658,7 +658,7 @@ async function deleteAllNotifications() {
                             if (markReadBtn) markReadBtn.remove();
                             
                             // Hide badge globally
-                            const badge = document.querySelector('.notification-badge');
+                            const badge = document.getElementById('notifications-badge');
                             if (badge) badge.remove();
                         }, 300);
                     }

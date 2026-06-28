@@ -33,7 +33,12 @@
 
           <!-- Icon nav links -->
           <a href="{% url 'startmessagechat' 0 %}" class="nav-icon-link" title="Messages">
-            <i class="fas fa-message"></i>
+            <div style="position: relative; display: inline-block;">
+              <i class="fas fa-message"></i>
+              {% if unread_messages_count > 0 %}
+                <span class="notification-badge" id="messages-badge">{{ unread_messages_count }}</span>
+              {% endif %}
+            </div>
             <span>Messages</span>
           </a>
           <a href="{% url 'connections' %}" class="nav-icon-link" title="Connections">
@@ -44,7 +49,7 @@
             <div style="position: relative; display: inline-block;">
               <i class="fas fa-bell"></i>
               {% if unread_notifications_count > 0 %}
-                <span class="notification-badge">{{ unread_notifications_count }}</span>
+                <span class="notification-badge" id="notifications-badge">{{ unread_notifications_count }}</span>
               {% endif %}
             </div>
             <span>Notifications</span>

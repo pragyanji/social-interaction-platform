@@ -130,6 +130,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'core_chatsphere.context_processors.unread_notifications_count',
+                'core_chatsphere.context_processors.unread_messages_count',
             ],
         },
     },

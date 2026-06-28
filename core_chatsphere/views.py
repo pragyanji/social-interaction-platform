@@ -219,11 +219,120 @@ def home(request):
     # Recalculate aura points after streak update
     aura.recalc()
 
+    from django.utils import timezone
+    from datetime import timedelta
+    
+    seven_days_ago = timezone.now() - timedelta(days=7)
+    
+    # 1. Total Connections (Bidirectional)
+    bidirectional_users = user_bidirectional_connections(request)
+    total_connections = bidirectional_users.count()
+    
+    # 2. Connections Made in the Last 7 Days
+    connections_7_days = models.Connection.objects.filter(
+        user=request.user,
+        connection_with__in=bidirectional_users,
+        created_at__gte=seven_days_ago
+    ).count()
+    
+    # 3. Aura Gained/Lost in the Last 7 Days
+    new_ratings = models.RatingPoints.objects.filter(
+        given_to=request.user, 
+        created_at__gte=seven_days_ago
+    )
+    
+    RATING_WEIGHTS = {5: 50, 4: 30, 3: 15, 2: 5, 1: -5}
+    rating_aura_change = sum(RATING_WEIGHTS.get(r.rate_points, 0) for r in new_ratings)
+        
+    # Subtract Report Penalty (manual reports received in last 7 days)
+    new_reports_count = models.Report.objects.filter(
+        reported_to=request.user,
+        created_at__gte=seven_days_ago
+    ).exclude(report_desc__icontains="Automated Detection").count()
+    report_penalty_change = new_reports_count * 50
+    
+    # Subtract Warning Penalty (automated warning strikes in last 7 days)
+    from core_chatsphere.models import ModerationLog
+    new_warnings_count = models.ModerationLog.objects.filter(
+        user=request.user,
+        action_taken=models.ModerationLog.Action.WARNING,
+        created_at__gte=seven_days_ago
+    ).count()
+    warning_penalty_change = new_warnings_count * 150
+    
+    aura_gained_7_days = rating_aura_change - report_penalty_change - warning_penalty_change
+    
+    # 4. Average Rating
+    ratings_stats = models.RatingPoints.objects.filter(given_to=request.user).aggregate(
+        avg_rating=Avg('rate_points'),
+        total_ratings=Count('id')
+    )
+    avg_rating = round(ratings_stats['avg_rating'] or 0, 1)
+    total_ratings = ratings_stats['total_ratings'] or 0
+    
+    # 5. Warning / Strikes Count
+    warning_count = models.ModerationLog.objects.filter(
+        user=request.user,
+        action_taken=models.ModerationLog.Action.WARNING
+    ).count()
+
+    # 6. Reconstruct Daily History for charts (last 7 days)
+    chart_labels = []
+    connections_history = []
+    aura_history = []
+    
+    ratings_7d = list(models.RatingPoints.objects.filter(given_to=request.user, created_at__gte=seven_days_ago).order_by('created_at'))
+    reports_7d = list(models.Report.objects.filter(reported_to=request.user, created_at__gte=seven_days_ago).exclude(report_desc__icontains="Automated Detection").order_by('created_at'))
+    warnings_7d = list(models.ModerationLog.objects.filter(user=request.user, action_taken=models.ModerationLog.Action.WARNING, created_at__gte=seven_days_ago).order_by('created_at'))
+    
+    current_aura_val = aura.aura_points
+    import datetime
+    
+    for i in range(7):
+        target_dt = timezone.now() - timedelta(days=i)
+        target_date = target_dt.date()
+        chart_labels.append(target_dt.strftime('%a'))
+        
+        day_start = timezone.make_aware(datetime.datetime.combine(target_date, datetime.time.min))
+        day_end = timezone.make_aware(datetime.datetime.combine(target_date, datetime.time.max))
+        
+        day_conns = models.Connection.objects.filter(
+            user=request.user,
+            connection_with__in=bidirectional_users,
+            created_at__range=(day_start, day_end)
+        ).count()
+        connections_history.append(day_conns)
+        
+        # Calculate aura at the end of this day
+        fut_ratings = [r for r in ratings_7d if r.created_at > day_end]
+        fut_reports = sum(1 for r in reports_7d if r.created_at > day_end)
+        fut_warnings = sum(1 for w in warnings_7d if w.created_at > day_end)
+        
+        fut_rating_change = sum(RATING_WEIGHTS.get(r.rate_points, 0) for r in fut_ratings)
+        fut_report_change = fut_reports * 50
+        fut_warning_change = fut_warnings * 150
+        
+        fut_delta = fut_rating_change - fut_report_change - fut_warning_change
+        aura_history.append(current_aura_val - fut_delta)
+        
+    chart_labels.reverse()
+    connections_history.reverse()
+    aura_history.reverse()
+
     return render(request, "home.html", {
         'aura_points': aura.aura_points,
         'streak_days': streak.current_streak,
         'longest_streak': streak.longest_streak,
         'firebase_config': json.dumps(FIREBASE_CONFIG),
+        'total_connections': total_connections,
+        'connections_7_days': connections_7_days,
+        'aura_gained_7_days': aura_gained_7_days,
+        'avg_rating': avg_rating,
+        'total_ratings': total_ratings,
+        'warning_count': warning_count,
+        'chart_labels': chart_labels,
+        'connections_history': connections_history,
+        'aura_history': aura_history,
     })
 
 
