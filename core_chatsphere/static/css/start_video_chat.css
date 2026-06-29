@@ -1142,3 +1142,272 @@ body.video-chat-body::before {
   margin-bottom: 0.75rem;
 }
 
+/* ══════════════════════════════════════════════
+   AURA VISUAL EFFECTS SYSTEM v3 — OUTER GLOW ONLY
+   All effects render OUTSIDE / AROUND the video frame.
+   No overlays inside the video stream.
+   ══════════════════════════════════════════════ */
+
+/* Allow outer glow to be visible — remove clipping for aura tiers */
+.video-panel[class*="aura-tier-"] {
+  overflow: visible;
+  z-index: 2;
+}
+
+/* Ensure the video itself still clips to the rounded rect */
+.video-panel[class*="aura-tier-"] .vid {
+  border-radius: inherit;
+  overflow: hidden;
+}
+
+/* Rotating border beam — a conic gradient pseudo-element behind the panel */
+.video-panel[class*="aura-tier-"]::before {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: inherit;
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
+.video-panel[class*="aura-tier-"]::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: #000;
+  z-index: -1;
+}
+
+/* ── Tier 1: Rare (1000–1999) — Warm Ember Glow ──
+   Soft pulsing amber/orange outer glow with breathing animation */
+
+.video-panel.aura-tier-rare {
+  border-color: rgba(249, 115, 22, 0.6);
+  animation: rareGlow 2.5s ease-in-out infinite alternate;
+}
+
+.video-panel.aura-tier-rare::before {
+  opacity: 1;
+  background: linear-gradient(135deg, #f97316, #ea580c, #f59e0b, #f97316);
+  background-size: 300% 300%;
+  animation: rareBorderShift 4s ease infinite;
+}
+
+@keyframes rareGlow {
+  0% {
+    box-shadow:
+      0 0 12px rgba(249, 115, 22, 0.4),
+      0 0 30px rgba(249, 115, 22, 0.2),
+      0 0 50px rgba(234, 88, 12, 0.1);
+  }
+  100% {
+    box-shadow:
+      0 0 18px rgba(249, 115, 22, 0.7),
+      0 0 45px rgba(249, 115, 22, 0.35),
+      0 0 80px rgba(234, 88, 12, 0.15);
+  }
+}
+
+@keyframes rareBorderShift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+
+/* ── Tier 2: Epic (2000–2999) — Electric Storm ──
+   Intense cyan glow with a scanning beam that rotates around the border */
+
+.video-panel.aura-tier-epic {
+  border-color: rgba(6, 182, 212, 0.7);
+  animation: epicGlow 2s ease-in-out infinite alternate;
+}
+
+.video-panel.aura-tier-epic::before {
+  opacity: 1;
+  inset: -4px;
+  background: conic-gradient(
+    from var(--aura-angle, 0deg),
+    transparent 0%,
+    transparent 60%,
+    #06b6d4 72%,
+    #22d3ee 80%,
+    #ffffff 84%,
+    #22d3ee 88%,
+    #06b6d4 92%,
+    transparent 100%
+  );
+  animation: auraRotate 2.5s linear infinite;
+}
+
+@keyframes epicGlow {
+  0% {
+    box-shadow:
+      0 0 15px rgba(6, 182, 212, 0.5),
+      0 0 40px rgba(6, 182, 212, 0.25),
+      0 0 70px rgba(6, 182, 212, 0.1);
+  }
+  100% {
+    box-shadow:
+      0 0 22px rgba(6, 182, 212, 0.85),
+      0 0 55px rgba(6, 182, 212, 0.4),
+      0 0 100px rgba(34, 211, 238, 0.15);
+  }
+}
+
+@keyframes auraRotate {
+  to { --aura-angle: 360deg; }
+}
+
+/* Register the custom property for the conic rotation */
+@property --aura-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+
+/* ── Tier 3: Legendary (3000–4999) — Prismatic Aurora ──
+   Full-spectrum rotating rainbow border with deep cosmic outer glow */
+
+.video-panel.aura-tier-legendary {
+  border-color: rgba(168, 85, 247, 0.7);
+  animation: legendaryGlow 3s ease-in-out infinite alternate;
+}
+
+.video-panel.aura-tier-legendary::before {
+  opacity: 1;
+  inset: -4px;
+  background: conic-gradient(
+    from var(--aura-angle, 0deg),
+    #a855f7,
+    #ec4899,
+    #f43f5e,
+    #f97316,
+    #eab308,
+    #22c55e,
+    #06b6d4,
+    #3b82f6,
+    #8b5cf6,
+    #a855f7
+  );
+  animation: auraRotate 3.5s linear infinite;
+  filter: blur(1px);
+}
+
+@keyframes legendaryGlow {
+  0% {
+    box-shadow:
+      0 0 18px rgba(168, 85, 247, 0.5),
+      0 0 45px rgba(236, 72, 153, 0.3),
+      0 0 75px rgba(59, 130, 246, 0.15),
+      0 0 110px rgba(168, 85, 247, 0.08);
+  }
+  100% {
+    box-shadow:
+      0 0 25px rgba(168, 85, 247, 0.8),
+      0 0 60px rgba(236, 72, 153, 0.45),
+      0 0 100px rgba(59, 130, 246, 0.25),
+      0 0 140px rgba(168, 85, 247, 0.12);
+  }
+}
+
+
+/* ── Tier 4: Mythic (≥5000) — Inferno God ──
+   Dual rotating beams (gold + crimson) with intense multi-layered fire glow
+   and a pulsing shockwave ring */
+
+.video-panel.aura-tier-mythic {
+  border-color: rgba(251, 191, 36, 0.8);
+  animation: mythicGlow 2s ease-in-out infinite alternate;
+}
+
+.video-panel.aura-tier-mythic::before {
+  opacity: 1;
+  inset: -5px;
+  background: conic-gradient(
+    from var(--aura-angle, 0deg),
+    transparent 0%,
+    transparent 30%,
+    #fbbf24 38%,
+    #ef4444 45%,
+    #ffffff 50%,
+    #ef4444 55%,
+    #fbbf24 62%,
+    transparent 70%,
+    transparent 100%
+  );
+  animation: auraRotate 2s linear infinite;
+  filter: blur(1.5px);
+}
+
+/* Second beam overlay for mythic — counter-rotating */
+.video-panel.aura-tier-mythic .aura-beam-ring {
+  position: absolute;
+  inset: -5px;
+  border-radius: inherit;
+  z-index: -1;
+  pointer-events: none;
+  background: conic-gradient(
+    from var(--aura-angle, 0deg),
+    transparent 0%,
+    transparent 55%,
+    #ec4899 65%,
+    #fbbf24 72%,
+    #ffffff 76%,
+    #fbbf24 80%,
+    #ec4899 85%,
+    transparent 95%,
+    transparent 100%
+  );
+  animation: auraRotateReverse 3s linear infinite;
+  filter: blur(2px);
+  opacity: 0.7;
+}
+
+@keyframes auraRotateReverse {
+  to { --aura-angle: -360deg; }
+}
+
+/* Mythic expanding shockwave ring */
+.video-panel.aura-tier-mythic .aura-shockwave {
+  position: absolute;
+  inset: -8px;
+  border-radius: inherit;
+  border: 2px solid rgba(251, 191, 36, 0);
+  z-index: -1;
+  pointer-events: none;
+  animation: mythicShockwave 3s ease-out infinite;
+}
+
+@keyframes mythicShockwave {
+  0% {
+    inset: -8px;
+    border-color: rgba(251, 191, 36, 0.6);
+    opacity: 1;
+  }
+  100% {
+    inset: -35px;
+    border-color: rgba(239, 68, 68, 0);
+    opacity: 0;
+  }
+}
+
+@keyframes mythicGlow {
+  0% {
+    box-shadow:
+      0 0 20px rgba(251, 191, 36, 0.6),
+      0 0 50px rgba(239, 68, 68, 0.35),
+      0 0 90px rgba(251, 191, 36, 0.15),
+      0 0 130px rgba(239, 68, 68, 0.08);
+  }
+  100% {
+    box-shadow:
+      0 0 30px rgba(251, 191, 36, 0.9),
+      0 0 70px rgba(239, 68, 68, 0.55),
+      0 0 120px rgba(251, 191, 36, 0.25),
+      0 0 170px rgba(239, 68, 68, 0.12);
+  }
+}

@@ -270,9 +270,13 @@ function startModeration() {
             debugCtx.drawImage(canvas, 0, 0);
         }
         
-        // Quick sanity check: is the canvas actually drawing anything?
-        const pixelCheck = ctx.getImageData(112, 112, 1, 1).data;
-        const isBlank = pixelCheck[0] === 0 && pixelCheck[1] === 0 && pixelCheck[2] === 0 && pixelCheck[3] === 0;
+        // Retrieve canvas pixel data in a single readback operation to prevent stalling GPU pipeline
+        const imgData = ctx.getImageData(0, 0, 224, 224);
+        const pixelData = imgData.data;
+
+        // Quick sanity check: is the canvas actually drawing anything? (Check center pixel)
+        const centerIdx = (112 * 224 + 112) * 4;
+        const isBlank = pixelData[centerIdx] === 0 && pixelData[centerIdx+1] === 0 && pixelData[centerIdx+2] === 0 && pixelData[centerIdx+3] === 0;
         if (isBlank) {
             log('⏭️ Moderation skip: captured frame is blank (all black). Remote stream may not have video data.');
             return;
@@ -284,8 +288,8 @@ function startModeration() {
         const sampleCoords = [56, 112, 168];
         for (const x of sampleCoords) {
             for (const y of sampleCoords) {
-                const pixel = ctx.getImageData(x, y, 1, 1).data;
-                currentFrameHash += pixel[0] + pixel[1] + pixel[2] + pixel[3];
+                const idx = (y * 224 + x) * 4;
+                currentFrameHash += pixelData[idx] + pixelData[idx+1] + pixelData[idx+2] + pixelData[idx+3];
             }
         }
         
@@ -296,6 +300,9 @@ function startModeration() {
         lastFrameHash = currentFrameHash;
         
         try {
+            // Yield execution to the browser's paint cycle before invoking heavy TFJS classifier
+            await new Promise(resolve => requestAnimationFrame(resolve));
+            
             log('🔬 Classifying remote video frame...');
             const predictions = await nsfwModel.classify(canvas);
             log('📊 Classification results:', JSON.stringify(predictions));
@@ -1114,6 +1121,85 @@ function triggerSparkles() {
 }
 
 /* ──────────────────────────────────────────────
+   AURA VISUAL EFFECTS SYSTEM (RE-DESIGNED)
+   ────────────────────────────────────────────── */
+const AURA_TIERS = [
+    {
+        minPoints: 5000,
+        className: 'aura-tier-mythic',
+        displayName: 'Mythic Aura',
+        setup: (container) => {
+            // Inject counter-rotating beam ring
+            const beamRing = document.createElement('div');
+            beamRing.className = 'aura-beam-ring';
+            container.appendChild(beamRing);
+
+            // Inject expanding shockwave ring
+            const shockwave = document.createElement('div');
+            shockwave.className = 'aura-shockwave';
+            container.appendChild(shockwave);
+
+            // Second staggered shockwave for continuous effect
+            const shockwave2 = document.createElement('div');
+            shockwave2.className = 'aura-shockwave';
+            shockwave2.style.animationDelay = '1.5s';
+            container.appendChild(shockwave2);
+        }
+    },
+    {
+        minPoints: 3000,
+        className: 'aura-tier-legendary',
+        displayName: 'Legendary Aura',
+        setup: null
+    },
+    {
+        minPoints: 2000,
+        className: 'aura-tier-epic',
+        displayName: 'Epic Aura',
+        setup: null
+    },
+    {
+        minPoints: 1000,
+        className: 'aura-tier-rare',
+        displayName: 'Rare Aura',
+        setup: null
+    }
+];
+
+function applyAuraEffects(container, auraPoints) {
+    if (!container) return;
+    clearAuraEffects(container);
+
+    if (auraPoints === undefined || auraPoints === null) return;
+    const points = parseInt(auraPoints);
+    if (isNaN(points) || points < 1000) return;
+
+    const tier = AURA_TIERS.find(t => points >= t.minPoints);
+    if (!tier) return;
+
+    container.classList.add(tier.className);
+    if (typeof tier.setup === 'function') {
+        tier.setup(container);
+    }
+}
+
+function clearAuraEffects(container) {
+    if (!container) return;
+    AURA_TIERS.forEach(t => container.classList.remove(t.className));
+
+    // Remove any injected mythic DOM elements
+    const extras = container.querySelectorAll('.aura-beam-ring, .aura-shockwave, .aura-glow-overlay, .aura-canvas, .aura-dragon-overlay');
+    extras.forEach(el => el.remove());
+
+    // Clean up any lingering canvas loops
+    const canvas = container.querySelector('.aura-canvas');
+    if (canvas && typeof canvas._cleanup === 'function') {
+        canvas._cleanup();
+        canvas.remove();
+    }
+}
+
+/* ──────────────────────────────────────────────
    PEER STATS
    ────────────────────────────────────────────── */
 async function loadPeerStats(peerId) {
@@ -1147,6 +1233,11 @@ function displayPeerStats(stats) {
     }
 
     badge.classList.remove('hidden');
+
+    const remoteContainer = document.getElementById('remoteVideoContainer');
+    if (remoteContainer) {
+        applyAuraEffects(remoteContainer, stats.aura_points);
+    }
 }
 
 function clearPeerStats() {
@@ -1158,6 +1249,7 @@ function clearPeerStats() {
     const rp = document.getElementById('remoteVideoContainer');
     if (rp) {
         for (let i = 1; i <= 5; i++) rp.classList.remove('star-glow-' + i);
+        clearAuraEffects(rp);
     }
 }
 
@@ -1443,6 +1535,7 @@ window.addEventListener('load', async () => {
 
         await checkMediaPermissions();
         await initialize();
+
         await loadNSFWModel();
         log('Initialization complete');
     } catch (error) {
