@@ -58,18 +58,18 @@ def dashboard(request):
         })
 
     # 2. Aura Tier Distribution
-    bronze_count = AuraPoints.objects.filter(aura_points__lte=100).count()
-    silver_count = AuraPoints.objects.filter(aura_points__gt=100, aura_points__lte=300).count()
-    gold_count = AuraPoints.objects.filter(aura_points__gt=300, aura_points__lte=750).count()
-    platinum_count = AuraPoints.objects.filter(aura_points__gt=750, aura_points__lte=1500).count()
-    diamond_count = AuraPoints.objects.filter(aura_points__gt=1500).count()
+    default_count = AuraPoints.objects.filter(aura_points__lt=1000).count()
+    rare_count = AuraPoints.objects.filter(aura_points__gte=1000, aura_points__lt=2000).count()
+    epic_count = AuraPoints.objects.filter(aura_points__gte=2000, aura_points__lt=3000).count()
+    legendary_count = AuraPoints.objects.filter(aura_points__gte=3000, aura_points__lt=5000).count()
+    mythic_count = AuraPoints.objects.filter(aura_points__gte=5000).count()
     
     aura_distribution = [
-        {'tier': 'Bronze (0-100)', 'count': bronze_count, 'color': '#b45309'},
-        {'tier': 'Silver (101-300)', 'count': silver_count, 'color': '#94a3b8'},
-        {'tier': 'Gold (301-750)', 'count': gold_count, 'color': '#fbbf24'},
-        {'tier': 'Platinum (751-1500)', 'count': platinum_count, 'color': '#22d3ee'},
-        {'tier': 'Diamond (1500+)', 'count': diamond_count, 'color': '#a855f7'},
+        {'tier': 'Default (0-999)', 'count': default_count, 'color': '#94a3b8'},
+        {'tier': 'Rare (1000-1999)', 'count': rare_count, 'color': '#f97316'},
+        {'tier': 'Epic (2000-2999)', 'count': epic_count, 'color': '#06b6d4'},
+        {'tier': 'Legendary (3000-4999)', 'count': legendary_count, 'color': '#a855f7'},
+        {'tier': 'Mythic (5000+)', 'count': mythic_count, 'color': '#fbbf24'},
     ]
 
     # 3. Community Ratings Distribution (1-5 Stars)
