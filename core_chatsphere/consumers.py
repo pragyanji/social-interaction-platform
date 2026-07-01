@@ -26,6 +26,10 @@ User = get_user_model()
 class ChatConsumer(AsyncWebsocketConsumer):
     """WebSocket consumer for real-time chat functionality."""
 
+    # Class-level set tracking user IDs that currently have a messaging
+    # WebSocket open.  Shared across all consumer instances in this process.
+    _online_users: set = set()
+
     async def connect(self):
         """Called when a WebSocket connection is established."""
         self.user_id = self.scope['url_route']['kwargs']['user_id']
@@ -38,9 +42,15 @@ class ChatConsumer(AsyncWebsocketConsumer):
             return
 
         await self.channel_layer.group_add(self.room_name, self.channel_name)
+
+        # Join a global per-user presence group so other rooms can detect us
+        self.presence_group = f"presence_{self.user.id}"
+        await self.channel_layer.group_add(self.presence_group, self.channel_name)
+        ChatConsumer._online_users.add(self.user.id)
+
         await self.accept()
 
-        # Notify the other user that this user is now online
+        # Notify the chat room that this user is now online
         await self.channel_layer.group_send(
             self.room_name,
             {
@@ -50,8 +60,23 @@ class ChatConsumer(AsyncWebsocketConsumer):
             }
         )
 
+        # Check if the OTHER user (the one we're chatting with) is already
+        # online on any messaging page and immediately send their status
+        peer_user_id = int(self.user_id)
+        peer_is_online = peer_user_id in ChatConsumer._online_users
+        await self.send(text_data=json.dumps({
+            'type': 'user_presence',
+            'user_id': peer_user_id,
+            'status': 'online' if peer_is_online else 'offline',
+        }))
+
     async def disconnect(self, close_code):
         """Called when a WebSocket connection is closed."""
+        # Leave the global presence group
+        if hasattr(self, 'presence_group'):
+            await self.channel_layer.group_discard(self.presence_group, self.channel_name)
+            ChatConsumer._online_users.discard(self.user.id)
+
         # Notify the other user that this user is now offline
         if hasattr(self, 'room_name'):
             await self.channel_layer.group_send(
@@ -62,7 +87,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     'status': 'offline',
                 }
             )
-        await self.channel_layer.group_discard(self.room_name, self.channel_name)
+            await self.channel_layer.group_discard(self.room_name, self.channel_name)
 
     async def receive(self, text_data):
         """Called when a message is received from the WebSocket."""
