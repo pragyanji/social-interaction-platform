@@ -108,6 +108,8 @@
 .stat-row {
   display: flex;
   gap: 1rem;
+  position: relative;
+  z-index: 10;
   animation: fadeUp 0.5s ease 0.1s both;
 }
 
@@ -125,6 +127,7 @@
   cursor: default;
   transition: border-color 0.25s ease, transform 0.25s ease;
   overflow: visible;
+  z-index: 3;
 }
 
 .stat-chip:hover {
@@ -751,4 +754,352 @@
   color: #ffffff;
   transform: translateX(4px);
   box-shadow: 0 0 15px rgba(124, 58, 237, 0.5);
+}
+
+
+/* ══════════════════════════════════════════════
+   AURA TIER VISUAL EFFECTS — DASHBOARD HERO
+   Mirrors the video-chat frame animations
+   ══════════════════════════════════════════════ */
+
+/* Register the custom property for conic rotation (CSS Houdini) */
+@property --aura-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+/* ── Base: allow glow to bleed outside hero frame ── */
+.home-hero[class*="aura-tier-"] {
+  overflow: visible;
+  z-index: 2;
+  border-color: transparent;
+}
+
+/* Rotating / gradient border — pseudo-element behind the panel */
+.home-hero[class*="aura-tier-"]::before {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: inherit;
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  pointer-events: none;
+}
+
+/* Mask interior so only the thin outer ring of ::before is visible */
+.home-hero[class*="aura-tier-"]::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: rgba(15, 23, 42, 0.97);
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* Ensure hero-glow sits above the ::after mask */
+.home-hero[class*="aura-tier-"] .hero-glow {
+  z-index: 0;
+}
+
+/* Ensure text / avatar sit above pseudo-elements */
+.home-hero[class*="aura-tier-"] .hero-text,
+.home-hero[class*="aura-tier-"] .hero-avatar {
+  position: relative;
+  z-index: 1;
+}
+
+
+/* ── Tier 1: Rare (1000–1999) — Warm Ember ── */
+
+.home-hero.aura-tier-rare {
+  border-color: rgba(249, 115, 22, 0.6);
+  animation: fadeUp 0.5s ease both, heroRareGlow 2.5s ease-in-out infinite alternate;
+}
+
+.home-hero.aura-tier-rare::before {
+  opacity: 1;
+  background: linear-gradient(135deg, #f97316, #ea580c, #f59e0b, #f97316);
+  background-size: 300% 300%;
+  animation: heroRareBorderShift 4s ease infinite;
+}
+
+@keyframes heroRareGlow {
+  0% {
+    box-shadow:
+      0 0 12px rgba(249, 115, 22, 0.4),
+      0 0 30px rgba(249, 115, 22, 0.2),
+      0 0 50px rgba(234, 88, 12, 0.1);
+  }
+  100% {
+    box-shadow:
+      0 0 18px rgba(249, 115, 22, 0.7),
+      0 0 45px rgba(249, 115, 22, 0.35),
+      0 0 80px rgba(234, 88, 12, 0.15);
+  }
+}
+
+@keyframes heroRareBorderShift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+
+/* ── Tier 2: Epic (2000–2999) — Electric Storm ── */
+
+.home-hero.aura-tier-epic {
+  border-color: rgba(6, 182, 212, 0.7);
+  animation: fadeUp 0.5s ease both, heroEpicGlow 2s ease-in-out infinite alternate;
+}
+
+.home-hero.aura-tier-epic::before {
+  opacity: 1;
+  inset: -4px;
+  background: conic-gradient(
+    from var(--aura-angle, 0deg),
+    transparent 0%,
+    transparent 60%,
+    #06b6d4 72%,
+    #22d3ee 80%,
+    #ffffff 84%,
+    #22d3ee 88%,
+    #06b6d4 92%,
+    transparent 100%
+  );
+  animation: heroAuraRotate 2.5s linear infinite;
+}
+
+@keyframes heroEpicGlow {
+  0% {
+    box-shadow:
+      0 0 15px rgba(6, 182, 212, 0.5),
+      0 0 40px rgba(6, 182, 212, 0.25),
+      0 0 70px rgba(6, 182, 212, 0.1);
+  }
+  100% {
+    box-shadow:
+      0 0 22px rgba(6, 182, 212, 0.85),
+      0 0 55px rgba(6, 182, 212, 0.4),
+      0 0 100px rgba(34, 211, 238, 0.15);
+  }
+}
+
+
+/* ── Tier 3: Legendary (3000–4999) — Prismatic Aurora ── */
+
+.home-hero.aura-tier-legendary {
+  border-color: rgba(168, 85, 247, 0.7);
+  animation: fadeUp 0.5s ease both, heroLegendaryGlow 3s ease-in-out infinite alternate;
+}
+
+.home-hero.aura-tier-legendary::before {
+  opacity: 1;
+  inset: -4px;
+  background: conic-gradient(
+    from var(--aura-angle, 0deg),
+    #a855f7,
+    #ec4899,
+    #f43f5e,
+    #f97316,
+    #eab308,
+    #22c55e,
+    #06b6d4,
+    #3b82f6,
+    #8b5cf6,
+    #a855f7
+  );
+  animation: heroAuraRotate 3.5s linear infinite;
+  filter: blur(1px);
+}
+
+@keyframes heroLegendaryGlow {
+  0% {
+    box-shadow:
+      0 0 18px rgba(168, 85, 247, 0.5),
+      0 0 45px rgba(236, 72, 153, 0.3),
+      0 0 75px rgba(59, 130, 246, 0.15),
+      0 0 110px rgba(168, 85, 247, 0.08);
+  }
+  100% {
+    box-shadow:
+      0 0 25px rgba(168, 85, 247, 0.8),
+      0 0 60px rgba(236, 72, 153, 0.45),
+      0 0 100px rgba(59, 130, 246, 0.25),
+      0 0 140px rgba(168, 85, 247, 0.12);
+  }
+}
+
+
+/* ── Tier 4: Mythic (≥5000) — Inferno God ── */
+
+.home-hero.aura-tier-mythic {
+  border-color: rgba(251, 191, 36, 0.8);
+  animation: fadeUp 0.5s ease both, heroMythicGlow 2s ease-in-out infinite alternate;
+}
+
+.home-hero.aura-tier-mythic::before {
+  opacity: 1;
+  inset: -5px;
+  background: conic-gradient(
+    from var(--aura-angle, 0deg),
+    transparent 0%,
+    transparent 30%,
+    #fbbf24 38%,
+    #ef4444 45%,
+    #ffffff 50%,
+    #ef4444 55%,
+    #fbbf24 62%,
+    transparent 70%,
+    transparent 100%
+  );
+  animation: heroAuraRotate 2s linear infinite;
+  filter: blur(1.5px);
+}
+
+/* Counter-rotating beam ring (mythic only) */
+.home-hero.aura-tier-mythic .aura-beam-ring {
+  position: absolute;
+  inset: -5px;
+  border-radius: inherit;
+  z-index: -1;
+  pointer-events: none;
+  background: conic-gradient(
+    from var(--aura-angle, 0deg),
+    transparent 0%,
+    transparent 55%,
+    #ec4899 65%,
+    #fbbf24 72%,
+    #ffffff 76%,
+    #fbbf24 80%,
+    #ec4899 85%,
+    transparent 95%,
+    transparent 100%
+  );
+  animation: heroAuraRotateReverse 3s linear infinite;
+  filter: blur(2px);
+  opacity: 0.7;
+}
+
+/* Expanding shockwave rings (mythic only) */
+.home-hero.aura-tier-mythic .aura-shockwave {
+  position: absolute;
+  inset: -8px;
+  border-radius: inherit;
+  border: 2px solid rgba(251, 191, 36, 0);
+  z-index: -1;
+  pointer-events: none;
+  animation: heroMythicShockwave 3s ease-out infinite;
+}
+
+@keyframes heroMythicGlow {
+  0% {
+    box-shadow:
+      0 0 20px rgba(251, 191, 36, 0.6),
+      0 0 50px rgba(239, 68, 68, 0.35),
+      0 0 90px rgba(251, 191, 36, 0.15),
+      0 0 130px rgba(239, 68, 68, 0.08);
+  }
+  100% {
+    box-shadow:
+      0 0 30px rgba(251, 191, 36, 0.9),
+      0 0 70px rgba(239, 68, 68, 0.55),
+      0 0 120px rgba(251, 191, 36, 0.25),
+      0 0 170px rgba(239, 68, 68, 0.12);
+  }
+}
+
+@keyframes heroMythicShockwave {
+  0% {
+    inset: -8px;
+    border-color: rgba(251, 191, 36, 0.6);
+    opacity: 1;
+  }
+  100% {
+    inset: -35px;
+    border-color: rgba(239, 68, 68, 0);
+    opacity: 0;
+  }
+}
+
+
+/* ── Shared keyframes for conic rotation ── */
+
+@keyframes heroAuraRotate {
+  to { --aura-angle: 360deg; }
+}
+
+@keyframes heroAuraRotateReverse {
+  to { --aura-angle: -360deg; }
+}
+
+
+/* ══════════════════════════════════════════════
+   AURA TIER BADGE — inside the Aura Points chip
+   ══════════════════════════════════════════════ */
+
+.aura-tier-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  line-height: 1;
+  margin-top: 4px;
+  transition: all 0.3s ease;
+}
+
+/* No tier — hidden */
+.aura-tier-badge[data-tier="none"] {
+  display: none;
+}
+
+/* Tier-specific badge styles */
+.aura-tier-badge[data-tier="rare"] {
+  color: #f97316;
+  background: rgba(249, 115, 22, 0.12);
+  border: 1px solid rgba(249, 115, 22, 0.25);
+  box-shadow: 0 0 12px rgba(249, 115, 22, 0.15);
+}
+
+.aura-tier-badge[data-tier="epic"] {
+  color: #22d3ee;
+  background: rgba(6, 182, 212, 0.12);
+  border: 1px solid rgba(6, 182, 212, 0.25);
+  box-shadow: 0 0 12px rgba(6, 182, 212, 0.15);
+}
+
+.aura-tier-badge[data-tier="legendary"] {
+  color: #c084fc;
+  background: rgba(168, 85, 247, 0.12);
+  border: 1px solid rgba(168, 85, 247, 0.25);
+  box-shadow: 0 0 12px rgba(168, 85, 247, 0.15);
+}
+
+.aura-tier-badge[data-tier="mythic"] {
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.12);
+  border: 1px solid rgba(251, 191, 36, 0.25);
+  box-shadow: 0 0 14px rgba(251, 191, 36, 0.2);
+  animation: mythicBadgePulse 2s ease-in-out infinite alternate;
+}
+
+@keyframes mythicBadgePulse {
+  0% { box-shadow: 0 0 8px rgba(251, 191, 36, 0.15); }
+  100% { box-shadow: 0 0 18px rgba(251, 191, 36, 0.35); }
+}
+
+/* Tier badge dot indicator */
+.aura-tier-badge .tier-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 6px currentColor;
 }

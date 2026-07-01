@@ -18,7 +18,7 @@
 <div class="home-wrap">
 
   <!-- ── Hero greeting ── -->
-  <div class="home-hero">
+  <div class="home-hero" data-aura-points="{{ aura_points }}">
     <div class="hero-glow"></div>
     <div class="hero-text">
       <p class="hero-eyebrow">Welcome back</p>
@@ -41,6 +41,10 @@
       <div class="chip-body">
         <span class="chip-val">{{ aura_points }}</span>
         <span class="chip-lbl">Aura Points</span>
+        <span class="aura-tier-badge" id="auraTierBadge" data-tier="none">
+          <span class="tier-dot"></span>
+          <span class="tier-label"></span>
+        </span>
       </div>
       <div class="chip-nav-hint"><i class="fas fa-trophy"></i> Leaderboard <i class="fas fa-chevron-right"></i></div>
       <!-- Hover tooltip -->
@@ -277,6 +281,51 @@
         }
       });
     });
+
+    // ── Aura Tier Effects on Dashboard ──
+    (function() {
+      const DASHBOARD_AURA_TIERS = [
+        { minPoints: 5000, className: 'aura-tier-mythic', tierKey: 'mythic', displayName: 'Mythic Aura' },
+        { minPoints: 3000, className: 'aura-tier-legendary', tierKey: 'legendary', displayName: 'Legendary Aura' },
+        { minPoints: 2000, className: 'aura-tier-epic', tierKey: 'epic', displayName: 'Epic Aura' },
+        { minPoints: 1000, className: 'aura-tier-rare', tierKey: 'rare', displayName: 'Rare Aura' }
+      ];
+
+      const hero = document.querySelector('.home-hero');
+      const badge = document.getElementById('auraTierBadge');
+      if (!hero) return;
+
+      const auraPoints = parseInt(hero.dataset.auraPoints, 10);
+      if (isNaN(auraPoints) || auraPoints < 1000) return;
+
+      const tier = DASHBOARD_AURA_TIERS.find(t => auraPoints >= t.minPoints);
+      if (!tier) return;
+
+      // Apply tier class to hero
+      hero.classList.add(tier.className);
+
+      // Mythic: inject beam ring + shockwave elements
+      if (tier.tierKey === 'mythic') {
+        const beamRing = document.createElement('div');
+        beamRing.className = 'aura-beam-ring';
+        hero.appendChild(beamRing);
+
+        const shockwave1 = document.createElement('div');
+        shockwave1.className = 'aura-shockwave';
+        hero.appendChild(shockwave1);
+
+        const shockwave2 = document.createElement('div');
+        shockwave2.className = 'aura-shockwave';
+        shockwave2.style.animationDelay = '1.5s';
+        hero.appendChild(shockwave2);
+      }
+
+      // Set tier badge
+      if (badge) {
+        badge.dataset.tier = tier.tierKey;
+        badge.querySelector('.tier-label').textContent = tier.displayName;
+      }
+    })();
   </script>
 </div>
 
